@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.calcite.avatica.Meta;
 
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
@@ -31,6 +32,7 @@ import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.ATSD_VERSION_SUPPORTS_CANCEL_QUERIES;
+import static com.axibase.tsd.driver.jdbc.DriverConstants.COMMAND_ENDPOINT;
 
 public class DataProvider implements IDataProvider {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(DataProvider.class);
@@ -40,11 +42,24 @@ public class DataProvider implements IDataProvider {
 	private IStoreStrategy strategy;
 	private AtomicBoolean isHoldingConnection = new AtomicBoolean();
 
-	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context) {
-		if (logger.isTraceEnabled()) {
-			logger.trace("Host: " + connectionInfo.host());
+	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
+		switch (statementType) {
+			case SELECT: {
+				this.contentDescription = new ContentDescription(connectionInfo, query, context);
+				this.contentDescription.initSelectContent();
+				break;
+			}
+			case INSERT:
+			case UPDATE: {
+				final String commandUrl = connectionInfo.toEndpoint(COMMAND_ENDPOINT);
+				this.contentDescription = new ContentDescription(commandUrl, connectionInfo, query, context);
+				break;
+			}
+			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
 		}
-		this.contentDescription = new ContentDescription(connectionInfo, query, context);
+		if (logger.isTraceEnabled()) {
+			logger.trace("Host: " + contentDescription.getHost());
+		}
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
 	}
@@ -69,6 +84,14 @@ public class DataProvider implements IDataProvider {
 		if (this.strategy != null) {
 			this.strategy.store(is);
 		}
+	}
+
+	@Override
+	public long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException {
+		this.isHoldingConnection.set(true);
+		final long writeCount = contentProtocol.writeContent(timeout);
+		this.isHoldingConnection.set(false);
+		return writeCount;
 	}
 
 	@Override

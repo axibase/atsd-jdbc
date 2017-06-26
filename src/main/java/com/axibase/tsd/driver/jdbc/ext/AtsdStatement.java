@@ -20,8 +20,10 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaStatement;
+import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
+import org.apache.commons.lang3.StringUtils;
 
 public class AtsdStatement extends AvaticaStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdStatement.class);
@@ -42,6 +44,7 @@ public class AtsdStatement extends AvaticaStatement {
 
 	@Override
 	protected void executeInternal(String sql) throws SQLException {
+		sql = StringUtils.stripStart(sql, null);
 		try {
 			super.executeInternal(sql);
 		} catch (SQLException e) {
@@ -80,6 +83,21 @@ public class AtsdStatement extends AvaticaStatement {
 		super.close();
 		if (logger.isTraceEnabled())
 			logger.trace("[AtsdStatement#close] " + this.handle.id);
+	}
+
+	String getSql() {
+		return getSignature() == null ? null : getSignature().sql;
+	}
+
+	@Override
+	public void addBatch(String sql) throws SQLException {
+		sql = StringUtils.stripStart(sql, null);
+		super.addBatch(sql);
+	}
+
+	@Override
+	public Meta.StatementType getStatementType() {
+		return getSignature() == null ? null : getSignature().statementType;
 	}
 
 }

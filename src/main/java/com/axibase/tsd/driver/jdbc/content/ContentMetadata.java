@@ -25,9 +25,9 @@ import org.apache.calcite.avatica.Meta.CursorFactory;
 import org.apache.calcite.avatica.Meta.MetaResultSet;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementType;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParseException;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParser;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;

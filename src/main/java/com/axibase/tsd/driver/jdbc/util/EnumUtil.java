@@ -5,6 +5,8 @@ import java.util.*;
 import com.axibase.tsd.driver.jdbc.enums.*;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
+import org.apache.calcite.avatica.Meta;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -158,5 +160,13 @@ public class EnumUtil {
 	public static String getSqlKeywords() {
 		return LexerTokens.ROW_NUMBER.name();
 	}
+
+	public static Meta.StatementType getStatementTypeBySqlKind(SqlKind sqlKind) {
+	    try {
+	        return Meta.StatementType.valueOf(sqlKind.name());
+        } catch (IllegalArgumentException exc) {
+	        throw new IllegalArgumentException("Illegal statement type: " + sqlKind.name());
+        }
+    }
 
 }

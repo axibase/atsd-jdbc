@@ -30,9 +30,11 @@ import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaPreparedStatement;
 import org.apache.calcite.avatica.ColumnMetaData;
+import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.calcite.avatica.remote.TypedValue;
+import org.apache.commons.lang3.StringUtils;
 
 public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdPreparedStatement.class);
@@ -321,6 +323,31 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	public void setTimeExpression(int parameterIndex, String value) throws SQLException {
 		TimeDateExpression expression = new TimeDateExpression(value);
 		setObject(parameterIndex, expression);
+	}
+
+	String getSql() {
+		return getSignature() == null ? null : getSignature().sql;
+	}
+
+	@Override
+	public void addBatch(String sql) throws SQLException {
+		sql = StringUtils.stripStart(sql, null);
+		super.addBatch(sql);
+	}
+
+	@Override
+	protected List<TypedValue> copyParameterValues() {
+		List<TypedValue> current = getParameterValues();
+		List<TypedValue> copy = new ArrayList<>(current.size());
+		for (TypedValue value : current) {
+			copy.add(value);
+		}
+		return copy;
+	}
+
+	@Override
+	public Meta.StatementType getStatementType() {
+		return getSignature() == null ? null : getSignature().statementType;
 	}
 
 }

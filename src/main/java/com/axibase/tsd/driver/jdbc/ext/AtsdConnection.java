@@ -16,12 +16,14 @@ package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
+import java.sql.PreparedStatement;
 import org.apache.calcite.avatica.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
 
 public class AtsdConnection extends AvaticaConnection {
 	@SuppressWarnings("unused")
@@ -77,4 +79,20 @@ public class AtsdConnection extends AvaticaConnection {
 	AtsdConnectionInfo getConnectionInfo() {
 		return new AtsdConnectionInfo(this.info);
 	}
+
+	@Override
+	public PreparedStatement prepareStatement(String sql) throws SQLException {
+		sql = StringUtils.stripStart(sql, null);
+		return super.prepareStatement(sql);
+	}
+
+	@Override
+	protected long[] executeBatchUpdateInternal(AvaticaPreparedStatement pstmt) throws SQLException {
+		try {
+			return super.executeBatchUpdateInternal(pstmt);
+		} catch (SQLException e) {
+			throw ExceptionsUtil.unboxException(e);
+		}
+	}
+
 }

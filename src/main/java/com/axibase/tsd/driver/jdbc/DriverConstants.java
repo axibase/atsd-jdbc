@@ -52,12 +52,14 @@ public final class DriverConstants {
 	public static final int    ATSD_VERSION_DIFFERS_NULL_AND_EMPTY = 14540;
 	public static final String REVISION_LINE = "Revision";
 
+	public static final String COMMAND_ENDPOINT = "/api/v1/command";
 	public static final String METRICS_ENDPOINT = "/api/v1/metrics";
 	public static final String VERSION_ENDPOINT = "/api/v1/version";
 	public static final String CANCEL_METHOD = "/cancel";
 	public static final String CONN_KEEP_ALIVE = "Keep-Alive";
 	public static final String AUTHORIZATION_TYPE = "Basic ";
 	public static final String CSV_AND_JSON_MIME_TYPE = "text/csv,application/json";
+	public static final String PLAIN_AND_JSON_MIME_TYPE = "text/plain,application/json";
 	public static final String COMPRESSION_ENCODING = "gzip";
 	public static final String DEFAULT_ENCODING = "identity";
 	public static final String FORM_URLENCODED_TYPE = "application/x-www-form-urlencoded";
