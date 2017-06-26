@@ -1,6 +1,6 @@
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import javax.annotation.Generated;
 
 @Generated("com.robohorse.robopojogenerator")
