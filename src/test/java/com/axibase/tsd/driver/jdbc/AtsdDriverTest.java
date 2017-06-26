@@ -2,6 +2,7 @@ package com.axibase.tsd.driver.jdbc;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnection;
+import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.ConnectionProperty;
 import org.apache.calcite.avatica.DriverVersion;
@@ -11,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -40,7 +42,9 @@ public class AtsdDriverTest extends AtsdProperties {
 	@Before
 	public void setUp() throws Exception {
 		this.driver = PowerMockito.spy(new AtsdDriver());
-		this.conn = PowerMockito.mock(AtsdConnection.class);
+		AtsdConnection atsdConnection = PowerMockito.mock(AtsdConnection.class);
+		PowerMockito.doReturn(Mockito.mock(AtsdConnectionInfo.class)).when(atsdConnection, "getConnectionInfo");
+		this.conn = atsdConnection;
 	}
 
 	@Test

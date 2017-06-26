@@ -27,6 +27,7 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
+import org.apache.http.HttpHeaders;
 
 public class ContentDescription {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(ContentDescription.class);
@@ -35,6 +36,8 @@ public class ContentDescription {
 	private String query;
 	private String login;
 	private String password;
+	private String postContent = "";
+	private final Map<String, String> requestHeaders = new HashMap<>();
 	private long contentLength;
 	private String[] headers;
 	private String jsonScheme;
@@ -46,6 +49,10 @@ public class ContentDescription {
 
 	public ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo) {
 		this(host, atsdConnectionInfo, "", 0, "");
+	}
+
+	ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
+		this(host , atsdConnectionInfo, query, context.getVersion(), context.getQueryId());
 	}
 
 	public ContentDescription(AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
@@ -133,20 +140,31 @@ public class ContentDescription {
 		this.maxRowsCount = maxRowsCount;
 	}
 
-	public String getPostParams() {
+	public String getPostContent() {
+		return postContent;
+	}
+
+	public void setPostContent(String postContent) {
+		this.postContent = postContent;
+	}
+
+	public void initSelectContent() {
 		if (StringUtils.isEmpty(query)) {
-			return "";
+			return;
 		}
 		StringBuilder buffer = new StringBuilder();
 		if (supportsCancel) {
 			buffer.append(QUERY_ID_PARAM_NAME).append('=').append(queryId).append('&');
 		}
-		return buffer
+		this.postContent = buffer
 				.append(Q_PARAM_NAME).append('=').append(getEncodedQuery()).append('&')
 				.append(FORMAT_PARAM_NAME).append('=').append(FORMAT_PARAM_VALUE).append('&')
 				.append(METADATA_FORMAT_PARAM_NAME).append('=').append(metadataFormat).append('&')
 				.append(LIMIT_PARAM_NAME).append('=').append(maxRowsCount)
 				.toString();
+
+		addRequestHeader(HttpHeaders.ACCEPT, CSV_AND_JSON_MIME_TYPE);
+		addRequestHeader(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
 	}
 
 	public String getCancelQueryUrl() {
@@ -226,9 +244,20 @@ public class ContentDescription {
 
 	@Override
 	public String toString() {
-		return "ContentDescription [host=" + this.getHost() + ", params=" + this.getPostParams() + ", login=" + login
+		return "ContentDescription [host=" + this.getHost() + ", postContent=" + postContent + ", login=" + login
 				+ ", headers=" + Arrays.toString(headers) + ", jsonScheme=" + jsonScheme + ", contentLength="
 				+ contentLength + "]";
+	}
+
+	public void addRequestHeader(String name, String value) {
+		if (StringUtils.isEmpty(name) || StringUtils.isEmpty(value)) {
+			return;
+		}
+		requestHeaders.put(name, value);
+	}
+
+	public Map<String, String> getRequestHeaders() {
+		return requestHeaders;
 	}
 
 }

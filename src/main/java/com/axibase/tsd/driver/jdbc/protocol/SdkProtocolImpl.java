@@ -18,14 +18,16 @@ import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.content.json.GeneralError;
 import com.axibase.tsd.driver.jdbc.content.json.QueryDescription;
+import com.axibase.tsd.driver.jdbc.content.json.SendCommandResult;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
-import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
-import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.http.HttpHeaders;
+import org.apache.http.entity.ContentType;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
@@ -40,6 +42,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
@@ -171,6 +174,40 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
+	public long writeContent() throws AtsdException, GeneralSecurityException, IOException {
+		return writeContent(0);
+	}
+
+	@Override
+	public long writeContent(int timeout) throws AtsdException, GeneralSecurityException, IOException {
+		contentDescription.addRequestHeader(HttpHeaders.ACCEPT, PLAIN_AND_JSON_MIME_TYPE);
+		contentDescription.addRequestHeader(HttpHeaders.CONTENT_TYPE, ContentType.TEXT_PLAIN.getMimeType());
+		long writeCount = 0;
+		try {
+			InputStream inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
+			final SendCommandResult sendCommandResult = JsonMappingUtil.mapToSendCommandResult(inputStream);
+			if (logger.isTraceEnabled()) {
+				logger.trace("[sendResult] " + sendCommandResult.toString());
+			}
+			writeCount = sendCommandResult.getSuccess();
+			if (logger.isDebugEnabled()) {
+				logger.debug(("[sendResult] " + sendCommandResult.getSuccess()));
+			}
+		} catch (IOException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Data writing error", e);
+			}
+			if (queryId != null) {
+				throw new AtsdRuntimeException(prepareCancelMessage());
+			}
+			if (e instanceof SocketException) {
+				throw e;
+			}
+		}
+		return writeCount;
+	}
+
+	@Override
 	public void close() throws Exception {
 		if (logger.isTraceEnabled()) {
 			logger.trace("[SdkProtocolImpl#close]");
@@ -180,7 +217,8 @@ public class SdkProtocolImpl implements IContentProtocol {
 		}
 	}
 
-	private InputStream executeRequest(String method, int queryTimeout, String url) throws AtsdException, IOException, GeneralSecurityException {
+	private InputStream executeRequest(String method, int queryTimeout, String url) throws AtsdException, IOException,
+			GeneralSecurityException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[request] {} {}", method, url);
 		}
@@ -242,20 +280,19 @@ public class SdkProtocolImpl implements IContentProtocol {
 		conn.setRequestProperty(HttpHeaders.CONNECTION, CONN_KEEP_ALIVE);
 		conn.setRequestProperty(HttpHeaders.USER_AGENT, USER_AGENT);
 		conn.setUseCaches(false);
+		setAdditionalRequestHeaders(contentDescription.getRequestHeaders());
 		if (method.equals(POST_METHOD)) {
-			final String postParams = contentDescription.getPostParams();
-			conn.setRequestProperty(HttpHeaders.ACCEPT, CSV_AND_JSON_MIME_TYPE);
+			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
-			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postParams.length());
-			conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
+			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Long.toString(contentDescription.getContentLength()));
 			conn.setChunkedStreamingMode(100);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {
-				logger.debug("[params] " + postParams);
+				logger.debug("[content] " + postContent);
 			}
 			try (OutputStream os = conn.getOutputStream();
 				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, DEFAULT_CHARSET.name()))) {
-				writer.write(postParams);
+				writer.write(postContent);
 				writer.flush();
 			}
 		} else {
@@ -294,6 +331,12 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 		if (trusted) {
 			sslConnection.setHostnameVerifier(DUMMY_HOSTNAME_VERIFIER);
+		}
+	}
+
+	private void setAdditionalRequestHeaders(Map<String, String> headers) {
+		for (Map.Entry<String, String> header : headers.entrySet()) {
+			conn.setRequestProperty(header.getKey(), header.getValue());
 		}
 	}
 
