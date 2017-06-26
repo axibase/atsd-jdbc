@@ -22,18 +22,21 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 
-public class AtsdCommandConverter {
+public final class AtsdCommandConverter {
 
     private static final String TBL_ATSD_SERIES = "atsd_series";
 
-    private static final String ENTITY = "ENTITY";
-    private static final String DATETIME = "DATETIME";
-    private static final String METRIC = "METRIC";
+    private static final String ENTITY = "entity";
+    private static final String DATETIME = "datetime";
+    private static final String METRIC = "metric";
     private static final String VALUE = "value";
-    private static final String TEXT = "TEXT";
+    private static final String TEXT = "text";
     private static final String PREFIX_TAGS = "tags.";
 
-    public String convertSqlToCommand(String sql) throws SqlParseException {
+    private AtsdCommandConverter() {
+    }
+
+    public static String convertSqlToCommand(String sql) throws SqlParseException {
         SqlNode rootNode = parseSql(sql);
         switch (rootNode.getKind()) {
             case INSERT:
@@ -45,7 +48,7 @@ public class AtsdCommandConverter {
         }
     }
 
-    public String convertSqlToCommand(String sql, List<Object> parameterValues) throws SqlParseException {
+    public static String convertSqlToCommand(String sql, List<Object> parameterValues) throws SqlParseException {
         SqlNode rootNode = parseSql(sql);
         switch (rootNode.getKind()) {
             case INSERT:
@@ -57,7 +60,7 @@ public class AtsdCommandConverter {
         }
     }
 
-    public String convertBatchToCommands(String sql, List<List<Object>> parameterValueBatch) throws SqlParseException {
+    public static String convertBatchToCommands(String sql, List<List<Object>> parameterValueBatch) throws SqlParseException {
         SqlNode rootNode = parseSql(sql);
         switch (rootNode.getKind()) {
             case INSERT:
@@ -69,7 +72,7 @@ public class AtsdCommandConverter {
         }
     }
 
-    private SqlNode parseSql(String sql) throws SqlParseException {
+    private static SqlNode parseSql(String sql) throws SqlParseException {
         sql = prepareSql(sql);
         SqlParser sqlParser = SqlParser.create(sql, SqlParser.configBuilder()
                 .setParserFactory(SqlParserImpl.FACTORY)
@@ -101,7 +104,7 @@ public class AtsdCommandConverter {
         return sb.toString();
     }
 
-    private String createCommand(final SqlInsert rootNode, List<Object> parameterValues) {
+    private static String createCommand(final SqlInsert rootNode, List<Object> parameterValues) {
         SqlIdentifier targetTable = (SqlIdentifier) rootNode.getTargetTable();
         String tableName = targetTable.getSimple().toLowerCase();
         if (TBL_ATSD_SERIES.equals(tableName)) {
@@ -110,7 +113,7 @@ public class AtsdCommandConverter {
         return createSeriesCommand(tableName, rootNode, parameterValues);
     }
 
-    private String createCommandBatch(final SqlInsert rootNode, List<List<Object>> parameterValueBatch) {
+    private static String createCommandBatch(final SqlInsert rootNode, List<List<Object>> parameterValueBatch) {
         SqlIdentifier targetTable = (SqlIdentifier) rootNode.getTargetTable();
         String tableName = targetTable.getSimple().toLowerCase();
         if (TBL_ATSD_SERIES.equals(tableName)) {
@@ -119,22 +122,22 @@ public class AtsdCommandConverter {
         return createSeriesCommandBatch(tableName, rootNode, parameterValueBatch);
     }
 
-    private String createCommand(final SqlUpdate rootNode, List<Object> parameterValues) {
+    private static String createCommand(final SqlUpdate rootNode, List<Object> parameterValues) {
         throw new UnsupportedOperationException("Update not yet implemented");
     }
 
-    private String createCommandBatch(final SqlUpdate rootNode, List<List<Object>> parameterValueBatch) {
+    private static String createCommandBatch(final SqlUpdate rootNode, List<List<Object>> parameterValueBatch) {
         throw new UnsupportedOperationException("Update not yet implemented");
     }
 
-    private String createSeriesCommand(final SqlInsert rootNode, List<Object> parameterValues) {
+    private static String createSeriesCommand(final SqlInsert rootNode, List<Object> parameterValues) {
         final List<String> columnNames = getColumnNames(rootNode);
         final List<Object> values = getInsertValues(rootNode, parameterValues);
 
         return composeSeriesCommand(columnNames, values);
     }
 
-    private String createSeriesCommandBatch(final SqlInsert rootNode, List<List<Object>> parameterValueBatch) {
+    private static String createSeriesCommandBatch(final SqlInsert rootNode, List<List<Object>> parameterValueBatch) {
         final List<String> columnNames = getColumnNames(rootNode);
         final List<List<Object>> valueBatch = getInsertValueBatch(rootNode, parameterValueBatch);
 
@@ -145,13 +148,13 @@ public class AtsdCommandConverter {
         return sb.toString();
     }
 
-    private String createSeriesCommand(String metricName, final SqlInsert rootNode, List<Object> parameterValues) {
+    private static String createSeriesCommand(String metricName, final SqlInsert rootNode, List<Object> parameterValues) {
         final List<String> columnNames = getColumnNames(rootNode);
         final List<Object> values = getInsertValues(rootNode, parameterValues);
         return composeSeriesCommand(metricName, columnNames, values);
     }
 
-    private String createSeriesCommandBatch(String metricName, final SqlInsert rootNode, List<List<Object>> parameterValueBatch) {
+    private static String createSeriesCommandBatch(String metricName, final SqlInsert rootNode, List<List<Object>> parameterValueBatch) {
         final List<String> columnNames = getColumnNames(rootNode);
         final List<List<Object>> valueBatch = getInsertValueBatch(rootNode, parameterValueBatch);
 
