@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaPreparedStatement;
@@ -50,6 +51,15 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	}
 
 	@Override
+	protected void executeInternal(String sql) throws SQLException {
+		try {
+			super.executeInternal(sql);
+		} catch (SQLException e) {
+			throw ExceptionsUtil.unboxException(e);
+		}
+	}
+
+	@Override
 	public void clearParameters() throws SQLException {
 		super.clearParameters();
 		parameters.clear();
@@ -57,7 +67,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	protected List<TypedValue> getParameterValues() {
-		if (parameters.size() == 0) {
+		if (parameters.isEmpty()) {
 			return Collections.emptyList();
 		}
 		if (parameters.lastKey() != parameters.size()) {
@@ -89,11 +99,8 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	@Override
 	public synchronized void close() throws SQLException {
 		super.close();
-		if (logger.isTraceEnabled()) {
-			logger.trace("[close] " + this.handle.id);
-		}
+		logger.trace("[close] {}", this.handle.id);
 	}
-
 
 	@Override
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {

@@ -14,6 +14,17 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.net.URLEncoder;
+import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.*;
 import com.axibase.tsd.driver.jdbc.content.json.Metric;
@@ -33,18 +44,6 @@ import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.net.URLEncoder;
-import java.sql.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
@@ -68,7 +67,6 @@ public class AtsdMeta extends MetaImpl {
 	private final Map<Integer, ContentMetadata> metaCache = new ConcurrentHashMap<>();
 	private final Map<Integer, IDataProvider> providerCache = new ConcurrentHashMap<>();
 	private final Map<Integer, StatementContext> contextMap = new ConcurrentHashMap<>();
-	private final ReentrantLock lock = new ReentrantLock();
 	private final String schema;
 	private final String catalog;
 
@@ -99,21 +97,11 @@ public class AtsdMeta extends MetaImpl {
 
 	@Override
 	public StatementHandle prepare(ConnectionHandle connectionHandle, String query, long maxRowCount) {
-		try {
-			lock.lockInterruptibly();
-		} catch (InterruptedException e) {
-			if (log.isDebugEnabled()) {
-				log.debug("[prepare] " + e.getMessage());
-			}
-			Thread.currentThread().interrupt();
-		}
 		final int id = idGenerator.getAndIncrement();
-		if (log.isTraceEnabled()) {
-			log.trace("[prepare] locked: {} handle: {} query: {}", lock.getHoldCount(), id, query);
-		}
+		log.trace("[prepare] handle: {} query: {}", id, query);
 
-		final StatementType statementType = getStatementTypeByQuery(query);
-		Signature signature = new Signature(null, query, Collections.<AvaticaParameter>emptyList(), null,
+        final StatementType statementType = getStatementTypeByQuery(query);
+        Signature signature = new Signature(null, query, Collections.<AvaticaParameter>emptyList(), null,
 				statementType == SELECT ? CursorFactory.LIST : null, statementType);
 		return new StatementHandle(connectionHandle.id, id, signature);
 	}
@@ -132,22 +120,14 @@ public class AtsdMeta extends MetaImpl {
 		}
 		final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
 		final String query = substitutePlaceholders(getSql(statement), parameterValues);
-		IDataProvider provider = null;
 		try {
-			provider = initProvider(statementHandle, query, statement.getStatementType());
-		} catch (IOException e) {
-			if (log.isDebugEnabled()) {
-				log.debug("[execute]" + e.getMessage());
-			}
-		}
-		assert provider != null;
-		try {
-			final int timeout = getQueryTimeout(statement);
+            IDataProvider provider = createDataProvider(statementHandle, query, statement.getStatementType());
+            final int timeout = getQueryTimeout(statement);
 			final ExecuteResult result;
 			if (SELECT == statement.getStatementType()) {
 				final int maxRows = getMaxRows(statement);
 				provider.fetchData(maxRows, timeout);
-				final ContentMetadata contentMetadata = findMetadata(query, statementHandle.connectionId, statementHandle.id);
+				final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 				result = new ExecuteResult(contentMetadata.getList());
 			} else {
 				AtsdCommandConverter converter = new AtsdCommandConverter();
@@ -161,14 +141,10 @@ public class AtsdMeta extends MetaImpl {
 			}
 			return result;
 		} catch (final RuntimeException e) {
-			if (log.isErrorEnabled()) {
-				log.error("[execute] error", e);
-			}
+			log.error("[execute] error", e);
 			throw e;
 		} catch (final Exception e) {
-			if (log.isErrorEnabled()) {
-				log.error("[execute] error", e);
-			}
+			log.error("[execute] error", e);
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 	}
@@ -179,7 +155,7 @@ public class AtsdMeta extends MetaImpl {
 			final String[] parts = query.split("\\?", -1);
 			if (parts.length != parameterValues.size() + 1) {
 				throw new IndexOutOfBoundsException(
-						String.format("Number of specified values [%d] does not match to number of occurences [%d]",
+						String.format("Number of specified values [%d] does not match to number of occurrences [%d]",
 								parameterValues.size(), parts.length - 1));
 			}
 			buffer.append(parts[0]);
@@ -204,9 +180,7 @@ public class AtsdMeta extends MetaImpl {
 			}
 
 			final String result = buffer.toString();
-			if (log.isDebugEnabled()) {
-				log.debug("[substitutePlaceholders] " + result);
-			}
+			log.debug("[substitutePlaceholders] {}", result);
 			return result;
 		}
 		return query;
@@ -245,22 +219,11 @@ public class AtsdMeta extends MetaImpl {
 	@Override
 	public ExecuteResult prepareAndExecute(StatementHandle statementHandle, String query, long maxRowCount,
 										   int maxRowsInFrame, PrepareCallback callback) throws NoSuchStatementException {
-		long limit = maxRowCount < 0 ? 0 : maxRowCount;
-		try {
-			lock.lockInterruptibly();
-		} catch (InterruptedException e) {
-			if (log.isDebugEnabled()) {
-				log.debug("[prepareAndExecute] " + e.getMessage());
-			}
-			Thread.currentThread().interrupt();
-		}
-		if (log.isTraceEnabled()) {
-			log.trace("[prepareAndExecute] locked: {} maxRowCount: {} handle: {} query: {}", lock.getHoldCount(),
-					limit, statementHandle.toString(), query);
-		}
+		final long limit = maxRowCount < 0 ? 0 : maxRowCount;
+		log.trace("[prepareAndExecute] maxRowCount: {} handle: {} query: {}", limit, statementHandle, query);
 		try {
 			final AvaticaStatement statement = (AvaticaStatement) callback.getMonitor();
-			final IDataProvider provider = initProvider(statementHandle, query, statement.getStatementType());
+			final IDataProvider provider = createDataProvider(statementHandle, query, statement.getStatementType());
 			final long updateCount;
 			if (SELECT == statement.getStatementType()) {
 				provider.fetchData(limit, statement.getQueryTimeout());
@@ -271,41 +234,26 @@ public class AtsdMeta extends MetaImpl {
 				provider.getContentDescription().setPostContent(content);
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
-			final ContentMetadata contentMetadata = findMetadata(query, statementHandle.connectionId, statementHandle.id);
+			final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 			synchronized (callback.getMonitor()) {
-				// callback.clear();
+				callback.clear();
 				callback.assign(contentMetadata.getSign(), null, updateCount);
 			}
 			final ExecuteResult result = new ExecuteResult(contentMetadata.getList());
 			callback.execute();
 			return result;
 		} catch (final RuntimeException e) {
-			if (log.isErrorEnabled()) {
-				log.error("[prepareAndExecute] error", e);
-			}
+			log.error("[prepareAndExecute] error", e);
 			throw e;
 		} catch (final Exception e) {
-			if (log.isErrorEnabled()) {
-				log.error("[prepareAndExecute] error", e);
-			}
+			log.error("[prepareAndExecute] error", e);
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 	}
 
 	@Override
 	public ExecuteBatchResult prepareAndExecuteBatch(StatementHandle statementHandle, List<String> queries) throws NoSuchStatementException {
-		try {
-			lock.lockInterruptibly();
-		} catch (InterruptedException e) {
-			if (log.isDebugEnabled()) {
-				log.debug("[prepareAndExecuteBatch] " + e.getMessage());
-			}
-			Thread.currentThread().interrupt();
-		}
-		if (log.isTraceEnabled()) {
-			log.trace("[prepareAndExecuteBatch] locked: {} handle: {} queries: {}", lock.getHoldCount(),
-					statementHandle.toString(), queries);
-		}
+        log.trace("[prepareAndExecuteBatch] handle: {} queries: {}", statementHandle.toString(), queries);
 		try {
 			final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
 			long[] updateCounts = new long[queries.size()];
@@ -315,7 +263,7 @@ public class AtsdMeta extends MetaImpl {
 				if (SELECT == statementType) {
 					throw new IllegalArgumentException("Invalid statement type: " + statementType);
 				}
-				final IDataProvider provider = initProvider(statementHandle, query, statementType);
+				final IDataProvider provider = createDataProvider(statementHandle, query, statementType);
 				AtsdCommandConverter converter = new AtsdCommandConverter();
 				String content = converter.convertSqlToCommand(query);
 				provider.getContentDescription().setPostContent(content);
@@ -325,24 +273,17 @@ public class AtsdMeta extends MetaImpl {
 			final ExecuteBatchResult result = new ExecuteBatchResult(updateCounts);
 			return result;
 		} catch (final RuntimeException e) {
-			if (log.isErrorEnabled()) {
-				log.error("[prepareAndExecuteBatch] error", e);
-			}
+            log.error("[prepareAndExecuteBatch] error", e);
 			throw e;
 		} catch (final Exception e) {
-			if (log.isErrorEnabled()) {
-				log.error("[prepareAndExecuteBatch] error", e);
-			}
+            log.error("[prepareAndExecuteBatch] error", e);
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 	}
 
 	@Override
 	public ExecuteBatchResult executeBatch(StatementHandle statementHandle, List<List<TypedValue>> parameterValueBatch) throws NoSuchStatementException {
-		if (log.isTraceEnabled()) {
-			log.trace("[executeBatch] parameters: {} handle: {}", parameterValueBatch.size(),
-					statementHandle.toString());
-		}
+		log.trace("[executeBatch] parameters: {} handle: {}", parameterValueBatch.size(), statementHandle.toString());
 		final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
 		final StatementType statementType = statement.getStatementType();
 		if (SELECT == statementType) {
@@ -350,17 +291,9 @@ public class AtsdMeta extends MetaImpl {
 		}
 		final String query = getSql(statement);
 		final List<List<Object>> preparedValueBatch = prepareValueBatch(parameterValueBatch);
-		IDataProvider provider = null;
 		try {
-			provider = initProvider(statementHandle, query, statement.getStatementType());
-		} catch (IOException e) {
-			if (log.isDebugEnabled()) {
-				log.debug("[executeBatch]" + e.getMessage());
-			}
-		}
-		assert provider != null;
-		try {
-			final int timeout = getQueryTimeout(statement);
+            IDataProvider provider = createDataProvider(statementHandle, query, statement.getStatementType());
+            final int timeout = getQueryTimeout(statement);
 			AtsdCommandConverter converter = new AtsdCommandConverter();
 			String content = converter.convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(content);
@@ -368,14 +301,10 @@ public class AtsdMeta extends MetaImpl {
 			ExecuteBatchResult result = new ExecuteBatchResult(new long[] {updateCount});
 			return result;
 		} catch (final RuntimeException e) {
-			if (log.isErrorEnabled()) {
-				log.error("[executeBatch] error", e);
-			}
+			log.error("[executeBatch] error", e);
 			throw e;
 		} catch (final Exception e) {
-			if (log.isErrorEnabled()) {
-				log.error("[executeBatch] error", e);
-			}
+            log.error("[executeBatch] error", e);
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 	}
@@ -384,9 +313,7 @@ public class AtsdMeta extends MetaImpl {
 	public Frame fetch(final StatementHandle statementHandle, long loffset, int fetchMaxRowCount)
 			throws NoSuchStatementException, MissingResultsException {
 		final int offset = (int) loffset;
-		if (log.isTraceEnabled()) {
-			log.trace("[fetch] fetchMaxRowCount: {} offset: {}", fetchMaxRowCount, offset);
-		}
+		log.trace("[fetch] fetchMaxRowCount: {}, offset: {}", fetchMaxRowCount, offset);
 		IDataProvider provider = providerCache.get(statementHandle.id);
 		assert provider != null;
 		final ContentDescription contentDescription = provider.getContentDescription();
@@ -424,80 +351,40 @@ public class AtsdMeta extends MetaImpl {
 
 	@Override
 	public void closeStatement(StatementHandle statementHandle) {
-		if (log.isDebugEnabled()) {
-			log.debug("[closeStatement] " + statementHandle.id + "->" + statementHandle.toString());
-		}
+		log.debug("[closeStatement] {}->{}", statementHandle.id, statementHandle);
 		closeProviderCaches(statementHandle);
 		closeProvider(statementHandle);
-		if (lock.isHeldByCurrentThread()) {
-			lock.unlock();
-			if (log.isTraceEnabled()) {
-				log.trace("[unlocked]");
-			}
-		}
-		if (log.isTraceEnabled()) {
-			log.trace("[closedStatement]");
-		}
 	}
 
 	private void closeProviderCaches(StatementHandle statementHandle) {
-		if (!metaCache.isEmpty()) {
-			metaCache.remove(statementHandle.id);
-		}
-		if (!contextMap.isEmpty()) {
-			contextMap.remove(statementHandle.id);
-		}
-		if (log.isTraceEnabled()) {
-			log.trace("[closeProviderCaches]");
-		}
-
+		metaCache.remove(statementHandle.id);
+		contextMap.remove(statementHandle.id);
+		log.trace("[closeProviderCaches]");
 	}
 
 	private void closeProvider(StatementHandle statementHandle) {
-		if (!providerCache.isEmpty()) {
-			final IDataProvider provider = providerCache.remove(statementHandle.id);
-			if (provider != null) {
-				try {
-					provider.close();
-				} catch (final Exception e) {
-					if (log.isDebugEnabled()) {
-						log.debug("[closeProvider] " + e.getMessage());
-					}
-				}
+		final IDataProvider provider = providerCache.remove(statementHandle.id);
+		if (provider != null) {
+			try {
+				provider.close();
+			} catch (final Exception e) {
+				log.error("[closeProvider] error", e);
 			}
-		}
-	}
-
-	public void closeConnection() {
-		closeCaches();
-		if (lock.isHeldByCurrentThread()) {
-			lock.unlock();
-			if (log.isTraceEnabled()) {
-				log.trace("[unlocked]");
-			}
-		}
-		if (log.isTraceEnabled()) {
-			log.trace("[closed]");
-		}
-	}
-
-	private void closeCaches() {
-		if (!metaCache.isEmpty()) {
-			metaCache.clear();
-		}
-		if (!contextMap.isEmpty()) {
-			contextMap.clear();
-		}
-		if (!providerCache.isEmpty()) {
-			providerCache.clear();
 		}
 	}
 
 	@Override
+	public void closeConnection(ConnectionHandle ch) {
+		super.closeConnection(ch);
+		metaCache.clear();
+		contextMap.clear();
+		providerCache.clear();
+		log.trace("[closeConnection]");
+	}
+
+	@Override
 	public boolean syncResults(StatementHandle sh, QueryState state, long offset) throws NoSuchStatementException {
-		if (log.isDebugEnabled()) {
-			log.debug("[syncResults] " + offset);
-		}
+		log.debug("[syncResults] {}", offset);
 		return false;
 	}
 
@@ -546,6 +433,7 @@ public class AtsdMeta extends MetaImpl {
 				}
 			} catch (Exception e) {
 				log.error(e.getMessage());
+				//don't fill metric tables in case of error
 			}
 		}
 		return metricList;
@@ -670,7 +558,7 @@ public class AtsdMeta extends MetaImpl {
 				CursorFactory.record(clazz, Arrays.asList(fields), fieldNames), new Frame(0, true, iterable));
 	}
 
-	private IDataProvider initProvider(StatementHandle statementHandle, String sql, StatementType statementType) throws UnsupportedEncodingException {
+	private IDataProvider createDataProvider(StatementHandle statementHandle, String sql, StatementType statementType) throws UnsupportedEncodingException {
 		assert connection instanceof AtsdConnection;
 		AtsdConnection atsdConnection = (AtsdConnection) connection;
 		final StatementContext newContext = new StatementContext(statementHandle);
@@ -683,20 +571,17 @@ public class AtsdMeta extends MetaImpl {
 			providerCache.put(statementHandle.id, dataProvider);
 			return dataProvider;
 		} catch (SQLException e) {
-			log.error("[initProvider] Error attempting to get databaseMetadata", e);
+			log.error("[createDataProvider] Error attempting to get databaseMetadata", e);
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 	}
 
-	private ContentMetadata findMetadata(String sql, String connectionId, int statementId)
+	private ContentMetadata createMetadata(String sql, String connectionId, int statementId)
 			throws AtsdException, IOException {
-		ContentMetadata contentMetadata = metaCache.get(statementId);
-		if (contentMetadata == null) {
-			IDataProvider provider = providerCache.get(statementId);
-			final String jsonScheme = provider != null ? provider.getContentDescription().getJsonScheme() : "";
-			contentMetadata = new ContentMetadata(jsonScheme, sql, catalog, connectionId, statementId);
-			metaCache.put(statementId, contentMetadata);
-		}
+		IDataProvider provider = providerCache.get(statementId);
+		final String jsonScheme = provider != null ? provider.getContentDescription().getJsonScheme() : "";
+		ContentMetadata contentMetadata = new ContentMetadata(jsonScheme, sql, catalog, connectionId, statementId);
+		metaCache.put(statementId, contentMetadata);
 		return contentMetadata;
 	}
 
@@ -779,9 +664,7 @@ public class AtsdMeta extends MetaImpl {
 			}
 		}
 
-		if (log.isDebugEnabled()) {
-			log.debug("[preparedValues] " + result);
-		}
+		log.debug("[preparedValues] {}", result);
 		return result;
 	}
 

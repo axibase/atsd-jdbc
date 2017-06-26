@@ -171,7 +171,7 @@ public enum AtsdType {
 	public Object readValue(String[] values, int index, boolean nullable, ParserRowContext context) {
 		final String cell = values[index];
 		if (StringUtils.isEmpty(cell)) {
-			return this == AtsdType.STRING_DATA_TYPE && !nullable ? cell : null;
+			return this == AtsdType.STRING_DATA_TYPE && StringUtils.isNotEmpty(context.getColumnSource(index)) ? cell : null;
 		}
 		try {
 			return readValueHelper(cell);

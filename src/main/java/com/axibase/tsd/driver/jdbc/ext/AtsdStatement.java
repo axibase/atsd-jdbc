@@ -31,15 +31,13 @@ public class AtsdStatement extends AvaticaStatement {
 	protected AtsdStatement(AvaticaConnection connection, StatementHandle statementHandle, int resultSetType,
 			int resultSetConcurrency, int resultSetHoldability) {
 		super(connection, statementHandle, resultSetType, resultSetConcurrency, resultSetHoldability);
-		if (logger.isTraceEnabled())
-			logger.trace("[AtsdStatement#new] " + this.handle.id);
+		logger.trace("[AtsdStatement#new] {}", this.handle.id);
 	}
 
 	protected AtsdStatement(AvaticaConnection connection, StatementHandle statementHandle, int resultSetType,
 			int resultSetConcurrency, int resultSetHoldability, Signature signature) {
 		super(connection, statementHandle, resultSetType, resultSetConcurrency, resultSetHoldability, signature);
-		if (logger.isTraceEnabled())
-			logger.trace("[AtsdStatement#new] " + this.handle.id);
+		logger.trace("[AtsdStatement#new] {}", this.handle.id);
 	}
 
 	@Override
@@ -73,16 +71,13 @@ public class AtsdStatement extends AvaticaStatement {
 		}
 
 		super.cancel();
-		if (logger.isTraceEnabled()) {
-			logger.trace("[AtsdStatement#cancel]");
-		}
+		logger.trace("[AtsdStatement#cancel]");
 	}
 
 	@Override
 	public synchronized void close() throws SQLException {
 		super.close();
-		if (logger.isTraceEnabled())
-			logger.trace("[AtsdStatement#close] " + this.handle.id);
+		logger.trace("[AtsdStatement#close] {}", this.handle.id);
 	}
 
 	String getSql() {

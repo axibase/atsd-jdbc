@@ -57,9 +57,7 @@ public class DataProvider implements IDataProvider {
 			}
 			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
 		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("Host: " + contentDescription.getHost());
-		}
+		logger.trace("Host: {}", contentDescription.getHost());
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
 	}
@@ -100,19 +98,15 @@ public class DataProvider implements IDataProvider {
 			throw new IllegalStateException("Cannot cancel query: contentProtocol is not created yet");
 		}
 		if (context.isAbleToCancelAtsdQueries()) {
-			if (logger.isTraceEnabled()) {
-				logger.trace("[cancelQuery] sending cancel queryId={}", context.getQueryId());
-			}
+			logger.trace("[cancelQuery] sending cancel queryId={}", context.getQueryId());
 			try {
 				this.contentProtocol.cancelQuery();
 			} catch (Exception e) {
 				throw new AtsdRuntimeException(e.getMessage(), e);
 			}
 		} else {
-			if (logger.isWarnEnabled()) {
-				logger.warn("[cancelQuery] cancel query unsupported: minimal ATSD version {} is required",
+			logger.warn("[cancelQuery] cancel query unsupported: minimal ATSD version {} is required",
 						ATSD_VERSION_SUPPORTS_CANCEL_QUERIES);
-			}
 			((SdkProtocolImpl)this.contentProtocol).setQueryId(context.getQueryId());
 			closeWithRuntimeException();
 		}
@@ -135,9 +129,7 @@ public class DataProvider implements IDataProvider {
 		if (this.strategy != null) {
 			this.strategy.close();
 		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("[DataProvider#close]");
-		}
+		logger.trace("[DataProvider#close]");
 	}
 
 	private IStoreStrategy defineStrategy() {
