@@ -1,8 +1,8 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
-
 import java.util.Properties;
+
+import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.PROTOCOL_SEPARATOR;
 import static com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties.*;
@@ -72,6 +72,12 @@ public class AtsdConnectionInfo {
 
 	public boolean expandTags() {
 		final AtsdDriverConnectionProperties property = expandTags;
+		final String result = info.getProperty(property.camelName());
+		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
+	}
+
+	public boolean metaColumns() {
+		final AtsdDriverConnectionProperties property = metaColumns;
 		final String result = info.getProperty(property.camelName());
 		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
 	}

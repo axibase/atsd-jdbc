@@ -17,25 +17,27 @@ package com.axibase.tsd.driver.jdbc.enums;
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
 
 public enum DefaultColumn implements MetadataColumnDefinition {
-	TIME("time", AtsdType.LONG_DATA_TYPE, 0),
-	DATETIME("datetime", AtsdType.TIMESTAMP_DATA_TYPE, 0),
-	VALUE("value", AtsdType.FLOAT_DATA_TYPE, 0),
-	TEXT("text", AtsdType.STRING_DATA_TYPE, 1),
-	METRIC("metric", AtsdType.STRING_DATA_TYPE, 0),
-	ENTITY("entity", AtsdType.STRING_DATA_TYPE, 0),
-	TAGS("tags", AtsdType.STRING_DATA_TYPE, 1),
-	ENTITY_TAGS("entity.tags", AtsdType.STRING_DATA_TYPE, 1),
-	METRIC_TAGS("metric.tags", AtsdType.STRING_DATA_TYPE, 1),
-	ENTITY_GROUPS("entity.groups", AtsdType.STRING_DATA_TYPE, 1);
+	TIME("time", AtsdType.LONG_DATA_TYPE, 0, false),
+	DATETIME("datetime", AtsdType.TIMESTAMP_DATA_TYPE, 0, false),
+	VALUE("value", AtsdType.FLOAT_DATA_TYPE, 0, false),
+	TEXT("text", AtsdType.STRING_DATA_TYPE, 1, false),
+	METRIC("metric", AtsdType.STRING_DATA_TYPE, 0, false),
+	ENTITY("entity", AtsdType.STRING_DATA_TYPE, 0, false),
+	TAGS("tags", AtsdType.STRING_DATA_TYPE, 1, false),
+	ENTITY_TAGS("entity.tags", AtsdType.STRING_DATA_TYPE, 1, true),
+	METRIC_TAGS("metric.tags", AtsdType.STRING_DATA_TYPE, 1, true),
+	ENTITY_GROUPS("entity.groups", AtsdType.STRING_DATA_TYPE, 1, true);
 
 	private final String columnNamePrefix;
 	private final AtsdType type;
 	private final int nullable;
+	private final boolean metaColumn;
 	
-	DefaultColumn(String prefix, AtsdType type, int nullable) {
+	DefaultColumn(String prefix, AtsdType type, int nullable, boolean metaColumn) {
 		this.columnNamePrefix = prefix;
 		this.type = type;
 		this.nullable = nullable;
+		this.metaColumn = metaColumn;
 	}
 
 	public String getColumnNamePrefix() {
@@ -52,5 +54,10 @@ public enum DefaultColumn implements MetadataColumnDefinition {
 
 	public String getNullableAsString() {
 		return NULLABLE_AS_STRING[nullable];
+	}
+
+	@Override
+	public boolean isMetaColumn() {
+		return metaColumn;
 	}
 }

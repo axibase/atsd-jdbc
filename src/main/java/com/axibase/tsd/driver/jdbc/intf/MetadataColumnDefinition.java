@@ -26,4 +26,6 @@ public interface MetadataColumnDefinition {
 	int getNullable();
 
 	String getNullableAsString();
+
+	boolean isMetaColumn();
 }

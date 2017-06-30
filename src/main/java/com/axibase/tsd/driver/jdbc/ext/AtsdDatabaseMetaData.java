@@ -14,6 +14,13 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import java.io.InputStream;
+import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.content.json.Version;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
@@ -25,14 +32,8 @@ import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
 
-import java.io.InputStream;
-import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-
-import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
+import static com.axibase.tsd.driver.jdbc.DriverConstants.REVISION_LINE;
+import static com.axibase.tsd.driver.jdbc.DriverConstants.VERSION_ENDPOINT;
 
 public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdDatabaseMetaData.class);
@@ -150,6 +151,10 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public int getDatabaseMajorVersion() throws SQLException {
+		return getConnectedAtsdVersion();
+	}
+
+	int getConnectedAtsdVersion() {
 		try {
 			return Integer.parseInt(revision);
 		} catch (NumberFormatException e) {

@@ -69,6 +69,7 @@ public class AtsdMeta extends MetaImpl {
 	private final Map<Integer, StatementContext> contextMap = new ConcurrentHashMap<>();
 	private final String schema;
 	private final String catalog;
+	private final boolean showMetaColumns;
 
 	public AtsdMeta(final AvaticaConnection conn) {
 		super(conn);
@@ -77,7 +78,9 @@ public class AtsdMeta extends MetaImpl {
 		this.connProps.setTransactionIsolation(Connection.TRANSACTION_NONE);
 		this.connProps.setDirty(false);
 		this.schema = null;
-		this.catalog = ((AtsdConnection) conn).getConnectionInfo().catalog();
+		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) conn).getConnectionInfo();
+		this.catalog = connectionInfo.catalog();
+		this.showMetaColumns = connectionInfo.metaColumns();
 	}
 
 	private static ThreadLocal<SimpleDateFormat> prepareFormatter(final String pattern) {
@@ -417,7 +420,6 @@ public class AtsdMeta extends MetaImpl {
 
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo) {
 		final List<Object> metricList = new ArrayList<>();
-		metricList.add(generateDefaultMetaTable());
 		final String tables = connectionInfo.tables();
 		if (StringUtils.isNotBlank(tables)) {
 			final String metricsUrl = connectionInfo.toEndpoint(DriverConstants.METRICS_ENDPOINT);
@@ -474,8 +476,10 @@ public class AtsdMeta extends MetaImpl {
 			List<Object> columnData = new ArrayList<>(columns.length);
 			int position = 1;
 			for (DefaultColumn column : columns) {
-				columnData.add(createColumnMetaData(column, schema, tablePattern, position));
-				++position;
+				if (showMetaColumns || !column.isMetaColumn()) {
+					columnData.add(createColumnMetaData(column, schema, tablePattern, position));
+					++position;
+				}
 			}
 			if (!DriverConstants.DEFAULT_TABLE_NAME.equals(tablePattern)) {
 				for (String tag : getTags(tablePattern)) {
@@ -560,8 +564,8 @@ public class AtsdMeta extends MetaImpl {
 		final StatementContext newContext = new StatementContext(statementHandle);
 		contextMap.put(statementHandle.id, newContext);
 		try {
-			AtsdDatabaseMetaData metaData = (AtsdDatabaseMetaData) connection.getMetaData();
-			newContext.setVersion(metaData.getDatabaseMajorVersion());
+			AtsdDatabaseMetaData metaData = atsdConnection.getAtsdDatabaseMetaData();
+			newContext.setVersion(metaData.getConnectedAtsdVersion());
 			AtsdConnectionInfo connectionInfo = atsdConnection.getConnectionInfo();
 			final IDataProvider dataProvider = new DataProvider(connectionInfo, sql, newContext, statementType);
 			providerCache.put(statementHandle.id, dataProvider);

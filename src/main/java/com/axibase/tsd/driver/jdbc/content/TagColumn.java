@@ -43,4 +43,9 @@ public class TagColumn implements MetadataColumnDefinition {
 	public String getNullableAsString() {
 		return "TRUE";
 	}
+
+	@Override
+	public boolean isMetaColumn() {
+		return false;
+	}
 }

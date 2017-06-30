@@ -36,6 +36,8 @@ public final class DriverConstants {
 	public static final String CATALOG_PARAM_NAME = "catalog";
 	public static final String EXPAND_TAGS_PARAM_NAME = "expandTags";
 	public static final boolean DEFAULT_EXPAND_TAGS_VALUE = true;
+	public static final String META_COLUMNS_PARAM_NAME = "metaColumns";
+	public static final boolean META_COLUMNS_VALUE = true;
 
 	public static final String QUERY_ID_PARAM_NAME = "queryId";
 	public static final String Q_PARAM_NAME = "q";

@@ -13,7 +13,7 @@ public class AtsdMetaResultSets {
 		public final int dataType;
 		public final String typeName;
 		public final int columnSize;
-		public final String bufferLength = null;
+		public final Integer bufferLength = null;
 		public final Integer decimalDigits;
 		public final int numPrecRadix;
 		public final int nullable;
@@ -27,9 +27,9 @@ public class AtsdMetaResultSets {
 		public final String scopeCatalog = null;
 		public final String scopeSchema = null;
 		public final String scopeTable = null;
-		public final String sourceDataType = null;
-		public final String isAutoincrement = null;
-		public final String isGeneratedcolumn = null;
+		public final Short sourceDataType = null;
+		public final String isAutoincrement = "";
+		public final String isGeneratedcolumn = "";
 
 		public AtsdMetaColumn(
 				String tableCat,

@@ -78,6 +78,10 @@ public class AtsdConnection extends AvaticaConnection {
 		return new AtsdConnectionInfo(this.info);
 	}
 
+    AtsdDatabaseMetaData getAtsdDatabaseMetaData() throws SQLException {
+        return (AtsdDatabaseMetaData) super.getMetaData();
+    }
+
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
 		sql = StringUtils.stripStart(sql, null);
