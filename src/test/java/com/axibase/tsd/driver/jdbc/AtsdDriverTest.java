@@ -45,6 +45,7 @@ public class AtsdDriverTest extends AtsdProperties {
 		AtsdConnection atsdConnection = PowerMockito.mock(AtsdConnection.class);
 		PowerMockito.doReturn(Mockito.mock(AtsdConnectionInfo.class)).when(atsdConnection, "getConnectionInfo");
 		this.conn = atsdConnection;
+
 	}
 
 	@Test

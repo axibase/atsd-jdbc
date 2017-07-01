@@ -14,6 +14,8 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -31,23 +33,27 @@ import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaPreparedStatement;
 import org.apache.calcite.avatica.ColumnMetaData;
+import org.apache.calcite.avatica.ColumnMetaData.AvaticaType;
 import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
+import org.apache.calcite.avatica.MetaImpl;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdPreparedStatement.class);
 
 	private final ConcurrentSkipListMap<Integer, TypedValue> parameters = new ConcurrentSkipListMap<>();
 
+	boolean executed;
+
 	protected AtsdPreparedStatement(AvaticaConnection connection, StatementHandle h, Signature signature,
 									int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		super(connection, h, signature, resultSetType, resultSetConcurrency, resultSetHoldability);
-		if (logger.isTraceEnabled()) {
-			logger.trace("[new] " + this.handle.id);
-		}
+		logger.trace("[new] {}", this.handle.id);
 	}
 
 	@Override
@@ -78,7 +84,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		final List<TypedValue> list = new ArrayList<>(parameters.values());
 		if (logger.isDebugEnabled()) {
 			for (TypedValue tv : list) {
-				logger.debug("[TypedValue] " + tv.value);
+				logger.debug("[TypedValue] {}", tv.value);
 			}
 		}
 		return list;
@@ -365,6 +371,70 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	@Override
 	public Meta.StatementType getStatementType() {
 		return getSignature() == null ? null : getSignature().statementType;
+	}
+
+	@Override
+	public ResultSetMetaData getMetaData() {
+		logger.debug("[getMetaData] executed: {} signature: {}", executed, getSignature());
+		if (executed) {
+			return super.getMetaData();
+		} else if (getSignature() != null && getSignature().columns == null) {
+			switch (getStatementType()) {
+				case SELECT: {
+					Pair<String, List<String>> pair = extractTableNameAndColumnNames(getSignature().sql);
+					logger.debug("[getMetaData] tableName: {} columnNames: {}", pair.getKey(), pair.getValue());
+					Signature signature = createNewSignature(getSignature(), pair.getKey(), pair.getValue());
+					try {
+						ResultSetMetaData result = getConnection().getFactory().newResultSetMetaData(this, signature);
+						return result;
+					} catch (SQLException exc) {
+						throw new AtsdRuntimeException("", exc);
+					}
+				}
+				default: throw new UnsupportedOperationException("Not yet implemented for statement type: " + getStatementType());
+			}
+		}
+
+		return super.getMetaData();
+	}
+
+	public static Signature createNewSignature(final Signature input, String tableName, List<String> columnNames) {
+		List<ColumnMetaData> columnMetaDataList = new ArrayList<>();
+		int index = 0;
+		for (String columnName : columnNames) {
+			columnMetaDataList.add(createColumnMetaData(index++, tableName, columnName));
+		}
+		return new Signature(columnMetaDataList, input.sql, input.parameters, input.internalParameters, input.cursorFactory, input.statementType);
+	}
+
+	@Override
+	public AtsdConnection getConnection() {
+		return (AtsdConnection) connection;
+	}
+
+	private static Pair<String, List<String>> extractTableNameAndColumnNames(String sql) {
+		sql = sql.toLowerCase();
+		final int begin = StringUtils.indexOfIgnoreCase(sql, "select ") + 7;
+		final int end = StringUtils.indexOfIgnoreCase(sql, " from ");
+		String sqlColumns = sql.substring(begin, end);
+		String[] names = StringUtils.split(sqlColumns, ',');
+		List<String> columnNames = new ArrayList<>(names.length);
+		for (String name : names) {
+			columnNames.add(StringUtils.removeAll(name.trim(), "[\"'`]"));
+		}
+		String tail = sql.substring(end + 6);
+		int spaceIndex = sql.indexOf(' ');
+		final String tableName = StringUtils.removeAll(spaceIndex == -1 ? tail.trim() : sql.substring(0, spaceIndex), "[\"'`]");
+		return new ImmutablePair<>(tableName, columnNames);
+	}
+
+	private static ColumnMetaData createColumnMetaData(int position, String tableName, String columnName) {
+		DefaultColumn column = DefaultColumn.findByName(columnName);
+		ColumnMetaData.Rep rep = column.getType().avaticaType;
+		final AvaticaType avaticaType = new AvaticaType(column.getType().sqlTypeCode, column.getType().sqlType, rep);
+		return new ColumnMetaData(position, false, false, false, false, column.getNullable(), false,
+				column.getType().size, columnName, columnName, (String) null, 1,1, tableName, (String) null, avaticaType, true,
+				false, false, rep.clazz.getName());
 	}
 
 }

@@ -25,9 +25,9 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.http.HttpHeaders;
-import org.apache.http.entity.ContentType;
+import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
+import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
+import org.apache.calcite.avatica.org.apache.http.entity.ContentType;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
@@ -93,11 +93,13 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public InputStream readInfo() throws AtsdException, GeneralSecurityException, IOException {
+		contentDescription.addRequestHeadersForDataFetching();
 		return executeRequest(GET_METHOD, 0, contentDescription.getHost());
 	}
 
 	@Override
 	public InputStream readContent(int timeout) throws AtsdException, GeneralSecurityException, IOException {
+		contentDescription.addRequestHeadersForDataFetching();
 		InputStream inputStream = null;
 		try {
 			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
@@ -120,6 +122,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public InputStream getMetrics(String metricMask) throws AtsdException, GeneralSecurityException, IOException {
+		contentDescription.addRequestHeadersForDataFetching();
 		return executeRequest(GET_METHOD, 0, prepareUrlWithMetricExpression(metricMask));
 	}
 
@@ -158,6 +161,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public void cancelQuery() throws AtsdException, GeneralSecurityException, IOException {
+		contentDescription.addRequestHeadersForDataFetching();
 		InputStream result = executeRequest(GET_METHOD, 0, contentDescription.getCancelQueryUrl());
 		try {
 			final QueryDescription[] descriptionArray = JsonMappingUtil.mapToQueryDescriptionArray(result);
@@ -217,8 +221,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		}
 	}
 
-	private InputStream executeRequest(String method, int queryTimeout, String url) throws AtsdException, IOException,
-			GeneralSecurityException {
+	private InputStream executeRequest(String method, int queryTimeout, String url) throws AtsdException, IOException, GeneralSecurityException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[request] {} {}", method, url);
 		}
@@ -284,7 +287,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (method.equals(POST_METHOD)) {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
-			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Long.toString(contentDescription.getContentLength()));
+			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(postContent.length()));
 			conn.setChunkedStreamingMode(100);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {

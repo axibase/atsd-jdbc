@@ -20,6 +20,14 @@ public class EnumUtil {
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
 
+	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(new HashSet<Meta.StatementType>() {
+		{
+			add(Meta.StatementType.SELECT);
+			add(Meta.StatementType.INSERT);
+			add(Meta.StatementType.UPDATE);
+		}
+	});
+
 	private EnumUtil() {}
 
 	private static Map<String, AtsdType> createAtsdNameTypeMapping() {
@@ -161,12 +169,18 @@ public class EnumUtil {
 		return LexerTokens.ROW_NUMBER.name();
 	}
 
-	public static Meta.StatementType getStatementTypeBySqlKind(SqlKind sqlKind) {
-	    try {
-	        return Meta.StatementType.valueOf(sqlKind.name());
-        } catch (IllegalArgumentException exc) {
-	        throw new IllegalArgumentException("Illegal statement type: " + sqlKind.name());
-        }
-    }
+	public static Meta.StatementType getStatementTypeByQuery(final String query) {
+		final String queryKind = query.substring(0, query.indexOf(' ')).toUpperCase();
+		final Meta.StatementType statementType;
+		try {
+			statementType = Meta.StatementType.valueOf(queryKind);
+		} catch (IllegalArgumentException exc) {
+			throw new IllegalArgumentException("Illegal statement type: " + queryKind);
+		}
+		if (SUPPORTED_STATEMENT_TYPES.contains(statementType)) {
+			return statementType;
+		}
+		throw new IllegalArgumentException("Unsupported statement type: " + queryKind);
+	}
 
 }

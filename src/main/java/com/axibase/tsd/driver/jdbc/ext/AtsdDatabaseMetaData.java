@@ -29,6 +29,9 @@ import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import java.sql.ResultSetMetaData;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
 
@@ -109,7 +112,13 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 		return super.getColumnPrivileges(catalog, schema, table, columnNamePattern);
 	}
 
-	@Override
+	public ResultSet getColumns(final String catalog, final String schemaPattern, final String tableNamePattern, final String columnNamePattern) throws SQLException {
+		logger.debug("[getColumns] catalog: {}, schemaPattern: {}, tableNamePattern: {}, columnNamePattern: {}",
+					catalog, schemaPattern, tableNamePattern, columnNamePattern);
+		return super.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
+	}
+
+		@Override
 	public ResultSet getCatalogs() throws SQLException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getCatalogs]");
@@ -135,18 +144,18 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public String getDatabaseProductName() throws SQLException {
-		if (logger.isDebugEnabled()) {
-			logger.debug("[getDatabaseProductName]");
-		}
-		return super.getDatabaseProductName();
+		logger.debug("[getDatabaseProductName]");
+		final String result = super.getDatabaseProductName();
+		logger.trace("[getDatabaseProductName] name: {}", result);
+		return result;
 	}
 
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
-		if (logger.isDebugEnabled()) {
-			logger.debug("[getDatabaseProductVersion]");
-		}
-		return String.format("%s, %s, %s: %s", super.getDatabaseProductVersion(), edition, REVISION_LINE, revision);
+		logger.debug("[getDatabaseProductVersion]");
+		final String result = String.format("%s, %s, %s: %s", super.getDatabaseProductVersion(), edition, REVISION_LINE, revision);
+		logger.trace("[getDatabaseProductVersion] version: {}", result);
+		return result;
 	}
 
 	@Override

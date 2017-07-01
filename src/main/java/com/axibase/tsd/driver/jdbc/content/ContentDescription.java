@@ -24,10 +24,10 @@ import java.util.Map;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
-import org.apache.http.HttpHeaders;
 
 public class ContentDescription {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(ContentDescription.class);
@@ -162,7 +162,9 @@ public class ContentDescription {
 				.append(METADATA_FORMAT_PARAM_NAME).append('=').append(metadataFormat).append('&')
 				.append(LIMIT_PARAM_NAME).append('=').append(maxRowsCount)
 				.toString();
+	}
 
+	public void addRequestHeadersForDataFetching() {
 		addRequestHeader(HttpHeaders.ACCEPT, CSV_AND_JSON_MIME_TYPE);
 		addRequestHeader(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
 	}

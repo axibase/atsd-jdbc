@@ -1,6 +1,6 @@
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SendCommandResult {
 

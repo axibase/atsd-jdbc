@@ -32,7 +32,7 @@ public enum DefaultColumn implements MetadataColumnDefinition {
 	private final AtsdType type;
 	private final int nullable;
 	private final boolean metaColumn;
-	
+
 	DefaultColumn(String prefix, AtsdType type, int nullable, boolean metaColumn) {
 		this.columnNamePrefix = prefix;
 		this.type = type;
@@ -60,4 +60,14 @@ public enum DefaultColumn implements MetadataColumnDefinition {
 	public boolean isMetaColumn() {
 		return metaColumn;
 	}
+
+	public static DefaultColumn findByName(String name) {
+		for (DefaultColumn defaultColumn : DefaultColumn.values()) {
+			if (defaultColumn.name().equalsIgnoreCase(name)) {
+				return defaultColumn;
+			}
+		}
+		return TAGS;
+	}
+
 }

@@ -16,8 +16,12 @@ package com.axibase.tsd.driver.jdbc.ext;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 
@@ -71,6 +75,10 @@ public class AtsdConnection extends AvaticaConnection {
 			return super.executeQueryInternal(statement, signature, firstFrame, state, isUpdate);
 		} catch (SQLException e) {
 			throw ExceptionsUtil.unboxException(e);
+		} finally {
+			if (statement instanceof AtsdPreparedStatement) {
+				((AtsdPreparedStatement) statement).executed = true;
+			}
 		}
 	}
 
@@ -95,6 +103,10 @@ public class AtsdConnection extends AvaticaConnection {
 		} catch (SQLException e) {
 			throw ExceptionsUtil.unboxException(e);
 		}
+	}
+
+	AvaticaFactory getFactory() {
+		return factory;
 	}
 
 }

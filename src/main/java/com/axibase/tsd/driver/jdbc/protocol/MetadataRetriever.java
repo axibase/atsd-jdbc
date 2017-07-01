@@ -7,7 +7,7 @@ import java.util.Map;
 
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import org.apache.commons.codec.binary.Base64;
+import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;

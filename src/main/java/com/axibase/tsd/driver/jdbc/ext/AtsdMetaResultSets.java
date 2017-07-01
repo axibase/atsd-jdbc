@@ -94,6 +94,11 @@ public class AtsdMetaResultSets {
 		public String getName() {
 			return tableName;
 		}
+
+		public String toString() {
+			return "AtsdMetaTable {catalog= " + tableCat + ", schema=" + tableSchem + ", name=" + tableName + ", type=" + tableType + ", remarks=" + remarks + "}";
+		}
+
 	}
 }
 

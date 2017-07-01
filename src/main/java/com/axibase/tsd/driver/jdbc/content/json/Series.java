@@ -14,7 +14,7 @@
 */
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import com.fasterxml.jackson.annotation.*;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.annotation.Generated;
 import java.util.Map;

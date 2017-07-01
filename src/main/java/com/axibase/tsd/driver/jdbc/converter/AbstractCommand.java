@@ -6,9 +6,12 @@ import org.apache.commons.lang3.StringUtils;
 
 abstract class AbstractCommand {
 
+    private static final long MAX_TIME = 4291747200000l; //2106-01-01 00:00:00.000
+
     private final String commandName;
     protected String entity;
     private String dateTime;
+    private long time;
     protected final Map<String, String> tags = new CaseInsensitiveLinkedHashMap<>();
 
     AbstractCommand(String commandName) {
@@ -23,6 +26,10 @@ abstract class AbstractCommand {
         this.dateTime = dateTime;
     }
 
+    public void setTime(Long time) {
+        this.time = time;
+    }
+
     public void addTag(String name, String value) {
         if (name == null || value == null) {
             return;
@@ -34,8 +41,11 @@ abstract class AbstractCommand {
         if (StringUtils.isBlank(entity)) {
             throw new IllegalArgumentException("Entity not defined");
         }
-        if (StringUtils.isBlank(dateTime)) {
-            throw new IllegalArgumentException("DateTime not defined");
+        if (time == 0 && StringUtils.isBlank(dateTime)) {
+            throw new IllegalArgumentException("Time and DateTime not defined");
+        }
+        if (time != 0 && (time < 0 || time > MAX_TIME)) {
+            throw new IllegalArgumentException("Invalid time: " + time);
         }
     }
 
@@ -43,7 +53,11 @@ abstract class AbstractCommand {
         validate();
         StringBuilder sb = new StringBuilder(commandName);
         sb.append(" e:").append(handleName(entity));
-        sb.append(" d:").append(dateTime);
+        if (time == 0) {
+            sb.append(" d:").append(dateTime);
+        } else {
+            sb.append(" ms:").append(time);
+        }
         appendKeysAndValues(sb, " t:", tags);
         appendValues(sb);
         return sb.append('\n').toString();

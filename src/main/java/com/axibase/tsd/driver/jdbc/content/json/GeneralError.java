@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
-import com.fasterxml.jackson.annotation.*;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
