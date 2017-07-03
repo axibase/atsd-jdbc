@@ -47,6 +47,8 @@ import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.StringUtils;
 
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class AtsdMeta extends MetaImpl {
 	private static final LoggingFacade log = LoggingFacade.getLogger(AtsdMeta.class);
@@ -98,7 +100,8 @@ public class AtsdMeta extends MetaImpl {
 		final int id = idGenerator.getAndIncrement();
 		log.trace("[prepare] connection: {} query: {}", id, query);
 		StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
-		Signature signature = new Signature(null, query, Collections.<AvaticaParameter>emptyList(), null,
+		List<ColumnMetaData> columnMetaDataList = prepareColumnMetaData(statementType, query);
+		Signature signature = new Signature(columnMetaDataList, query, Collections.<AvaticaParameter>emptyList(), null,
 				statementType == SELECT ? CursorFactory.LIST : null, statementType);
 		return new StatementHandle(connectionHandle.id, id, signature);
 	}
@@ -672,6 +675,58 @@ public class AtsdMeta extends MetaImpl {
 
 		log.debug("[preparedValues] {}", result);
 		return result;
+	}
+
+	private static List<ColumnMetaData> prepareColumnMetaData(final StatementType statementType, final String query) {
+		log.debug("[prepareColumnMetaData] statementType: {} sql: {}", statementType, query);
+		if (Meta.StatementType.SELECT == statementType) {
+			final int end = StringUtils.indexOfIgnoreCase(query, " from");
+			if (end == -1 || StringUtils.contains(query.substring(6, end), '*')) {
+				return null;
+			}
+			Pair<String, List<String>> pair = extractTableNameAndColumnNames(query);
+			log.debug("[prepareColumnMetaData] tableName: {} columnNames: {}", pair.getKey(), pair.getValue());
+			List<ColumnMetaData> result = new ArrayList<>();
+			int index = 0;
+			for (String columnName : pair.getValue()) {
+				result.add(createColumnMetaData(index++, pair.getKey(), columnName));
+			}
+			return result;
+		} else {
+			log.debug("Not yet implemented for statement type: " + statementType);
+			return null;
+		}
+	}
+
+	private static Pair<String, List<String>> extractTableNameAndColumnNames(String query) {
+		query = query.toLowerCase();
+		final int begin = StringUtils.indexOfIgnoreCase(query, "select ") + 7;
+		final int end = StringUtils.indexOfIgnoreCase(query, " from ");
+		String sqlColumns = query.substring(begin, end);
+		String[] names = StringUtils.split(sqlColumns, ',');
+		List<String> columnNames = new ArrayList<>(names.length);
+		for (String name : names) {
+			if (name != null) {
+				int spaceIndex = name.indexOf(' ');
+				if (spaceIndex > 0) {
+					name = name.substring(0, spaceIndex);
+				}
+				columnNames.add(StringUtils.removeAll(name.trim(), "[\"'`]"));
+			}
+		}
+		String tail = query.substring(end + 6);
+		int spaceIndex = query.indexOf(' ');
+		final String tableName = StringUtils.removeAll(spaceIndex == -1 ? tail.trim() : query.substring(0, spaceIndex), "[\"'`]");
+		return new ImmutablePair<>(tableName, columnNames);
+	}
+
+	private static ColumnMetaData createColumnMetaData(int position, String tableName, String columnName) {
+		DefaultColumn column = DefaultColumn.findByName(columnName);
+		final ColumnMetaData.Rep rep = column.getType().rep;
+		final ColumnMetaData.AvaticaType avaticaType = ContentMetadata.getAvaticaType(column.getType());
+		return new ColumnMetaData(position, false, false, false, false, column.getNullable(), false,
+				column.getType().size, columnName, columnName, (String) null, 1,1, tableName, (String) null, avaticaType, true,
+				false, false, rep.clazz.getName());
 	}
 
 }

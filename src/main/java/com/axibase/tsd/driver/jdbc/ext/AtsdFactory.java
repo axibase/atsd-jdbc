@@ -24,7 +24,6 @@ import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
 import org.apache.calcite.avatica.AvaticaFactory;
 import org.apache.calcite.avatica.AvaticaPreparedStatement;
 import org.apache.calcite.avatica.AvaticaResultSet;
-import org.apache.calcite.avatica.AvaticaResultSetMetaData;
 import org.apache.calcite.avatica.AvaticaStatement;
 import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.QueryState;
@@ -85,8 +84,8 @@ public class AtsdFactory implements AvaticaFactory {
 	}
 
 	@Override
-	public AvaticaResultSetMetaData newResultSetMetaData(AvaticaStatement statement, Meta.Signature signature) {
-		return new AvaticaResultSetMetaData(statement, null, signature);
+	public AtsdResultSetMetaData newResultSetMetaData(AvaticaStatement statement, Meta.Signature signature) {
+		return new AtsdResultSetMetaData(statement, null, signature);
 	}
 
 	@Override

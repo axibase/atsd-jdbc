@@ -71,10 +71,6 @@ public class AtsdConnection extends AvaticaConnection {
 			return super.executeQueryInternal(statement, signature, firstFrame, state, isUpdate);
 		} catch (SQLException e) {
 			throw ExceptionsUtil.unboxException(e);
-		} finally {
-			if (statement instanceof AtsdPreparedStatement) {
-				((AtsdPreparedStatement) statement).executed = true;
-			}
 		}
 	}
 

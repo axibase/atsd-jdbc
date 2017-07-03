@@ -153,15 +153,15 @@ public enum AtsdType {
 	public final String originalType;
 	public final String sqlType;
 	public final int sqlTypeCode;
-	public final Rep avaticaType;
+	public final Rep rep;
 	public final int maxPrecision;
 	public final int size;
 
-	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep avaticaType, int maxPrecision, int size) {
+	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep rep, int maxPrecision, int size) {
 		this.originalType = atsdType;
 		this.sqlType = sqlType;
 		this.sqlTypeCode = sqlTypeCode;
-		this.avaticaType = avaticaType;
+		this.rep = rep;
 		this.maxPrecision = maxPrecision;
 		this.size = size;
 	}
