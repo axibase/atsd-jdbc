@@ -364,12 +364,16 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	@Override
 	public ResultSetMetaData getMetaData() {
 		logger.debug("[getMetaData] executed: {} signature: {}", executed, getSignature());
-		if (executed) {
-			return super.getMetaData();
-		} else if (getSignature() != null && getSignature().columns == null) {
+
+		if (!executed && getSignature() != null && getSignature().columns == null) {
 			switch (getStatementType()) {
 				case SELECT: {
-					Pair<String, List<String>> pair = extractTableNameAndColumnNames(getSignature().sql);
+					final String sql = getSignature().sql;
+					final int end = StringUtils.indexOfIgnoreCase(sql, " from");
+					if (end == -1 || StringUtils.contains(sql.substring(6, end), '*')) {
+						return super.getMetaData();
+					}
+					Pair<String, List<String>> pair = extractTableNameAndColumnNames(sql);
 					logger.debug("[getMetaData] tableName: {} columnNames: {}", pair.getKey(), pair.getValue());
 					Signature signature = createNewSignature(getSignature(), pair.getKey(), pair.getValue());
 					try {
