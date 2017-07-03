@@ -476,16 +476,17 @@ public class AtsdMeta extends MetaImpl {
 				tableNamePattern, columnNamePattern);
 		final String tablePattern = tableNamePattern.s;
 		if (tablePattern != null) {
-			DefaultColumn[] columns = DefaultColumn.values();
+			DefaultColumn[] columns = getDefaultColumns(columnNamePattern == null ? null : columnNamePattern.s);
 			List<Object> columnData = new ArrayList<>(columns.length);
-			int position = 1;
+			int position;
 			for (DefaultColumn column : columns) {
+				position = column.ordinal() + 1;
 				if (showMetaColumns || !column.isMetaColumn()) {
 					columnData.add(createColumnMetaData(column, schema, tablePattern, position));
-					++position;
 				}
 			}
 			if (!DriverConstants.DEFAULT_TABLE_NAME.equals(tablePattern)) {
+				position = DefaultColumn.values().length + 1;
 				for (String tag : getTags(tablePattern)) {
 					columnData.add(createColumnMetaData(new TagColumn(tag), schema, tablePattern, position));
 					++position;
@@ -496,6 +497,15 @@ public class AtsdMeta extends MetaImpl {
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaColumn.class);
 	}
 
+	private static DefaultColumn[] getDefaultColumns(String name) {
+		if (StringUtils.isBlank(name)) {
+			return DefaultColumn.values();
+		}
+
+		DefaultColumn defaultColumn = DefaultColumn.findByName(name);
+		return new DefaultColumn[] { defaultColumn };
+	}
+
 	private Set<String> getTags(String metric) {
 		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) connection).getConnectionInfo();
 		if (connectionInfo.expandTags()) {
@@ -503,6 +513,9 @@ public class AtsdMeta extends MetaImpl {
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(seriesUrl, connectionInfo))) {
 				final InputStream seriesInputStream = contentProtocol.readInfo();
 				final Series[] seriesArray = JsonMappingUtil.mapToSeries(seriesInputStream);
+				if (log.isTraceEnabled()) {
+					log.trace("[response] content: {}", Arrays.toString(seriesArray));
+				}
 				Set<String> tags = new HashSet<>();
 				for (Series series : seriesArray) {
 					tags.addAll(series.getTags().keySet());
@@ -536,10 +549,8 @@ public class AtsdMeta extends MetaImpl {
 				columnType.sqlTypeCode,
 				columnType.sqlType,
 				columnType.size,
-				null,
 				10,
 				column.getNullable(),
-				0,
 				ordinal,
 				column.getNullableAsString()
 		);

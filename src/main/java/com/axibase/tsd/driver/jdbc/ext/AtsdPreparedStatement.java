@@ -14,8 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -28,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.AvaticaConnection;
@@ -37,7 +36,6 @@ import org.apache.calcite.avatica.ColumnMetaData.AvaticaType;
 import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
-import org.apache.calcite.avatica.MetaImpl;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;

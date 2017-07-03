@@ -19,8 +19,8 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         logger.debug("[prepareSql] in: {}", sql);
         final int begin = StringUtils.indexOfIgnoreCase(sql, " set ") + 5;
         final int end = StringUtils.indexOfIgnoreCase(sql, " where ");
-        StringBuilder sb = new StringBuilder();
-        sb.append("UPDATE ").append(sql.substring(7, begin - 5)).append(" SET ");
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("UPDATE ").append(sql.substring(7, begin - 5)).append(" SET ");
         String[] pairs = StringUtils.split(sql.substring(begin, end), ',');
         String name;
         String value;
@@ -33,17 +33,17 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
             name = pairs[i].substring(0, idx).trim();
             value = pairs[i].substring(idx + 1).trim();
             if (i > 0) {
-                sb.append(", ");
+                buffer.append(", ");
             }
             if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
-                sb.append('\"').append(name).append('\"');
+                buffer.append('\"').append(name).append('\"');
             } else {
-                sb.append(name);
+                buffer.append(name);
             }
-            sb.append('=').append(value);
+            buffer.append('=').append(value);
         }
 
-        sb.append(" WHERE ");
+        buffer.append(" WHERE ");
         String tmp = sql.substring(end + 7);
         pairs = tmp.split("(?i)( and )");
         for (int i = 0; i < pairs.length; i++) {
@@ -54,16 +54,16 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
             name = pairs[i].substring(0, idx).trim();
             value = pairs[i].substring(idx + 1).trim();
             if (i > 0) {
-                sb.append(" AND ");
+                buffer.append(" AND ");
             }
             if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
-                sb.append('\"').append(name).append('\"');
+                buffer.append('\"').append(name).append('\"');
             } else {
-                sb.append(name);
+                buffer.append(name);
             }
-            sb.append('=').append(value);
+            buffer.append('=').append(value);
         }
-        String result = sb.toString();
+        String result = buffer.toString();
         logger.debug("[prepareSql] out: {}", result);
         return result;
     }

@@ -35,13 +35,13 @@ class SeriesCommand extends AbstractCommand {
     }
 
     @Override
-    protected void appendValues(StringBuilder sb) {
+    protected void appendValues(StringBuilder buffer) {
         for (Map.Entry<String, Double> entry : numericValues.entrySet()){
-            sb.append(" m:").append(handleName(entry.getKey()))
+            buffer.append(" m:").append(handleName(entry.getKey()))
                     .append('=').append(formatMetricValue(entry.getValue()));
         }
 
-        appendKeysAndValues(sb, " x:", textValues);
+        appendKeysAndValues(buffer, " x:", textValues);
     }
 
     private static String formatMetricValue(double value) {
@@ -49,6 +49,14 @@ class SeriesCommand extends AbstractCommand {
             return "NaN";
         }
         return Double.toString(value);
+    }
+
+    @Override
+    public String toString() {
+        return "SeriesCommand{" + super.toString() +
+                ", numericValues=" + numericValues +
+                ", textValues=" + textValues +
+                '}';
     }
 
 }

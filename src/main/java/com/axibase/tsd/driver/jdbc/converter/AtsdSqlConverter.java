@@ -17,11 +17,11 @@ import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 import org.apache.calcite.util.NlsString;
 import org.apache.commons.lang3.StringUtils;
 
+import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_TABLE_NAME;
+
 public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     protected final LoggingFacade logger = LoggingFacade.getLogger(getClass());
-
-    protected static final String TBL_ATSD_SERIES = "atsd_series";
 
     private static final String ENTITY = "entity";
     private static final String TIME = "time";
@@ -82,7 +82,8 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         logger.debug("[createSeriesCommand] tableName: {} columnCount: {}", tableName, columnNames.size());
         logger.trace("[createSeriesCommand] columnNames: {}", columnNames);
         final List<Object> values = getColumnValues(parameterValues);
-        return TBL_ATSD_SERIES.equals(tableName) ? composeSeriesCommand(columnNames, values) : composeSeriesCommand(tableName, columnNames, values);
+        logger.trace("[createSeriesCommand] values: {}", values);
+        return DEFAULT_TABLE_NAME.equals(tableName) ? composeSeriesCommand(logger, columnNames, values) : composeSeriesCommand(logger, tableName, columnNames, values);
     }
 
     private String createSeriesCommandBatch(List<List<Object>> parameterValueBatch) {
@@ -92,20 +93,20 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         logger.debug("[createSeriesCommandBatch] tableName: {} columnCount: {}", tableName, columnNames.size());
         logger.trace("[createSeriesCommandBatch] columnNames: {}", columnNames);
         final List<List<Object>> valueBatch = getColumnValuesBatch(parameterValueBatch);
-        StringBuilder sb = new StringBuilder();
-        if (TBL_ATSD_SERIES.equals(tableName)) {
+        StringBuilder buffer = new StringBuilder();
+        if (DEFAULT_TABLE_NAME.equals(tableName)) {
             for (List<Object> values : valueBatch) {
-                sb.append(composeSeriesCommand(columnNames, values));
+                buffer.append(composeSeriesCommand(logger, columnNames, values));
             }
         } else {
             for (List<Object> values : valueBatch) {
-                sb.append(composeSeriesCommand(tableName, columnNames, values));
+                buffer.append(composeSeriesCommand(logger, tableName, columnNames, values));
             }
         }
-        return sb.toString();
+        return buffer.toString();
     }
 
-    private static String composeSeriesCommand(final String metricName, final List<String> columnNames, final List<Object> values) {
+    private static String composeSeriesCommand(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values) {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
                     String.format("Number of values [%d] does not match to number of columns [%d]",
@@ -135,10 +136,11 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                 command.addTag(tagName, String.valueOf(value));
             }
         }
+        logger.trace("Command: {}", command);
         return command.compose();
     }
 
-    private static String composeSeriesCommand(final List<String> columnNames, final List<Object> values) {
+    private static String composeSeriesCommand(LoggingFacade logger, final List<String> columnNames, final List<Object> values) {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
                     String.format("Number of values [%d] does not match to number of columns [%d]",
@@ -193,6 +195,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                 command.addValue(columnName, (String) value);
             }
         }
+        logger.trace("Command: {}", command);
         return command.compose();
     }
 
@@ -233,7 +236,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     public static final class DynamicParam {
 
-        protected final int index;
+        final int index;
 
         private DynamicParam(int index) {
             this.index = index;

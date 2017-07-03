@@ -51,26 +51,26 @@ abstract class AbstractCommand {
 
     public String compose() {
         validate();
-        StringBuilder sb = new StringBuilder(commandName);
-        sb.append(" e:").append(handleName(entity));
+        StringBuilder buffer = new StringBuilder(commandName);
+        buffer.append(" e:").append(handleName(entity));
         if (time == 0) {
-            sb.append(" d:").append(dateTime);
+            buffer.append(" d:").append(dateTime);
         } else {
-            sb.append(" ms:").append(time);
+            buffer.append(" ms:").append(time);
         }
-        appendKeysAndValues(sb, " t:", tags);
-        appendValues(sb);
-        return sb.append('\n').toString();
+        appendKeysAndValues(buffer, " t:", tags);
+        appendValues(buffer);
+        return buffer.append('\n').toString();
     }
 
-    protected abstract void appendValues(StringBuilder sb);
+    protected abstract void appendValues(StringBuilder buffer);
 
-    protected static void appendKeysAndValues(StringBuilder sb, String prefix, Map<String, String> map) {
+    protected static void appendKeysAndValues(StringBuilder buffer, String prefix, Map<String, String> map) {
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (entry.getValue() == null) {
                 continue;
             }
-            sb.append(prefix)
+            buffer.append(prefix)
                     .append(handleName(entry.getKey()))
                     .append('=')
                     .append(handleStringValue(entry.getValue()));
@@ -91,4 +91,12 @@ abstract class AbstractCommand {
         return '"' + value.replace("\"", "\"\"") + '"';
     }
 
+    @Override
+    public String toString() {
+        return "commandName=" + commandName +
+                ", entity=" + entity +
+                ", dateTime=" + dateTime +
+                ", time=" + time +
+                ", tags=" + tags;
+    }
 }

@@ -29,9 +29,6 @@ import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
-import java.sql.ResultSetMetaData;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
 

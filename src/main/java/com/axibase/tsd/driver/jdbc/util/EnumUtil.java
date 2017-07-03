@@ -6,10 +6,8 @@ import com.axibase.tsd.driver.jdbc.enums.*;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
 import org.apache.calcite.avatica.Meta;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-
 
 public class EnumUtil {
 

@@ -190,13 +190,9 @@ public class SdkProtocolImpl implements IContentProtocol {
 		try {
 			InputStream inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
 			final SendCommandResult sendCommandResult = JsonMappingUtil.mapToSendCommandResult(inputStream);
-			if (logger.isTraceEnabled()) {
-				logger.trace("[sendResult] " + sendCommandResult.toString());
-			}
+			logger.trace("[response] content: {}", sendCommandResult);
 			writeCount = sendCommandResult.getSuccess();
-			if (logger.isDebugEnabled()) {
-				logger.debug(("[sendResult] " + sendCommandResult.getSuccess()));
-			}
+			logger.debug("[response] success: {}", sendCommandResult.getSuccess());
 		} catch (IOException e) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Data writing error", e);

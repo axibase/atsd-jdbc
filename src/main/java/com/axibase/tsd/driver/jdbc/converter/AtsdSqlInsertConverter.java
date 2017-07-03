@@ -17,23 +17,23 @@ class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
         logger.debug("[prepareSql] in: {}", sql);
         final int begin = sql.indexOf('(') + 1;
         final int end = sql.indexOf(')');
-        StringBuilder sb = new StringBuilder();
-        sb.append(sql.substring(0, begin));
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(sql.substring(0, begin));
         String[] names = StringUtils.split(sql.substring(begin, end), ',');
         String name;
         for (int i=0;i<names.length;i++) {
             name = names[i].trim();
             if (i > 0) {
-                sb.append(", ");
+                buffer.append(", ");
             }
             if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
-                sb.append('\"').append(name).append('\"');
+                buffer.append('\"').append(name).append('\"');
             } else {
-                sb.append(name);
+                buffer.append(name);
             }
         }
-        sb.append(sql.substring(end));
-        String result = sb.toString();
+        buffer.append(sql.substring(end));
+        String result = buffer.toString();
         logger.debug("[prepareSql] out: {}", result);
         return result;
     }
