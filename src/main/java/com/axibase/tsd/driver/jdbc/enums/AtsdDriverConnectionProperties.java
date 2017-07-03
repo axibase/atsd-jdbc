@@ -19,7 +19,8 @@ public enum AtsdDriverConnectionProperties implements ConnectionProperty {
 	tables(DriverConstants.TABLES_PARAM_NAME, DriverConstants.DEFAULT_TABLES_VALUE, Type.STRING),
 	catalog(DriverConstants.CATALOG_PARAM_NAME, null, Type.STRING),
 	expandTags(DriverConstants.EXPAND_TAGS_PARAM_NAME, DriverConstants.DEFAULT_EXPAND_TAGS_VALUE, Type.BOOLEAN),
-	metaColumns(DriverConstants.META_COLUMNS_PARAM_NAME, DriverConstants.META_COLUMNS_VALUE, Type.BOOLEAN);
+	metaColumns(DriverConstants.META_COLUMNS_PARAM_NAME, DriverConstants.DEFAULT_META_COLUMNS_VALUE, Type.BOOLEAN),
+	assignColumnNames(DriverConstants.ASSIGN_INNER_COLUMN_NAMES_PARAM, DriverConstants.DEFAULT_ASSIGN_INNER_COLUMN_NAMES_VALUE, Type.BOOLEAN);
 
 	private final String name;
 	private final Object defaultValue;

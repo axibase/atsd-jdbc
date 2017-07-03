@@ -65,7 +65,7 @@ public class TestUtil {
 			ColumnMetaData[] meta = new ColumnMetaData[columnNames.length];
 			for (int i = 0; i < columnNames.length; i++) {
 				final String columnName = columnNames[i];
-				meta[i] = new ContentMetadata.ColumnMetaDataBuilder()
+				meta[i] = new ContentMetadata.ColumnMetaDataBuilder(false)
 						.withName(columnName)
 						.withTitle(columnName)
 						.withColumnIndex(i)

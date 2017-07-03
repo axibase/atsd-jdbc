@@ -63,6 +63,7 @@ public class AtsdMeta extends MetaImpl {
 	private final String schema;
 	private final String catalog;
 	private final boolean showMetaColumns;
+	private final boolean assignColumnNames;
 
 	public AtsdMeta(final AvaticaConnection conn) {
 		super(conn);
@@ -74,6 +75,7 @@ public class AtsdMeta extends MetaImpl {
 		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) conn).getConnectionInfo();
 		this.catalog = connectionInfo.catalog();
 		this.showMetaColumns = connectionInfo.metaColumns();
+		this.assignColumnNames = connectionInfo.assignColumnNames();
 	}
 
 	private static ThreadLocal<SimpleDateFormat> prepareFormatter(final String pattern) {
@@ -598,7 +600,7 @@ public class AtsdMeta extends MetaImpl {
 			throws AtsdException, IOException {
 		IDataProvider provider = providerCache.get(statementId);
 		final String jsonScheme = provider != null ? provider.getContentDescription().getJsonScheme() : "";
-		ContentMetadata contentMetadata = new ContentMetadata(jsonScheme, sql, catalog, connectionId, statementId);
+		ContentMetadata contentMetadata = new ContentMetadata(jsonScheme, sql, catalog, connectionId, statementId, assignColumnNames);
 		metaCache.put(statementId, contentMetadata);
 		return contentMetadata;
 	}

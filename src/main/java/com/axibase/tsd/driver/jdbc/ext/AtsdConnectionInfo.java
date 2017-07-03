@@ -82,6 +82,12 @@ public class AtsdConnectionInfo {
 		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
 	}
 
+	public boolean assignColumnNames() {
+		final AtsdDriverConnectionProperties property = assignColumnNames;
+		final String result = info.getProperty(property.camelName());
+		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
+	}
+
 	private String propertyOrEmpty(String key) {
 		final String result = (String) info.get(key);
 		return result == null ? "" : result;

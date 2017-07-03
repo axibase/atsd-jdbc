@@ -14,14 +14,14 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
-import com.axibase.tsd.driver.jdbc.ext.AtsdException;
-import org.apache.calcite.avatica.ColumnMetaData;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Scanner;
+
+import com.axibase.tsd.driver.jdbc.ext.AtsdException;
+import org.apache.calcite.avatica.ColumnMetaData;
+import org.junit.Test;
 
 import static org.junit.Assert.*;
 
@@ -40,7 +40,7 @@ public class ContentMetadataTest {
 			scanner.useDelimiter("\\A");
 			String json = scanner.hasNext() ? scanner.next() : "";
 			assertTrue(json != null && json.length() != 0 && json.startsWith(CONTEXT_START));
-			final List<ColumnMetaData> metadataList = ContentMetadata.buildMetadataList(json, null);
+			final List<ColumnMetaData> metadataList = ContentMetadata.buildMetadataList(json, null, false);
 			assertEquals(expectedSize, metadataList.size());
 			final String[] expectedColumnNames = {"datetime", "value", "entity"};
 			for (int i = 0; i < metadataList.size(); i++) {
