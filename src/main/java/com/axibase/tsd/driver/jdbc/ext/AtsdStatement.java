@@ -63,16 +63,6 @@ public class AtsdStatement extends AvaticaStatement {
 	}
 
 	@Override
-	public int getUpdateCount() throws SQLException {
-		return -1;
-	}
-
-	@Override
-	public long getLargeUpdateCount() throws SQLException {
-		return -1L;
-	}
-
-	@Override
 	public synchronized void cancel() throws SQLException {
 		if (!this.cancelFlag.get()) {
 			final AtsdConnection atsdConnection = (AtsdConnection) this.connection;

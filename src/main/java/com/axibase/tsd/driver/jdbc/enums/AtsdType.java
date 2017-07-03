@@ -108,7 +108,7 @@ public enum AtsdType {
 			"2016-01-01T00:00:00.000".length(), 10) {
 		@Override
 		public String getLiteral(boolean isPrefix) {
-			return isPrefix ? "TIMESTAMP '" : "'";
+			return "'";
 		}
 
 		@Override
@@ -184,6 +184,6 @@ public enum AtsdType {
 	}
 
 	public String getLiteral(boolean isPrefix) {
-		return null;
+		return "";
 	}
 }

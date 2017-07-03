@@ -109,5 +109,49 @@ public class AtsdMetaResultSets {
 		}
 
 	}
+
+	public static class AtsdMetaTypeInfo implements MetaImpl.Named {
+		@MetaImpl.ColumnNoNulls
+		public final String typeName;
+		public final int dataType;
+		public final Integer precision;
+		public final String literalPrefix;
+		public final String literalSuffix;
+		public final String createParams = null;
+		public final short nullable;
+		public final boolean caseSensitive;
+		public final short searchable;
+		public final boolean unsignedAttribute;
+		public final boolean fixedPrecScale;
+		public final boolean autoIncrement;
+		public final String localTypeName;
+		public final Short minimumScale;
+		public final Short maximumScale;
+		public final Integer sqlDataType = 0;
+		public final Integer sqlDatetimeSub = 0;
+		public final Integer numPrecRadix;
+
+		public AtsdMetaTypeInfo(String typeName, int dataType, Integer precision, String literalPrefix, String literalSuffix, short nullable, boolean caseSensitive, short searchable, boolean unsignedAttribute, boolean fixedPrecScale, boolean autoIncrement, Short minimumScale, Short maximumScale, Integer numPrecRadix) {
+			this.typeName = typeName;
+			this.dataType = dataType;
+			this.precision = precision;
+			this.literalPrefix = literalPrefix;
+			this.literalSuffix = literalSuffix;
+			this.nullable = nullable;
+			this.caseSensitive = caseSensitive;
+			this.searchable = searchable;
+			this.unsignedAttribute = unsignedAttribute;
+			this.fixedPrecScale = fixedPrecScale;
+			this.autoIncrement = autoIncrement;
+			this.localTypeName = typeName;
+			this.minimumScale = minimumScale;
+			this.maximumScale = maximumScale;
+			this.numPrecRadix = numPrecRadix;
+		}
+
+		public String getName() {
+			return this.typeName;
+		}
+	}
 }
 

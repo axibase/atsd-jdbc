@@ -467,7 +467,7 @@ public class AtsdMeta extends MetaImpl {
 				list.add(getTypeInfo(type));
 			}
 		}
-		return getResultSet(list, MetaTypeInfo.class);
+		return getResultSet(list, AtsdMetaResultSets.AtsdMetaTypeInfo.class);
 	}
 
 	@Override
@@ -603,8 +603,8 @@ public class AtsdMeta extends MetaImpl {
 		return contentMetadata;
 	}
 
-	private static MetaTypeInfo getTypeInfo(AtsdType type) {
-		return new MetaTypeInfo(type.sqlType.toUpperCase(Locale.US), type.sqlTypeCode, type.maxPrecision,
+	private static AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType type) {
+		return new AtsdMetaResultSets.AtsdMetaTypeInfo(type.sqlType.toUpperCase(Locale.US), type.sqlTypeCode, type.maxPrecision,
 				type.getLiteral(true), type.getLiteral(false),
 				(short) DatabaseMetaData.typeNullable, type == AtsdType.STRING_DATA_TYPE,
 				(short) DatabaseMetaData.typeSearchable, false, false, false,

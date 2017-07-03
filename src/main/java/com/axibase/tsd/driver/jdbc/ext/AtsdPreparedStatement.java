@@ -101,16 +101,6 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	}
 
 	@Override
-	public int getUpdateCount() throws SQLException {
-		return -1;
-	}
-
-	@Override
-	public long getLargeUpdateCount() throws SQLException {
-		return -1L;
-	}
-
-	@Override
 	public synchronized void close() throws SQLException {
 		super.close();
 		logger.trace("[close] {}", this.handle.id);
