@@ -693,7 +693,7 @@ public class AtsdMeta extends MetaImpl {
 			}
 			return result;
 		} else {
-			log.debug("Not yet implemented for statement type: " + statementType);
+			log.debug("Not yet implemented for statement type: {}", statementType);
 			return null;
 		}
 	}

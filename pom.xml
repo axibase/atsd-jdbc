@@ -50,6 +50,7 @@
 		<powermock.version>1.6.6</powermock.version>
 		<jackson.version>2.8.5</jackson.version>
 		<univocity.parsers.version>2.2.3</univocity.parsers.version>
+		<lombok.version>1.16.18</lombok.version>
 		<maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
 		<maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
 		<maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
@@ -462,6 +463,12 @@
 			<artifactId>univocity-parsers</artifactId>
 			<version>${univocity.parsers.version}</version>
 			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<!-- Test -->
 		<dependency>

@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
+import lombok.SneakyThrows;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaPreparedStatement;
 import org.apache.calcite.avatica.ColumnMetaData;
@@ -356,22 +357,17 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	}
 
 	@Override
+	@SneakyThrows(SQLException.class)
 	public ResultSetMetaData getMetaData() {
 		logger.debug("[getMetaData]");
 		if (super.openResultSet == null) {
 			AtsdResultSetMetaData resultSetMetaData = (AtsdResultSetMetaData) super.getMetaData();
 			if (resultSetMetaData.getSignature() == null || resultSetMetaData.getSignature().columns == null) {
-				throw new AtsdRuntimeException("Not supported yet");
+				throw new SQLFeatureNotSupportedException();
 			}
 			return resultSetMetaData;
-		} else {
-			try {
-				return super.openResultSet.getMetaData();
-			} catch (SQLException e) {
-				logger.error("[getMetaData[] Error attempting to get metaData from resultSet", e);
-				throw new AtsdRuntimeException(e.getMessage(), e);
-			}
 		}
+		return super.openResultSet.getMetaData();
 	}
 
 	@Override
