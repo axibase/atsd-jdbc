@@ -45,10 +45,10 @@ import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.StringUtils;
-
-import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+
+import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
 public class AtsdMeta extends MetaImpl {
 	private static final LoggingFacade log = LoggingFacade.getLogger(AtsdMeta.class);
@@ -414,16 +414,30 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	private AtsdMetaResultSets.AtsdMetaTable generateMetaTable(String table) {
-		return new AtsdMetaResultSets.AtsdMetaTable(catalog, schema,
-				table, "TABLE", "SELECT metric, entity, tags, datetime, time, value" +
-				" FROM '" + table + "' WHERE datetime >= now - 1*HOUR ORDER BY datetime DESC LIMIT 10");
+		return new AtsdMetaResultSets.AtsdMetaTable(catalog, schema, table, "TABLE", generateTableRemark(table));
+	}
+
+	private String generateTableRemark(String table) {
+		StringBuilder buffer = new StringBuilder("SELECT");
+		for (DefaultColumn defaultColumn : DefaultColumn.values()) {
+			if (showMetaColumns || !defaultColumn.isMetaColumn()) {
+				if (defaultColumn.ordinal() != 0) {
+					buffer.append(',');
+				}
+				buffer.append(' ').append(defaultColumn.getColumnNamePrefix());
+			}
+		}
+		return buffer
+				.append(" FROM '")
+				.append(table)
+				.append("' LIMIT 1")
+				.toString();
 	}
 
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo) {
 		final List<Object> metricList = new ArrayList<>();
 		final String tables = connectionInfo.tables();
 		if (StringUtils.isNotBlank(tables)) {
-			log.debug("[receiveTables] tables: {}", tables);
 			final String metricsUrl = connectionInfo.toEndpoint(DriverConstants.METRICS_ENDPOINT);
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.getMetrics(tables);
@@ -448,9 +462,9 @@ public class AtsdMeta extends MetaImpl {
 
 	@Override
 	public MetaResultSet getCatalogs(ConnectionHandle ch) {
-		log.debug("[getCatalogs] connection: {}", ch.id);
-		final Iterable<Object> iterable = Collections.<Object>singletonList(
-				new MetaCatalog(catalog));
+        log.debug("[getCatalogs] connection: {}", ch.id);
+        final Iterable<Object> iterable = catalog == null ? Collections.emptyList() :
+				Collections.<Object>singletonList(new MetaCatalog(catalog));
 		return getResultSet(iterable, MetaCatalog.class);
 	}
 

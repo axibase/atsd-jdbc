@@ -79,10 +79,7 @@ public class ContentMetadata {
 		if (publisher == null) {
 			throw new AtsdException("Wrong metadata publisher");
 		}
-		final String schema = (String) publisher.get(SCHEMA_NAME_PROPERTY);
-		if (schema == null) {
-			throw new AtsdException("Wrong metadata schema");
-		}
+		final String schema = null;
 		final Map<String, Object> tableSchema = (Map<String, Object>) jsonObject.get(TABLE_SCHEMA_SECTION);
 		if (tableSchema == null) {
 			throw new AtsdException("Wrong table schema");
@@ -123,7 +120,7 @@ public class ContentMetadata {
 				.withCatalog(catalog)
 				.withTable(table)
 				.withName(name)
-				.withTitle(title)
+				.withLabel(title)
 				.withAtsdType(atsdType)
 				.withNullable(nullable ? 1 : 0)
 				.build();
@@ -151,7 +148,7 @@ public class ContentMetadata {
 	public static class ColumnMetaDataBuilder {
 		private final boolean assignColumnNames;
 		private String name;
-		private String title;
+		private String label;
 		private String table;
 		private AtsdType atsdType;
 
@@ -166,16 +163,11 @@ public class ContentMetadata {
 
 		public ColumnMetaDataBuilder withName(String name) {
 			this.name = name;
-			if (!assignColumnNames) {
-				this.title = name;
-			}
 			return this;
 		}
 
-		public ColumnMetaDataBuilder withTitle(String title) {
-			if (assignColumnNames) {
-				this.title = title;
-			}
+		public ColumnMetaDataBuilder withLabel(String label) {
+			this.label = label;
 			return this;
 		}
 
@@ -212,8 +204,13 @@ public class ContentMetadata {
 		public ColumnMetaData build() {
 			final ColumnMetaData.AvaticaType atype = getAvaticaType(atsdType);
 			return new ColumnMetaData(columnIndex, false, false, false,
-					false, nullable, false, atsdType.size, name, title, schema, 1, 1, table, catalog, atype,
-					true, false, false, atype.rep.clazz.getCanonicalName());
+					false, nullable, false, atsdType.size, label, assignColumnNames ? name : label,
+					getValueNotNull(schema), atsdType.maxPrecision, atsdType.scale, table, getValueNotNull(catalog), atype,
+					true, false,false, atype.rep.clazz.getCanonicalName());
+		}
+
+		private String getValueNotNull(String value) {
+			return value == null ? "" : value;
 		}
 	}
 

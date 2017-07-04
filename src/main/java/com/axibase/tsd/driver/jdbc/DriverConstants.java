@@ -6,7 +6,7 @@ public final class DriverConstants {
 	public static final String DATABASE_PRODUCT_NAME = "Axibase";
 	public static final String DATABASE_PRODUCT_VERSION = "Axibase Time Series Database";
 	public static final String JDBC_DRIVER_NAME = "ATSD JDBC driver";
-	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.2.22";
+	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.0";
 	public static final int    DRIVER_VERSION_MAJOR_DEFAULT = 1;
 	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 2;
 
@@ -37,7 +37,7 @@ public final class DriverConstants {
 	public static final String EXPAND_TAGS_PARAM_NAME = "expandTags";
 	public static final boolean DEFAULT_EXPAND_TAGS_VALUE = true;
 	public static final String META_COLUMNS_PARAM_NAME = "metaColumns";
-	public static final boolean DEFAULT_META_COLUMNS_VALUE = true;
+	public static final boolean DEFAULT_META_COLUMNS_VALUE = false;
 	public static final String ASSIGN_INNER_COLUMN_NAMES_PARAM = "assignColumnNames";
 	public static final boolean DEFAULT_ASSIGN_INNER_COLUMN_NAMES_VALUE = false;
 
