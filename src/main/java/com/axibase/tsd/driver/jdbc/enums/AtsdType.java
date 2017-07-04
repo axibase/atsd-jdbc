@@ -40,7 +40,7 @@ public enum AtsdType {
 			return Double.valueOf(cell);
 		}
 	},
-	FLOAT_DATA_TYPE("float", "float", Types.FLOAT, Rep.FLOAT, 23, 10) {
+	FLOAT_DATA_TYPE("float", "float", Types.FLOAT, Rep.FLOAT, 23, 23, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Double.valueOf(cell);
