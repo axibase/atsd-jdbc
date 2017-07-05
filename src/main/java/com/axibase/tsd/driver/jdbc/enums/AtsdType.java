@@ -75,7 +75,7 @@ public enum AtsdType {
 			return cell.startsWith("\"") ? cell : new BigDecimal(cell);
 		}
 	},
-	LONG_DATA_TYPE("long", "bigint", Types.BIGINT, Rep.LONG, 19, 10, 0) {
+	LONG_DATA_TYPE("long", "bigint", Types.BIGINT, Rep.LONG, 19, 20, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Long.valueOf(cell);
