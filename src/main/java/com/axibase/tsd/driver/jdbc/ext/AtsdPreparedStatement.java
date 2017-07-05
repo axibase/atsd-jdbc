@@ -331,6 +331,21 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		setObject(parameterIndex, expression);
 	}
 
+    @Override
+    public Meta.StatementType getStatementType() {
+        return getSignature() == null ? null : getSignature().statementType;
+    }
+
+    @Override
+    public int getUpdateCount() throws SQLException {
+        return getStatementType() != Meta.StatementType.SELECT ? super.getUpdateCount() : -1;
+    }
+
+    @Override
+    public long getLargeUpdateCount() throws SQLException {
+        return getStatementType() != Meta.StatementType.SELECT ? super.getLargeUpdateCount() : -1L;
+    }
+
 	String getSql() {
 		return getSignature() == null ? null : getSignature().sql;
 	}
@@ -349,11 +364,6 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 			copy.add(value);
 		}
 		return copy;
-	}
-
-	@Override
-	public Meta.StatementType getStatementType() {
-		return getSignature() == null ? null : getSignature().statementType;
 	}
 
 	@Override

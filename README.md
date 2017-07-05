@@ -49,6 +49,7 @@ For example, database versions 14150 supports driver versions between 1.2.10 (in
 | tables | comma-separated list of strings | | List of metrics or metric expressions to be exposed as tables |
 | catalog | string | not set | Specify a catalog name |
 | expandTags | boolean | `true` | Expose series tags as separate table columns |
+| assignColumnNames | boolean | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
 
 Properties can be included as part of the JDBC url using a semicolon as a separator. For example: `jdbc:axibase:atsd:https://10.102.0.6:8443/api/sql;trustServerCertificate=true;strategy=file`.
 

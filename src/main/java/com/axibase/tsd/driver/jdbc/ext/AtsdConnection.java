@@ -21,13 +21,10 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import org.apache.calcite.avatica.*;
 
 public class AtsdConnection extends AvaticaConnection {
-	@SuppressWarnings("unused")
-	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdConnection.class);
 	protected static final Trojan TROJAN = createTrojan();
 	
 	protected AtsdConnection(UnregisteredDriver driver, AvaticaFactory factory, String url, Properties info) {
@@ -53,11 +50,6 @@ public class AtsdConnection extends AvaticaConnection {
 
 	Meta getMeta(){
 		return TROJAN.getMeta(this);
-	}
-
-	@Override
-	public String getCatalog() {
-		return super.getCatalog();
 	}
 
 	@Override

@@ -8,7 +8,7 @@ public final class DriverConstants {
 	public static final String JDBC_DRIVER_NAME = "ATSD JDBC driver";
 	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.0";
 	public static final int    DRIVER_VERSION_MAJOR_DEFAULT = 1;
-	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 2;
+	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 3;
 
 	public static final String PRODUCT_NAME_KEY = "product.name";
 	public static final String PRODUCT_VERSION_KEY = "product.version";
@@ -50,10 +50,7 @@ public final class DriverConstants {
 	public static final String METADATA_FORMAT_PARAM_NAME = "metadataFormat";
 	public static final String LIMIT_PARAM_NAME = "limit";
 
-	public static final int    ATSD_VERSION_SUPPORTING_BODY_METADATA = 13919;
-	public static final int    ATSD_VERSION_COMPRESSED_ERRORS = 14185;
-	public static final int    ATSD_VERSION_SUPPORTS_CANCEL_QUERIES = 14451;
-	public static final int    ATSD_VERSION_DIFFERS_NULL_AND_EMPTY = 14540;
+	public static final int	MIN_SUPPORTED_ATSD_REVISION = 16702;
 	public static final String REVISION_LINE = "Revision";
 
 	public static final String COMMAND_ENDPOINT = "/api/v1/command";

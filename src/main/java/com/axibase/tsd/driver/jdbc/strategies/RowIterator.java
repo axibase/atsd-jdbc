@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.UnivocityParserRowContext;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -106,7 +105,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		settings.setReadInputOnSeparateThread(false);
 		settings.setCommentCollectionEnabled(false);
 		settings.setEmptyValue("");
-		settings.setNullValue(version >= DriverConstants.ATSD_VERSION_DIFFERS_NULL_AND_EMPTY ? null : "");
+		settings.setNullValue(null);
 		settings.setNumberOfRowsToSkip(1);
 		settings.setSkipEmptyLines(false);
 		return settings;

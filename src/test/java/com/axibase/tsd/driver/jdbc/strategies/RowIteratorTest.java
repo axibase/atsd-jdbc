@@ -15,7 +15,7 @@ public class RowIteratorTest {
 		String header = "\"tags.absent\"";
 		final String content = header + "\n\n\n\n";
 		final RowIterator rowIterator = RowIterator.newDefaultIterator(new StringReader(content), TestUtil.prepareMetadata(header),
-				DriverConstants.ATSD_VERSION_DIFFERS_NULL_AND_EMPTY);
+				DriverConstants.MIN_SUPPORTED_ATSD_REVISION);
 		int rowNumber = 0;
 		while (rowIterator.hasNext()) {
 			++ rowNumber;

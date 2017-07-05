@@ -128,6 +128,10 @@ public class AtsdDriver extends UnregisteredDriver {
 		final AvaticaConnection connection = atsdFactory.newConnection(this, atsdFactory, url, info);
 		AtsdDatabaseMetaData atsdDatabaseMetaData = (AtsdDatabaseMetaData) connection.getMetaData();
 		atsdDatabaseMetaData.initVersions(new AtsdConnectionInfo(info));
+		if (atsdDatabaseMetaData.getDatabaseMajorVersion() < DriverConstants.MIN_SUPPORTED_ATSD_REVISION) {
+			throw new SQLException("ATSD revision is not supported. Current revision: " + atsdDatabaseMetaData.getDatabaseMajorVersion()
+					+ ". Minimum supported revision: " + DriverConstants.MIN_SUPPORTED_ATSD_REVISION);
+		}
 		handler.onConnectionInit(connection);
 		return connection;
 	}
