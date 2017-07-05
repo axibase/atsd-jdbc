@@ -713,33 +713,38 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	private static Pair<String, List<String>> extractTableNameAndColumnNames(String query) {
-		query = query.toLowerCase();
-		final int begin = StringUtils.indexOfIgnoreCase(query, "select ") + 7;
-		final int end = StringUtils.indexOfIgnoreCase(query, " from ");
-		String sqlColumns = query.substring(begin, end);
-		String[] names = StringUtils.split(sqlColumns, ',');
-		List<String> columnNames = new ArrayList<>(names.length);
-		for (String name : names) {
-			if (name != null) {
-				int spaceIndex = name.indexOf(' ');
-				if (spaceIndex > 0) {
-					name = name.substring(0, spaceIndex);
-				}
-				columnNames.add(StringUtils.removeAll(name.trim(), "[\"'`]"));
-			}
-		}
-		String tail = query.substring(end + 6);
-		int spaceIndex = query.indexOf(' ');
-		final String tableName = StringUtils.removeAll(spaceIndex == -1 ? tail.trim() : query.substring(0, spaceIndex), "[\"'`]");
+        query = query.toLowerCase();
+        final int begin = StringUtils.indexOfIgnoreCase(query, "select ") + 7;
+        final int end = StringUtils.indexOfIgnoreCase(query, "from");
+        String sqlColumns = query.substring(begin, end);
+        String[] names = StringUtils.split(sqlColumns, ',');
+        String tail = query.substring(end + 4).trim();
+        int spaceIndex = tail.indexOf(' ');
+        final String tableName = StringUtils.removeAll(spaceIndex == -1 ? tail : tail.substring(0, spaceIndex), "[\"'`]");
+        List<String> columnNames = new ArrayList<>(names.length);
+        for (String name : names) {
+            if (name != null) {
+                name = name.trim();
+                spaceIndex = name.indexOf(' ');
+                if (spaceIndex > 0) {
+                    name = name.substring(0, spaceIndex);
+                }
+                if (name.startsWith(tableName)) {
+                    name = name.substring(tableName.length() + 1);
+                }
+                columnNames.add(StringUtils.removeAll(name, "[\"'`]"));
+            }
+        }
 		return new ImmutablePair<>(tableName, columnNames);
 	}
 
 	private static ColumnMetaData createColumnMetaData(int position, String tableName, String columnName) {
 		DefaultColumn column = DefaultColumn.findByName(columnName);
-		final ColumnMetaData.Rep rep = column.getType().rep;
-		final ColumnMetaData.AvaticaType avaticaType = ContentMetadata.getAvaticaType(column.getType());
+		final AtsdType atsdType = column.getType();
+		final ColumnMetaData.Rep rep = atsdType.rep;
+		final ColumnMetaData.AvaticaType avaticaType = ContentMetadata.getAvaticaType(atsdType);
 		return new ColumnMetaData(position, false, false, false, false, column.getNullable(), false,
-				column.getType().size, columnName, columnName, (String) null, 1,1, tableName, (String) null, avaticaType, true,
+				atsdType.size, columnName, columnName, (String) null, atsdType.maxPrecision,atsdType.scale, tableName, (String) null, avaticaType, true,
 				false, false, rep.clazz.getName());
 	}
 
