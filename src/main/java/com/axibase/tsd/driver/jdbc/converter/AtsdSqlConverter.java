@@ -27,7 +27,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     private static final String TIME = "time";
     private static final String DATETIME = "datetime";
     private static final String METRIC = "metric";
-    private static final String VALUE = "value";
+    protected static final String VALUE = "value";
     private static final String TEXT = "text";
     protected static final String PREFIX_TAGS = "tags.";
 
@@ -39,7 +39,11 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     public String convertToCommand(String sql, List<Object> parameterValues) throws SQLException {
         logger.debug("[convertToCommand] parameterCount: {}", getSize(parameterValues));
-        sql = prepareSql(sql);
+        try {
+            sql = prepareSql(sql);
+        } catch (RuntimeException e) {
+            throw new SQLException("SQL prepare error: " + sql, e);
+        }
         this.rootNode = parseSql(sql);
         final String result = createSeriesCommand(parameterValues);
         logger.trace("[convertToCommand] result: {}", result);
@@ -48,7 +52,11 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     public String convertBatchToCommands(String sql, List<List<Object>> parameterValuesBatch) throws SQLException {
         logger.debug("[convertBatchToCommands] batchSize: {}", getSize(parameterValuesBatch));
-        sql = prepareSql(sql);
+        try {
+            sql = prepareSql(sql);
+        } catch (RuntimeException e) {
+            throw new SQLException("SQL prepare error: " + sql, e);
+        }
         this.rootNode = parseSql(sql);
         final String result =createSeriesCommandBatch(parameterValuesBatch);
         logger.trace("[convertBatchToCommands] result: {}", result);
@@ -216,6 +224,12 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
             return DynamicParam.create(((SqlDynamicParam) node).getIndex());
         }
         if (SqlKind.LITERAL != node.getKind()) {
+            if (SqlKind.IDENTIFIER == node.getKind()) {
+                SqlIdentifier identifier = (SqlIdentifier) node;
+                if (identifier.isSimple() && "nan".equals(identifier.getSimple())) {
+                    return Double.NaN;
+                }
+            }
             throw new IllegalArgumentException("Illegal operand kind: " + node.getKind());
         }
         SqlLiteral literal = (SqlLiteral) node;

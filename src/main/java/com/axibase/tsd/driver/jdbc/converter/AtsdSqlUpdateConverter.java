@@ -17,10 +17,10 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
     @Override
     protected String prepareSql(String sql) {
         logger.debug("[prepareSql] in: {}", sql);
-        final int begin = StringUtils.indexOfIgnoreCase(sql, " set ") + 5;
-        final int end = StringUtils.indexOfIgnoreCase(sql, " where ");
+        final int begin = StringUtils.indexOfIgnoreCase(sql, "set ") + 4;
+        final int end = StringUtils.indexOfIgnoreCase(sql, "where ");
         StringBuilder buffer = new StringBuilder();
-        buffer.append("UPDATE ").append(sql.substring(7, begin - 5)).append(" SET ");
+        buffer.append("UPDATE ").append(sql.substring(7, begin - 4)).append(" SET ");
         String[] pairs = StringUtils.split(sql.substring(begin, end), ',');
         String name;
         String value;
@@ -44,14 +44,14 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         }
 
         buffer.append(" WHERE ");
-        String tmp = sql.substring(end + 7);
+        String tmp = sql.substring(end + 6);
         pairs = tmp.split("(?i)( and )");
         for (int i = 0; i < pairs.length; i++) {
             idx = pairs[i].indexOf('=');
             if (idx == -1 || idx == pairs[i].length() - 1) {
                 throw new AtsdRuntimeException("Invalid part of clause: " + pairs[i]);
             }
-            name = pairs[i].substring(0, idx).trim();
+            name = pairs[i].substring(0, idx).trim().toLowerCase();
             value = pairs[i].substring(idx + 1).trim();
             if (i > 0) {
                 buffer.append(" AND ");
@@ -59,6 +59,12 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
             if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
                 buffer.append('\"').append(name).append('\"');
             } else {
+                int valueIndex = name.indexOf(VALUE);
+                if (valueIndex != -1) {
+                    if (valueIndex > 0 && name.charAt(valueIndex) != '"') {
+                        name = StringUtils.replace(name, VALUE, "\"value\"");
+                    }
+                }
                 buffer.append(name);
             }
             buffer.append('=').append(value);
