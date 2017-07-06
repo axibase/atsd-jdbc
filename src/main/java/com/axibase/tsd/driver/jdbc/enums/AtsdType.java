@@ -16,7 +16,7 @@ import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_FORMATTER;
 import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_SHORT_FORMATTER;
 
 public enum AtsdType {
-	BIGINT_DATA_TYPE("bigint", "bigint", Types.BIGINT, Rep.LONG, 19, 20, 0) {
+	BIGINT_DATA_TYPE("bigint", "numeric", Types.NUMERIC, Rep.LONG, 19, 20, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Long.valueOf(cell);
@@ -73,18 +73,6 @@ public enum AtsdType {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return cell.startsWith("\"") ? cell : new BigDecimal(cell);
-		}
-	},
-	LONG_DATA_TYPE("long", "numeric", Types.NUMERIC, Rep.LONG, 19, 19, 0) {
-		@Override
-		protected Object readValueHelper(String cell) {
-			return Long.valueOf(cell);
-		}
-	},
-	SHORT_DATA_TYPE("short", "smallint", Types.SMALLINT, Rep.SHORT, 5, 5, 0) {
-		@Override
-		protected Object readValueHelper(String cell) {
-			return Short.valueOf(cell);
 		}
 	},
 	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 5, 0) {

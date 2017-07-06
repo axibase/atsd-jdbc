@@ -50,7 +50,7 @@ public final class DriverConstants {
 	public static final String METADATA_FORMAT_PARAM_NAME = "metadataFormat";
 	public static final String LIMIT_PARAM_NAME = "limit";
 
-	public static final int	MIN_SUPPORTED_ATSD_REVISION = 16702;
+	public static final int	MIN_SUPPORTED_ATSD_REVISION = 16720;
 	public static final String REVISION_LINE = "Revision";
 
 	public static final String COMMAND_ENDPOINT = "/api/v1/command";
