@@ -14,7 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -28,11 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.*;
+import com.axibase.tsd.driver.jdbc.content.ContentMetadata.ColumnMetaDataBuilder;
 import com.axibase.tsd.driver.jdbc.content.json.Metric;
 import com.axibase.tsd.driver.jdbc.content.json.Series;
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
+import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.EndTime;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.intf.IDataProvider;
@@ -40,6 +41,7 @@ import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
+import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.*;
@@ -100,7 +102,7 @@ public class AtsdMeta extends MetaImpl {
 		final int id = idGenerator.getAndIncrement();
 		log.trace("[prepare] connection: {} query: {}", id, query);
 		StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
-		List<ColumnMetaData> columnMetaDataList = prepareColumnMetaData(statementType, query);
+		List<ColumnMetaData> columnMetaDataList = prepareColumnMetaData(statementType, query, connectionHandle.id, id);
 		Signature signature = new Signature(columnMetaDataList, query, Collections.<AvaticaParameter>emptyList(), null,
 				statementType == SELECT ? CursorFactory.LIST : null, statementType);
 		return new StatementHandle(connectionHandle.id, id, signature);
@@ -689,24 +691,21 @@ public class AtsdMeta extends MetaImpl {
 		return result;
 	}
 
-	private static List<ColumnMetaData> prepareColumnMetaData(final StatementType statementType, final String query) {
+	private List<ColumnMetaData> prepareColumnMetaData(final StatementType statementType, final String query, String connectionId, int statementId) {
 		log.debug("[prepareColumnMetaData] statementType: {} sql: {}", statementType, query);
 		if (Meta.StatementType.SELECT == statementType) {
-			final int end = StringUtils.indexOfIgnoreCase(query, " from");
-			if (end == -1 || StringUtils.contains(query.substring(6, end), '*')) {
-				return null;
-			}
-			Pair<String, List<String>> pair = extractTableNameAndColumnNames(query);
-			log.debug("[prepareColumnMetaData] tableName: {} columnNames: {}", pair.getKey(), pair.getValue());
-			List<ColumnMetaData> result = new ArrayList<>();
-			int index = 0;
-			for (String columnName : pair.getValue()) {
-				result.add(createColumnMetaData(index++, pair.getKey(), columnName));
-			}
-			return result;
+			return getColumnMetadataList(query);
 		} else {
 			log.debug("Not yet implemented for statement type: {}", statementType);
-			return null;
+			//return null;
+			//temporary
+			List<String> columnNames = Arrays.asList("entity", "time", "value");
+			List<ColumnMetaData> result = new ArrayList<>();
+			int index = 0;
+			for (String columnName : columnNames) {
+				result.add(createColumnMetaData(index++, "m1", columnName, columnName));
+			}
+			return result;
 		}
 	}
 
@@ -736,14 +735,43 @@ public class AtsdMeta extends MetaImpl {
 		return new ImmutablePair<>(tableName, columnNames);
 	}
 
-	private static ColumnMetaData createColumnMetaData(int position, String tableName, String columnName) {
+	private ColumnMetaData createColumnMetaData(int columnIndex, String tableName, String columnName, String columnLabel) {
 		DefaultColumn column = DefaultColumn.findByName(columnName);
-		final AtsdType atsdType = column.getType();
-		final ColumnMetaData.Rep rep = atsdType.rep;
-		final ColumnMetaData.AvaticaType avaticaType = ContentMetadata.getAvaticaType(atsdType);
-		return new ColumnMetaData(position, false, false, false, false, column.getNullable(), false,
-				atsdType.size, columnName, columnName, (String) null, atsdType.maxPrecision,atsdType.scale, tableName, (String) null, avaticaType, true,
-				false, false, rep.clazz.getName());
+		return new ColumnMetaDataBuilder(assignColumnNames)
+				.withColumnIndex(columnIndex)
+				.withSchema(schema)
+				.withCatalog(catalog)
+				.withTable(tableName)
+				.withName(columnName)
+				.withLabel(columnLabel == null ? columnName : columnLabel)
+				.withAtsdType(column.getType())
+				.withNullable(column.getNullable())
+				.build();
+	}
+
+	private List<ColumnMetaData> getColumnMetadataList(String query) {
+		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) connection).getConnectionInfo();
+		final String url = addQueryParameter(connectionInfo, query);
+		final ContentDescription contentDescription = new ContentDescription(url, connectionInfo, query, new StatementContext());
+		contentDescription.setMetadataFormat(MetadataFormat.HEADER);
+		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(contentDescription)) {
+			contentProtocol.fetchMetadata();
+			return ContentMetadata.buildMetadataList(contentDescription.getJsonScheme(), catalog, assignColumnNames);
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+		return Collections.emptyList();
+	}
+
+	private static String addQueryParameter(AtsdConnectionInfo connectionInfo, String query) {
+		String encodedQuery;
+		try {
+			encodedQuery = URLEncoder.encode(query, DriverConstants.DEFAULT_CHARSET.displayName(Locale.US));
+		} catch (UnsupportedEncodingException e) {
+			log.error("[addQueryParameter] {}", e.getMessage());
+			encodedQuery = query;
+		}
+		return connectionInfo.host() + "?q=" + encodedQuery;
 	}
 
 }

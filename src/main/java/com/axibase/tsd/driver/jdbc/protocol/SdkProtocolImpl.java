@@ -53,6 +53,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private static final int MILLIS = 1000;
 	private static final String POST_METHOD = "POST";
 	private static final String GET_METHOD = "GET";
+	private static final String HEAD_METHOD = "HEAD";
 	private static final String CONTEXT_INSTANCE_TYPE = "SSL";
 
 	private static final TrustManager[] DUMMY_TRUST_MANAGER = new TrustManager[]{new X509TrustManager() {
@@ -67,6 +68,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		public void checkClientTrusted(X509Certificate[] certs, String authType) throws CertificateException {
 		}
 	}};
+
 	private static final HostnameVerifier DUMMY_HOSTNAME_VERIFIER = new HostnameVerifier() {
 		@Override
 		public boolean verify(String urlHostName, SSLSession session) {
@@ -103,7 +105,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		InputStream inputStream = null;
 		try {
 			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
-			if (MetadataFormat.EMBED.name().equals(contentDescription.getMetadataFormat())) {
+			if (MetadataFormat.EMBED == contentDescription.getMetadataFormat()) {
 				inputStream = MetadataRetriever.retrieveJsonSchemeAndSubstituteStream(inputStream, contentDescription);
 			}
 		} catch (IOException e) {
@@ -226,7 +228,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			doTrustToCertificates((HttpsURLConnection) this.conn);
 		}
 		setBaseProperties(method, queryTimeout);
-		if (MetadataFormat.HEADER.name().equals(contentDescription.getMetadataFormat())
+		if (MetadataFormat.HEADER == contentDescription.getMetadataFormat()
 				&& StringUtils.isEmpty(contentDescription.getJsonScheme())) {
 			MetadataRetriever.retrieveJsonSchemeFromHeader(conn.getHeaderFields(), contentDescription);
 		}
@@ -336,6 +338,23 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private void setAdditionalRequestHeaders(Map<String, String> headers) {
 		for (Map.Entry<String, String> header : headers.entrySet()) {
 			conn.setRequestProperty(header.getKey(), header.getValue());
+		}
+	}
+
+	@Override
+	public void fetchMetadata() throws AtsdException, GeneralSecurityException, IOException {
+		try (InputStream inputStream = executeRequest(HEAD_METHOD, 0, contentDescription.getHost())) {
+
+		} catch (IOException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Metadata retrieving error", e);
+			}
+			if (queryId != null) {
+				throw new AtsdRuntimeException(prepareCancelMessage());
+			}
+			if (e instanceof SocketException) {
+				throw e;
+			}
 		}
 	}
 

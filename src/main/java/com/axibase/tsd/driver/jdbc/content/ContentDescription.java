@@ -45,7 +45,7 @@ public class ContentDescription {
 	private long contentLength;
 	private String[] headers;
 	private String jsonScheme;
-	private final String metadataFormat;
+	private MetadataFormat metadataFormat;
 	private long maxRowsCount;
 	private final String queryId;
 	@Getter(AccessLevel.NONE)
@@ -55,7 +55,7 @@ public class ContentDescription {
 		this(host, atsdConnectionInfo, "", 0, "");
 	}
 
-	ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
+	public ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
 		this(host , atsdConnectionInfo, query, context.getVersion(), context.getQueryId());
 	}
 
@@ -68,7 +68,7 @@ public class ContentDescription {
 		this.query = query;
 		this.login = atsdConnectionInfo.user();
 		this.password = atsdConnectionInfo.password();
-		this.metadataFormat = MetadataFormat.EMBED.name();
+		this.metadataFormat = MetadataFormat.EMBED;
 		this.atsdConnectionInfo = atsdConnectionInfo;
 		this.queryId = queryId;
 	}
@@ -161,7 +161,7 @@ public class ContentDescription {
 		Map<String, String> map = new HashMap<>();
 		map.put(Q_PARAM_NAME, query);
 		map.put(FORMAT_PARAM_NAME, FORMAT_PARAM_VALUE);
-		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat);
+		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat.name());
 		map.put(LIMIT_PARAM_NAME, Long.toString(maxRowsCount));
 		return map;
 	}

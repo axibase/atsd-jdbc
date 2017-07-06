@@ -30,6 +30,8 @@ public interface IContentProtocol extends AutoCloseable {
 
 	InputStream getMetrics(String metricMask) throws AtsdException, GeneralSecurityException, IOException;
 
+	void fetchMetadata() throws AtsdException, GeneralSecurityException, IOException;
+
 	void cancelQuery() throws AtsdException, GeneralSecurityException, IOException;
 
 	long writeContent() throws AtsdException, GeneralSecurityException, IOException;

@@ -69,7 +69,7 @@ public class ContentMetadata {
 		return metadataList;
 	}
 
-	static List<ColumnMetaData> buildMetadataList(String json, String catalog, boolean assignColumnNames)
+	public static List<ColumnMetaData> buildMetadataList(String json, String catalog, boolean assignColumnNames)
 			throws JsonParseException, MalformedURLException, IOException, AtsdException {
 		final Map<String, Object> jsonObject = getJsonScheme(json);
 		if (jsonObject == null) {
