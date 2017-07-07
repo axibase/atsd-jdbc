@@ -24,6 +24,7 @@ import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import lombok.Data;
+import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
@@ -40,7 +41,7 @@ public class ContentDescription {
     private final Map<String, String> requestHeaders = new HashMap<>();
     private String[] headers;
 	private String jsonScheme;
-	private final String metadataFormat;
+	private MetadataFormat metadataFormat;
 	private long maxRowsCount;
 	private final String queryId;
 	private final AtsdConnectionInfo info;
@@ -56,7 +57,7 @@ public class ContentDescription {
 	private ContentDescription(String endpoint, AtsdConnectionInfo atsdConnectionInfo, String query, String queryId) {
 		this.endpoint = endpoint;
 		this.query = query;
-		this.metadataFormat = MetadataFormat.EMBED.name();
+		this.metadataFormat = MetadataFormat.EMBED;
 		this.info = atsdConnectionInfo;
 		this.queryId = queryId;
 	}
@@ -70,7 +71,7 @@ public class ContentDescription {
 		}
 	}
 
-	public String getPostParams() {
+	public void initSelectContent() {
 		if (StringUtils.isEmpty(query)) {
 			return;
 		}
@@ -81,6 +82,11 @@ public class ContentDescription {
                 LIMIT_PARAM_NAME + '=' + maxRowsCount;
     }
 
+	public void addRequestHeadersForDataFetching() {
+		addRequestHeader(HttpHeaders.ACCEPT, CSV_AND_JSON_MIME_TYPE);
+		addRequestHeader(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
+	}
+
 	public Map<String, String> getQueryParamsAsMap() {
 		if (StringUtils.isEmpty(query)) {
 			return Collections.emptyMap();
@@ -88,7 +94,7 @@ public class ContentDescription {
 		Map<String, String> map = new HashMap<>();
 		map.put(Q_PARAM_NAME, query);
 		map.put(FORMAT_PARAM_NAME, FORMAT_PARAM_VALUE);
-		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat);
+		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat.name());
 		map.put(LIMIT_PARAM_NAME, Long.toString(maxRowsCount));
 		return map;
 	}

@@ -94,7 +94,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	@Override
 	public InputStream readInfo() throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
-		return executeRequest(GET_METHOD, 0, contentDescription.getHost());
+		return executeRequest(GET_METHOD, 0, contentDescription.getEndpoint());
 	}
 
 	@Override
@@ -102,7 +102,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		contentDescription.addRequestHeadersForDataFetching();
 		InputStream inputStream = null;
 		try {
-			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
+			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
 			if (MetadataFormat.EMBED.name().equals(contentDescription.getMetadataFormat())) {
 				inputStream = MetadataRetriever.retrieveJsonSchemeAndSubstituteStream(inputStream, contentDescription);
 			}
@@ -123,7 +123,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	@Override
 	public InputStream getMetrics(String metricMask) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
-		return executeRequest(GET_METHOD, 0, prepareUrlWithMetricExpression(metricMask));
+		return executeRequest(GET_METHOD, 0, prepareUrlWithMetricExpression(contentDescription.getEndpoint(), metricMask));
 	}
 
 	private String prepareUrlWithMetricExpression(String metricEndpoint, String metricMask) throws UnsupportedEncodingException {
@@ -188,7 +188,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		contentDescription.addRequestHeader(HttpHeaders.CONTENT_TYPE, ContentType.TEXT_PLAIN.getMimeType());
 		long writeCount = 0;
 		try {
-			InputStream inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
+			InputStream inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
 			final SendCommandResult sendCommandResult = JsonMappingUtil.mapToSendCommandResult(inputStream);
 			logger.trace("[response] content: {}", sendCommandResult);
 			writeCount = sendCommandResult.getSuccess();
@@ -282,7 +282,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (method.equals(POST_METHOD)) {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
-			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postParams.length());
+			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postContent.length());
 			conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
 			conn.setChunkedStreamingMode(100);
 			conn.setDoOutput(true);
@@ -341,7 +341,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public void fetchMetadata() throws AtsdException, GeneralSecurityException, IOException {
-		try (InputStream inputStream = executeRequest(HEAD_METHOD, 0, contentDescription.getHost())) {
+		try (InputStream inputStream = executeRequest(HEAD_METHOD, 0, contentDescription.getEndpoint())) {
 
 		} catch (IOException e) {
 			if (logger.isDebugEnabled()) {

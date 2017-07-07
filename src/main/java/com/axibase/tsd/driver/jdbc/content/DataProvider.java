@@ -44,7 +44,7 @@ public class DataProvider implements IDataProvider {
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
 		switch (statementType) {
 			case SELECT: {
-				this.contentDescription = new ContentDescription(connectionInfo, query, context);
+				this.contentDescription = new ContentDescription(connectionInfo.host(), connectionInfo, query, context);
 				this.contentDescription.initSelectContent();
 				break;
 			}
