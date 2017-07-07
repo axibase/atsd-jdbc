@@ -46,6 +46,7 @@ import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -325,10 +326,9 @@ public class AtsdMeta extends MetaImpl {
 		try {
 			if (offset == 0) {
 				final String[] headers = strategy.openToRead(contentMetadata.getMetadataList());
-				if (headers == null || headers.length == 0) {
+				if (ArrayUtils.isEmpty(headers)) {
 					throw new MissingResultsException(statementHandle);
 				}
-				contentDescription.setHeaders(headers);
 			}
 			@SuppressWarnings("unchecked")
 			final List<Object> subList = (List) strategy.fetch(offset, fetchMaxRowCount);

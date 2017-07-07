@@ -98,7 +98,7 @@ public class AtsdDriverTest extends AtsdProperties {
 	public void testConnectToWrongUrl() throws Exception {
 		exception.expect(SQLException.class);
 		exception.expectMessage("Unknown host specified");
-		Connection connection = driver.connect(JDBC_ATSD_URL_PREFIX + "https://unknown:443/api/sql", new Properties());
+		Connection connection = driver.connect(JDBC_ATSD_URL_PREFIX + "https://unknown:443", new Properties());
 		connection.close();
 	}
 

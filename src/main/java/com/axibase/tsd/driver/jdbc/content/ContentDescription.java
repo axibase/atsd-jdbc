@@ -16,7 +16,6 @@ package com.axibase.tsd.driver.jdbc.content;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,10 +23,7 @@ import java.util.Map;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.Getter;
-import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
@@ -36,40 +32,32 @@ import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 public class ContentDescription {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(ContentDescription.class);
 
-	private String host;
+	private String endpoint;
 	private String query;
 	private String login;
 	private String password;
-	private String postContent = "";
-	private final Map<String, String> requestHeaders = new HashMap<>();
-	private long contentLength;
-	private String[] headers;
+    private String postContent = "";
+    private final Map<String, String> requestHeaders = new HashMap<>();
+    private String[] headers;
 	private String jsonScheme;
-	private MetadataFormat metadataFormat;
+	private final String metadataFormat;
 	private long maxRowsCount;
 	private final String queryId;
-	@Getter(AccessLevel.NONE)
-	private final AtsdConnectionInfo atsdConnectionInfo;
+	private final AtsdConnectionInfo info;
 
-	public ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo) {
-		this(host, atsdConnectionInfo, "", 0, "");
+	public ContentDescription(String endpoint, AtsdConnectionInfo atsdConnectionInfo) {
+		this(endpoint, atsdConnectionInfo, "", "");
 	}
 
-	public ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
-		this(host , atsdConnectionInfo, query, context.getVersion(), context.getQueryId());
+	public ContentDescription(String endpoint, AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
+		this(endpoint, atsdConnectionInfo, query, context.getQueryId());
 	}
 
-	public ContentDescription(AtsdConnectionInfo atsdConnectionInfo, String query, StatementContext context) {
-		this(atsdConnectionInfo.host() , atsdConnectionInfo, query, context.getVersion(), context.getQueryId());
-	}
-
-	private ContentDescription(String host, AtsdConnectionInfo atsdConnectionInfo, String query, int atsdVersion, String queryId) {
-		this.host = host;
+	private ContentDescription(String endpoint, AtsdConnectionInfo atsdConnectionInfo, String query, String queryId) {
+		this.endpoint = endpoint;
 		this.query = query;
-		this.login = atsdConnectionInfo.user();
-		this.password = atsdConnectionInfo.password();
-		this.metadataFormat = MetadataFormat.EMBED;
-		this.atsdConnectionInfo = atsdConnectionInfo;
+		this.metadataFormat = MetadataFormat.EMBED.name();
+		this.info = atsdConnectionInfo;
 		this.queryId = queryId;
 	}
 
@@ -82,59 +70,7 @@ public class ContentDescription {
 		}
 	}
 
-	public String getLogin() {
-		return login;
-	}
-
-	public void setLogin(String login) {
-		this.login = login;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public String getJsonScheme() {
-		return jsonScheme != null ? jsonScheme : "";
-	}
-
-	public void setJsonScheme(String jsonScheme) {
-		this.jsonScheme = jsonScheme;
-	}
-
-	public String[] getHeaders() {
-		return headers;
-	}
-
-	public void setHeaders(String[] headers) {
-		this.headers = headers;
-	}
-
-	public long getContentLength() {
-		return contentLength;
-	}
-
-	public void setContentLength(long contentLength) {
-		this.contentLength = contentLength;
-	}
-
-	public void setMaxRowsCount(long maxRowsCount) {
-		this.maxRowsCount = maxRowsCount;
-	}
-
-	public String getPostContent() {
-		return postContent;
-	}
-
-	public void setPostContent(String postContent) {
-		this.postContent = postContent;
-	}
-
-	public void initSelectContent() {
+	public String getPostParams() {
 		if (StringUtils.isEmpty(query)) {
 			return;
 		}
@@ -145,15 +81,6 @@ public class ContentDescription {
                 LIMIT_PARAM_NAME + '=' + maxRowsCount;
     }
 
-	public void addRequestHeadersForDataFetching() {
-		addRequestHeader(HttpHeaders.ACCEPT, CSV_AND_JSON_MIME_TYPE);
-		addRequestHeader(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
-	}
-
-	public String getCancelQueryUrl() {
-		return host + CANCEL_METHOD + '?' + QUERY_ID_PARAM_NAME + '=' + queryId;
-	}
-
 	public Map<String, String> getQueryParamsAsMap() {
 		if (StringUtils.isEmpty(query)) {
 			return Collections.emptyMap();
@@ -161,33 +88,13 @@ public class ContentDescription {
 		Map<String, String> map = new HashMap<>();
 		map.put(Q_PARAM_NAME, query);
 		map.put(FORMAT_PARAM_NAME, FORMAT_PARAM_VALUE);
-		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat.name());
+		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat);
 		map.put(LIMIT_PARAM_NAME, Long.toString(maxRowsCount));
 		return map;
 	}
 
 	public boolean isSsl() {
-		return StringUtils.startsWithIgnoreCase(host, "https://");
-	}
-
-	public boolean isTrusted() {
-		return atsdConnectionInfo.trustCertificate();
-	}
-
-	public int getConnectTimeout() {
-		return atsdConnectionInfo.connectTimeout();
-	}
-
-	public int getReadTimeout() {
-		return atsdConnectionInfo.readTimeout();
-	}
-
-	public String getStrategyName() {
-		return atsdConnectionInfo.strategy();
-	}
-
-	public String getQueryId() {
-		return queryId;
+		return StringUtils.startsWithIgnoreCase(endpoint, "https://");
 	}
 
     public void addRequestHeader(String name, String value) {

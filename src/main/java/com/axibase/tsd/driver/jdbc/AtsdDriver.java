@@ -36,6 +36,7 @@ import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
 public class AtsdDriver extends UnregisteredDriver {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdDriver.class);
+	private static final char PARAM_SEPARATOR = ';';
 
 	static {
 		new AtsdDriver().register();

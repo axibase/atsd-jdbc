@@ -4,10 +4,11 @@ import java.util.Properties;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
 
-import static com.axibase.tsd.driver.jdbc.DriverConstants.PROTOCOL_SEPARATOR;
 import static com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties.*;
 
 public class AtsdConnectionInfo {
+	private static final int MILLIS = 1000;
+
 	private final Properties info;
 
 	public AtsdConnectionInfo(Properties info) {
@@ -19,9 +20,7 @@ public class AtsdConnectionInfo {
 	}
 
 	public String toEndpoint(String endpoint) {
-		final String host = host();
-		final int endOfHostIndex = host.indexOf('/', host.indexOf(PROTOCOL_SEPARATOR) + PROTOCOL_SEPARATOR.length());
-		return host.substring(0, endOfHostIndex) + endpoint;
+		return host() + endpoint;
 	}
 
 	public String url() {
@@ -42,16 +41,18 @@ public class AtsdConnectionInfo {
 		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
 	}
 
-	public int connectTimeout() {
+	public int connectTimeoutMillis() {
 		final AtsdDriverConnectionProperties property = connectTimeout;
 		final String result = info.getProperty(property.camelName());
-		return result == null ? (Integer) property.defaultValue() : Integer.parseInt(result);
+		int timeout = result == null ? (Integer) property.defaultValue() : Integer.parseInt(result);
+		return timeout * MILLIS;
 	}
 
-	public int readTimeout() {
+	public int readTimeoutMillis() {
 		final AtsdDriverConnectionProperties property = readTimeout;
 		final String result = info.getProperty(property.camelName());
-		return result == null ? (Integer) property.defaultValue() : Integer.parseInt(result);
+		int timeout = result == null ? (Integer) property.defaultValue() : Integer.parseInt(result);
+		return timeout * MILLIS;
 	}
 
 	public String strategy() {

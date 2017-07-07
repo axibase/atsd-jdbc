@@ -14,7 +14,21 @@
 */
 package com.axibase.tsd.driver.jdbc.protocol;
 
-import com.axibase.tsd.driver.jdbc.DriverConstants;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import javax.net.ssl.*;
+
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.content.json.GeneralError;
 import com.axibase.tsd.driver.jdbc.content.json.QueryDescription;
@@ -30,31 +44,15 @@ import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.calcite.avatica.org.apache.http.entity.ContentType;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
 public class SdkProtocolImpl implements IContentProtocol {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(SdkProtocolImpl.class);
-	private static final int UNSUCCESSFUL_SQL_RESULT_CODE = 400;
-	private static final int MILLIS = 1000;
 	private static final String POST_METHOD = "POST";
 	private static final String GET_METHOD = "GET";
 	private static final String HEAD_METHOD = "HEAD";
 	private static final String CONTEXT_INSTANCE_TYPE = "SSL";
+	private static final int CHUNK_LENGTH = 100;
 
 	private static final TrustManager[] DUMMY_TRUST_MANAGER = new TrustManager[]{new X509TrustManager() {
 		@Override
@@ -105,7 +103,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		InputStream inputStream = null;
 		try {
 			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getHost());
-			if (MetadataFormat.EMBED == contentDescription.getMetadataFormat()) {
+			if (MetadataFormat.EMBED.name().equals(contentDescription.getMetadataFormat())) {
 				inputStream = MetadataRetriever.retrieveJsonSchemeAndSubstituteStream(inputStream, contentDescription);
 			}
 		} catch (IOException e) {
@@ -128,7 +126,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		return executeRequest(GET_METHOD, 0, prepareUrlWithMetricExpression(metricMask));
 	}
 
-	private String prepareUrlWithMetricExpression(String metricMask) throws UnsupportedEncodingException {
+	private String prepareUrlWithMetricExpression(String metricEndpoint, String metricMask) throws UnsupportedEncodingException {
 		StringBuilder expressionBuilder = new StringBuilder();
 		for (String mask : metricMask.split(",")) {
 			if (expressionBuilder.length() > 0) {
@@ -142,8 +140,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			}
 			expressionBuilder.append('\'').append(mask).append('\'');
 		}
-		return contentDescription.getHost() + "?expression=" +
-					URLEncoder.encode(expressionBuilder.toString(), DriverConstants.DEFAULT_CHARSET.displayName());
+		return metricEndpoint + "?expression=" + URLEncoder.encode(expressionBuilder.toString(), DEFAULT_CHARSET.name());
 
 	}
 
@@ -163,8 +160,9 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public void cancelQuery() throws AtsdException, GeneralSecurityException, IOException {
-		contentDescription.addRequestHeadersForDataFetching();
-		InputStream result = executeRequest(GET_METHOD, 0, contentDescription.getCancelQueryUrl());
+        contentDescription.addRequestHeadersForDataFetching();
+        String cancelEndpoint = contentDescription.getInfo().toEndpoint(CANCEL_ENDPOINT) + '?' + QUERY_ID_PARAM_NAME + '=' + queryId;
+		InputStream result = executeRequest(GET_METHOD, 0, cancelEndpoint);
 		try {
 			final QueryDescription[] descriptionArray = JsonMappingUtil.mapToQueryDescriptionArray(result);
 			if (descriptionArray.length > 0) {
@@ -236,7 +234,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[response] " + contentLength);
 		}
-		contentDescription.setContentLength(contentLength);
 
 		final boolean gzipped = COMPRESSION_ENCODING.equals(conn.getContentEncoding());
 		final int code = conn.getResponseCode();
@@ -249,7 +246,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 				throw new AtsdException("Wrong credentials provided");
 			}
 			body = conn.getErrorStream();
-			if (code != UNSUCCESSFUL_SQL_RESULT_CODE) {
+			if (code != HttpURLConnection.HTTP_BAD_REQUEST) {
 				try {
 					final String error = GeneralError.errorFromInputStream(body);
 					throw new AtsdRuntimeException(error);
@@ -264,19 +261,19 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	private void setBaseProperties(String method, int queryTimeout) throws IOException {
-		final String login = contentDescription.getLogin();
-		final String password = contentDescription.getPassword();
+		final String login = contentDescription.getInfo().user();
+		final String password = contentDescription.getInfo().password();
 		if (!StringUtils.isEmpty(login) && !StringUtils.isEmpty(password)) {
 			final String basicCreds = login + ':' + password;
 			final byte[] encoded = Base64.encodeBase64(basicCreds.getBytes());
 			conn.setRequestProperty(HttpHeaders.AUTHORIZATION, AUTHORIZATION_TYPE + new String(encoded));
 		}
 		conn.setAllowUserInteraction(false);
-		conn.setConnectTimeout(contentDescription.getConnectTimeout() * MILLIS);
+		conn.setConnectTimeout(contentDescription.getInfo().connectTimeoutMillis());
 		conn.setDoInput(true);
 		conn.setInstanceFollowRedirects(true);
-		int timeoutInSeconds = queryTimeout == 0 ? contentDescription.getReadTimeout() : queryTimeout;
-		conn.setReadTimeout(timeoutInSeconds * MILLIS);
+		int timeoutInMillis = queryTimeout == 0 ? contentDescription.getInfo().readTimeoutMillis() : queryTimeout;
+		conn.setReadTimeout(timeoutInMillis);
 		conn.setRequestMethod(method);
 		conn.setRequestProperty(HttpHeaders.CONNECTION, CONN_KEEP_ALIVE);
 		conn.setRequestProperty(HttpHeaders.USER_AGENT, USER_AGENT);
@@ -285,7 +282,8 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (method.equals(POST_METHOD)) {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
-			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, Integer.toString(postContent.length()));
+			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postParams.length());
+			conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
 			conn.setChunkedStreamingMode(100);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {
@@ -316,7 +314,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			}
 			return;
 		}
-		final boolean trusted = contentDescription.isTrusted();
+		final boolean trusted = contentDescription.getInfo().trustCertificate();
 		if (logger.isDebugEnabled()) {
 			logger.debug("[doTrustToCertificates] " + trusted);
 		}

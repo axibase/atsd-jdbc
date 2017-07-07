@@ -56,7 +56,7 @@ public class DataProvider implements IDataProvider {
 			}
 			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
 		}
-		logger.trace("Host: {}", contentDescription.getHost());
+		logger.trace("Endpoint: {}", contentDescription.getEndpoint());
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
 	}
@@ -126,7 +126,7 @@ public class DataProvider implements IDataProvider {
 	}
 
 	private IStoreStrategy defineStrategy() {
-		return StrategyFactory.create(StrategyFactory.findClassByName(this.contentDescription.getStrategyName()), this.context);
+		return StrategyFactory.create(StrategyFactory.findClassByName(this.contentDescription.getInfo().strategy()), this.context);
 	}
 
 }
