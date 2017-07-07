@@ -623,7 +623,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	private static AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType type) {
-		return new AtsdMetaResultSets.AtsdMetaTypeInfo(type.sqlType.toUpperCase(Locale.US), type.sqlTypeCode, type.maxPrecision,
+		return new AtsdMetaResultSets.AtsdMetaTypeInfo(type.sqlType, type.sqlTypeCode, type.maxPrecision,
 				type.getLiteral(true), type.getLiteral(false),
 				(short) DatabaseMetaData.typeNullable, type == AtsdType.STRING_DATA_TYPE,
 				(short) DatabaseMetaData.typeSearchable, false, false, false,

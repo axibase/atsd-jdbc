@@ -174,6 +174,6 @@ public enum AtsdType {
 	}
 
 	public String getLiteral(boolean isPrefix) {
-		return "";
+		return null;
 	}
 }
