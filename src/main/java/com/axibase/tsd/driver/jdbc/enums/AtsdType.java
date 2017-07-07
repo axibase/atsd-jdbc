@@ -28,25 +28,25 @@ public enum AtsdType {
 			return Boolean.valueOf(cell);
 		}
 	},
-	DECIMAL_TYPE("decimal", "decimal", Types.DECIMAL, Rep.OBJECT, -1, 10, 0) {
+	DECIMAL_TYPE("decimal", "decimal", Types.DECIMAL, Rep.NUMBER, 0, 128 * 1024, 0) {
 		@Override
 		public Object readValueHelper(String values) {
 			return new BigDecimal(values);
 		}
 	},
-	DOUBLE_DATA_TYPE("double", "double", Types.DOUBLE, Rep.DOUBLE, 52, 52, 0) {
+	DOUBLE_DATA_TYPE("double", "double", Types.DOUBLE, Rep.DOUBLE, 15, 25, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Double.valueOf(cell);
 		}
 	},
-	FLOAT_DATA_TYPE("float", "float", Types.FLOAT, Rep.FLOAT, 23, 23, 0) {
+	FLOAT_DATA_TYPE("float", "float", Types.REAL, Rep.FLOAT, 7, 15, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
-			return Double.valueOf(cell);
+			return Float.valueOf(cell);
 		}
 	},
-	INTEGER_DATA_TYPE("integer", "integer", Types.INTEGER, Rep.INTEGER, 10, 10, 0) {
+	INTEGER_DATA_TYPE("integer", "integer", Types.INTEGER, Rep.INTEGER, 10, 11, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Integer.valueOf(cell);
@@ -60,7 +60,7 @@ public enum AtsdType {
 				return "";
 			}
 			final char firstCharacter = cell.charAt(0);
-			if (!isNumberStart(firstCharacter) || firstCharacter == '"' || context.hasQuote(index)) {
+			if (!isNumberStart(firstCharacter) || context.hasQuote(index)) {
 				return cell;
 			}
 			return Double.valueOf(cell);
@@ -75,7 +75,7 @@ public enum AtsdType {
 			return cell.startsWith("\"") ? cell : new BigDecimal(cell);
 		}
 	},
-	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 5, 0) {
+	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 6, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Short.valueOf(cell);

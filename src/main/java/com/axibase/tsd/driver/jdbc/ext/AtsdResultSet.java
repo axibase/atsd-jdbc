@@ -496,23 +496,6 @@ public class AtsdResultSet extends AvaticaResultSet {
 	}
 
 	@Override
-	public float getFloat(int columnIndex) throws SQLException {
-		// casting needed as Avatica stores sql FLOAT in java.lang.Double
-		return (float) getDouble(columnIndex);
-	}
-
-	@Override
-	public Object getObject(int columnIndex) throws SQLException {
-		Object result = super.getObject(columnIndex);
-		final ColumnMetaData metaData = columnMetaDataList.get(columnIndex - 1);
-		if (metaData.type.id == Types.FLOAT && result != null) {
-			double primitiveDouble = (double) result;
-			return (float) primitiveDouble;
-		}
-		return result;
-	}
-
-	@Override
 	public boolean next() throws SQLException {
 		final boolean next = super.next();
 		if (!next) {
