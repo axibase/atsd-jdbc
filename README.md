@@ -1,4 +1,5 @@
-[![Build Status](https://secure.travis-ci.org/axibase/atsd-jdbc.png?branch=master)](https://travis-ci.org/axibase/atsd-jdbc)  [![Codacy Badge](https://api.codacy.com/project/badge/grade/4cdddfc67ef742818be7d81d8f53aebc)](https://www.codacy.com/app/alexey-reztsov/atsd-jdbc)
+[![Build Status](https://secure.travis-ci.org/axibase/atsd-jdbc.png?branch=master)](https://travis-ci.org/axibase/atsd-jdbc)
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/4cdddfc67ef742818be7d81d8f53aebc)](https://www.codacy.com/app/alexey-reztsov/atsd-jdbc)
 [![License](https://img.shields.io/badge/License-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.axibase/atsd-jdbc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.axibase/atsd-jdbc)
 
@@ -10,10 +11,18 @@ Internal communication is implemented by means of transferring results in CSV fo
 
 ## JDBC URL
 
-The ATSD JDBC driver prefix is `jdbc:axibase:atsd:`, followed by the http/https URL of the ATSD SQL API endpoint, and optional driver properties.
+The ATSD JDBC driver prefix is `jdbc:axibase:atsd:`, followed by the ATSD host and port, optional catalog, and optional driver properties.
+In driver versions before 1.3.1 driver prefix had to be followed by the HTTP/HTTPS ATSD SQL endpoint  and optional driver properties.
 
 ```ls
-jdbc:axibase:atsd:http://atsd_hostname:8088/api/sql
+jdbc:axibase:atsd:atsd_hostname:8088/atsd;secure=false
+jdbc:axibase:atsd:atsd_hostname:8443;trust=true
+```
+
+Before 1.3.1:
+
+```ls
+jdbc:axibase:atsd:http://atsd_hostname:8088/api/sql;catalog=atsd
 jdbc:axibase:atsd:https://atsd_hostname:8443/api/sql;trustServerCertificate=true
 ```
 
@@ -25,31 +34,36 @@ The project is released under [Apache 2.0 License](http://www.apache.org/license
 
 | **Database Version** | **Driver Version** |
 |:---|---|
-| 12400 |  1.2.1 |
-| 12500 |  1.2.6 |
-| 14049 |  1.2.8 |
+| 12400 | 1.2.1  |
+| 12500 | 1.2.6  |
+| 14049 | 1.2.8  |
 | 14126 | 1.2.10 |
 | 14220 | 1.2.12 |
 | 14451 | 1.2.15 |
 | 14540 | 1.2.16 |
 | 16130 | 1.2.20 |
+| 16620 | 1.3.0  |
+| 16643 | 1.3.1  |
 
-For a given the database version, the above table specifies a range of compatible driver versions.
+For the given database version, the above table specifies a range of compatible driver versions.
 
-For example, database versions 14150 supports driver versions between 1.2.10 (inclusive) and 1.2.12 (exclusive).
+For example, database version 14150 supports driver versions between 1.2.10 (inclusive) and 1.2.12 (exclusive).
 
 ## JDBC Connection Properties Supported by Driver
 
-| **Name** | **Type** | **Default** | **Description** |
-| :--- | --- | ---: | --- |
-| trustServerCertificate | boolean | `false` | Skip SSL certification validation |
-| connectTimeout | number | 5 | Connection timeout, in seconds. |
-| readTimeout | number | 0 | Read timeout, in seconds. |
-| strategy | `file`, `memory`, `stream` | `stream` | Resultset processing strategy. |
-| tables | comma-separated list of strings | | List of metrics or metric expressions to be exposed as tables |
-| catalog | string | not set | Specify a catalog name |
-| expandTags | boolean | `true` | Expose series tags as separate table columns |
-| assignColumnNames | boolean | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
+| **Name** | **Type** | **Supported drivers** | **Default** | **Description** |
+| :--- | --- | --- | ---: | --- |
+| trustServerCertificate (deprecated) | boolean | 1.0 – 1.3.0  | `false` | Skip SSL certificate validation |
+| trust | boolean | 1.3.1+ | `true` | Skip SSL certificate validation |
+| secure | boolean | 1.3.1+ | `true` | Use HTTPS protocol to communicate with ATSD |
+| connectTimeout | number | 1.2.7+ | 5 | Connection timeout, in seconds. |
+| readTimeout | number | 1.2.7+ | 0 | Read timeout, in seconds. |
+| strategy | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
+| tables | comma-separated list of strings | 1.2.21+ | | List of metrics or metric expressions to be exposed as tables |
+| catalog (deprecated) | string | 1.2.21 | not set | Specify a catalog name |
+| expandTags | boolean | 1.2.21+ | `true` | Expose series tags as separate table columns |
+| metaColumns | boolean | 1.2.21+ | `false` | Make `DatabaseMetaData#getColumns` method return metric and entity tags, and entity groups |
+| assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
 
 Properties can be included as part of the JDBC url using a semicolon as a separator. For example: `jdbc:axibase:atsd:https://10.102.0.6:8443/api/sql;trustServerCertificate=true;strategy=file`.
 
@@ -80,23 +94,23 @@ Add dependency to `pom.xml` in your project. The JDBC driver will be imported au
 <dependency>
     <groupId>com.axibase</groupId>
     <artifactId>atsd-jdbc</artifactId>
-    <version>1.2.21</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
 Alternatively, build the project with Maven:
 
 ```bash
-$ mvn clean install -DskipTests=true
+$ mvn clean package -DskipTests=true
 ```
 
 ### Classpath
 
-Download the driver [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.2.21/atsd-jdbc-1.2.21-DEPS.jar) with dependencies and add it to the classpath of your application.
+Download the driver [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.1/atsd-jdbc-1.3.1-DEPS.jar) with dependencies and add it to the classpath of your application.
 
 ```
-* Unix: java -cp "atsd-jdbc-1.2.21-DEPS.jar:lib/*" your.package.MainClass
-* Windows java -cp "atsd-jdbc-1.2.21-DEPS.jar;lib/*" your.package.MainClass
+* Unix: java -cp "atsd-jdbc-1.3.1-DEPS.jar:lib/*" your.package.MainClass
+* Windows java -cp "atsd-jdbc-1.3.1-DEPS.jar;lib/*" your.package.MainClass
 ```
 
 ### Database Tools
@@ -110,13 +124,13 @@ Follow the instructions in the manager's user guide to create a custom driver ba
 | **TYPE NAME** | **DATA TYPE** | **PRECISION**  |
 |:---------|----------:|-----------:|
 | BOOLEAN | 16 | 1 |
-| DECIMAL | 3 | -1 |
-| DOUBLE | 8 | 52 |
-| FLOAT | 6 | 23 |
+| DECIMAL | 3 | 0 |
+| DOUBLE | 8 | 15 |
+| FLOAT | 7 | 7 |
 | INTEGER | 4 | 10 |
 | BIGINT | -5 | 19 |
 | SMALLINT | 5 | 5 |
-| VARCHAR | 12 | 2147483647 |
+| VARCHAR | 12 | 131072 |
 | TIMESTAMP | 93 | 23 |
 | JAVA_OBJECT | 2000 | 2147483647 |
 
@@ -188,7 +202,7 @@ public class TestQuery {
         String username = System.getProperty("atsd.user");
         String password = System.getProperty("atsd.password");
         String hostUrl = System.getProperty("atsd.host");
-        String sqlUrl = "jdbc:axibase:atsd:" + hostUrl + "/api/sql;trustServerCertificate=true";
+        String sqlUrl = "jdbc:axibase:atsd:" + hostUrl + ";trust=true";
 
         String query = "SELECT * FROM mpstat.cpu_busy WHERE datetime > now - 1 * HOUR LIMIT 5";
         Connection connection = null;
@@ -228,7 +242,7 @@ public class TestQuery {
     String atsdHost = System.getProperty("atsd.host");
     String username = System.getProperty("atsd.user");
     String password = System.getProperty("atsd.password");
-    String url = "jdbc:axibase:atsd:" + atsdHost + "/api/sql;trustServerCertificate=true";
+    String url = "jdbc:axibase:atsd:" + atsdHost + ";trust=true";
     
     String query = "SELECT entity, datetime, value, tags.mount_point, tags.file_system "
             + "FROM df.disk_used_percent WHERE entity = 'NURSWGHBS001' AND datetime > now - 1 * HOUR LIMIT 10";
@@ -280,7 +294,7 @@ The following example shows how to extract metadata from the database:
     String hostUrl = System.getProperty("atsd.host");
     String userName = System.getProperty("atsd.user");
     String password = System.getProperty("atsd.password");
-    String sqlUrl = "jdbc:axibase:atsd:" + hostUrl + "/api/sql;trustServerCertificate=true";
+    String sqlUrl = "jdbc:axibase:atsd:" + hostUrl + ";trust=true";
 
     try (Connection connection = DriverManager.getConnection(sqlUrl, userName, password)) {
 
@@ -332,19 +346,19 @@ Results:
 Product Name:   	Axibase
 Product Version:	Axibase Time Series Database, <ATSD_EDITION>, Revision: <ATSD_REVISION_NUMBER>
 Driver Name:    	ATSD JDBC driver
-Driver Version: 	1.2.21
+Driver Version: 	1.3.1
 
 TypeInfo:
-	Name:BIGINT 	    CS: false 	Type: -5 	Precision: 19
-	Name:BOOLEAN 	    CS: false 	Type: 16 	Precision: 1
-	Name:DECIMAL 	    CS: false 	Type: 3 	Precision: -1
-	Name:DOUBLE 	    CS: false 	Type: 8 	Precision: 52
-	Name:FLOAT 	    CS: false 	Type: 6 	Precision: 23
-	Name:INTEGER 	    CS: false 	Type: 4 	Precision: 10
-	Name:JAVA_OBJECT    CS: false 	Type: 2000 	Precision: 2147483647
-	Name:SMALLINT 	    CS: false 	Type: 5 	Precision: 5
-	Name:VARCHAR 	    CS: true 	Type: 12 	Precision: 2147483647
-	Name:TIMESTAMP 	    CS: false 	Type: 93 	Precision: 23
+	Name:bigint 	    CS: false 	Type: -5 	Precision: 19
+	Name:boolean 	    CS: false 	Type: 16 	Precision: 1
+	Name:decimal 	    CS: false 	Type: 3 	Precision: 0
+	Name:double 	    CS: false 	Type: 8 	Precision: 15
+	Name:float          CS: false 	Type: 7 	Precision: 7
+	Name:integer 	    CS: false 	Type: 4 	Precision: 10
+	Name:java_object 	CS: false 	Type: 2000 	Precision: 2147483647
+	Name:smallint 	    CS: false 	Type: 5 	Precision: 5
+	Name:varchar 	    CS: true 	Type: 12 	Precision: 131072
+	Name:timestamp 	    CS: false 	Type: 93 	Precision: 23
 
 TableTypes:
 	TABLE
