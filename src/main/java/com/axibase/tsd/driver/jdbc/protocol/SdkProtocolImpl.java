@@ -50,7 +50,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(SdkProtocolImpl.class);
 	private static final String POST_METHOD = "POST";
 	private static final String GET_METHOD = "GET";
-	private static final String HEAD_METHOD = "HEAD";
 	private static final String CONTEXT_INSTANCE_TYPE = "SSL";
 	private static final int CHUNK_LENGTH = 100;
 
@@ -103,7 +102,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		InputStream inputStream = null;
 		try {
 			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
-			if (MetadataFormat.EMBED.name().equals(contentDescription.getMetadataFormat())) {
+			if (MetadataFormat.EMBED == contentDescription.getMetadataFormat()) {
 				inputStream = MetadataRetriever.retrieveJsonSchemeAndSubstituteStream(inputStream, contentDescription);
 			}
 		} catch (IOException e) {
@@ -343,8 +342,8 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public void fetchMetadata() throws AtsdException, GeneralSecurityException, IOException {
-		try (InputStream inputStream = executeRequest(HEAD_METHOD, 0, contentDescription.getEndpoint())) {
-
+		try (InputStream inputStream = executeRequest(POST_METHOD, 0, contentDescription.getEndpoint())) {
+			MetadataRetriever.retrieveJsonScheme(inputStream, contentDescription);
 		} catch (IOException e) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Metadata retrieving error", e);

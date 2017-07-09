@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.google.common.io.ByteStreams;
 import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -84,6 +85,14 @@ public class MetadataRetriever {
 			}
 			contentDescription.setJsonScheme(json);
 		}
+	}
+
+	public static void retrieveJsonScheme(InputStream inputStream, ContentDescription contentDescription) throws IOException {
+		String json = new String(ByteStreams.toByteArray(inputStream), DEFAULT_CHARSET);
+		if (logger.isTraceEnabled()) {
+			logger.trace("JSON schema: " + json);
+		}
+		contentDescription.setJsonScheme(json);
 	}
 
 	private static void printHeaders(Map<String, List<String>> map) {

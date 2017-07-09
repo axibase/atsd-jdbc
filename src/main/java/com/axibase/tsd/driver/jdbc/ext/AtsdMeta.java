@@ -33,7 +33,6 @@ import com.axibase.tsd.driver.jdbc.content.json.Series;
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
-import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.EndTime;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.intf.IDataProvider;
@@ -753,7 +752,6 @@ public class AtsdMeta extends MetaImpl {
 		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) connection).getConnectionInfo();
 		final String url = addQueryParameter(connectionInfo, query);
 		final ContentDescription contentDescription = new ContentDescription(url, connectionInfo, query, new StatementContext());
-		contentDescription.setMetadataFormat(MetadataFormat.HEADER);
 		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(contentDescription)) {
 			contentProtocol.fetchMetadata();
 			return ContentMetadata.buildMetadataList(contentDescription.getJsonScheme(), catalog, assignColumnNames);
@@ -771,7 +769,7 @@ public class AtsdMeta extends MetaImpl {
 			log.error("[addQueryParameter] {}", e.getMessage());
 			encodedQuery = query;
 		}
-		return connectionInfo.host() + "?q=" + encodedQuery;
+		return connectionInfo.toEndpoint(DriverConstants.SQL_META_ENDPOINT) + "?q=" + encodedQuery;
 	}
 
 }
