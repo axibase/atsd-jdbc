@@ -191,6 +191,9 @@ public class SdkProtocolImpl implements IContentProtocol {
 			InputStream inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
 			final SendCommandResult sendCommandResult = JsonMappingUtil.mapToSendCommandResult(inputStream);
 			logger.trace("[response] content: {}", sendCommandResult);
+			if (StringUtils.isNotEmpty(sendCommandResult.getError())) {
+				throw new AtsdException("ATSD server error: " + sendCommandResult.getError());
+			}
 			writeCount = sendCommandResult.getSuccess();
 			logger.debug("[response] success: {}", sendCommandResult.getSuccess());
 		} catch (IOException e) {
@@ -283,7 +286,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
 			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postContent.length());
-			conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
 			conn.setChunkedStreamingMode(100);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {

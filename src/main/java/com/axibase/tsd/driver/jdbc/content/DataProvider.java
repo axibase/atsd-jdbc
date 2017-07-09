@@ -31,6 +31,7 @@ import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
 
+import static com.axibase.tsd.driver.jdbc.DriverConstants.SQL_ENDPOINT;
 import static com.axibase.tsd.driver.jdbc.DriverConstants.COMMAND_ENDPOINT;
 
 public class DataProvider implements IDataProvider {
@@ -44,7 +45,8 @@ public class DataProvider implements IDataProvider {
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
 		switch (statementType) {
 			case SELECT: {
-				this.contentDescription = new ContentDescription(connectionInfo.host(), connectionInfo, query, context);
+				final String commandUrl = connectionInfo.toEndpoint(SQL_ENDPOINT);
+				this.contentDescription = new ContentDescription(commandUrl, connectionInfo, query, context);
 				this.contentDescription.initSelectContent();
 				break;
 			}
@@ -85,9 +87,8 @@ public class DataProvider implements IDataProvider {
 
 	@Override
 	public long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException {
-		this.isHoldingConnection.set(true);
-		final long writeCount = contentProtocol.writeContent(timeout);
 		this.isHoldingConnection.set(false);
+		final long writeCount = contentProtocol.writeContent(timeout);
 		return writeCount;
 	}
 
