@@ -14,6 +14,7 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
+import com.axibase.tsd.driver.jdbc.enums.Location;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
@@ -45,20 +46,20 @@ public class DataProvider implements IDataProvider {
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
 		switch (statementType) {
 			case SELECT: {
-				final String commandUrl = connectionInfo.toEndpoint(SQL_ENDPOINT);
-				this.contentDescription = new ContentDescription(commandUrl, connectionInfo, query, context);
+                final String endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
+				this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
 				this.contentDescription.initSelectContent();
 				break;
 			}
 			case INSERT:
 			case UPDATE: {
-				final String commandUrl = connectionInfo.toEndpoint(COMMAND_ENDPOINT);
-				this.contentDescription = new ContentDescription(commandUrl, connectionInfo, query, context);
+                final String endpoint = Location.COMMAND_ENDPOINT.getUrl(connectionInfo);
+				this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
 				break;
 			}
 			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
 		}
-		logger.trace("Endpoint: {}", contentDescription.getEndpoint());
+        logger.trace("Endpoint: {}", contentDescription.getEndpoint());
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
 	}
@@ -104,14 +105,6 @@ public class DataProvider implements IDataProvider {
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 		this.isHoldingConnection.set(false);
-	}
-
-	private void closeWithRuntimeException() {
-		try {
-			this.contentProtocol.close();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	@Override

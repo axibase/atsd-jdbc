@@ -39,10 +39,6 @@ public class AtsdConnection extends AvaticaConnection {
 		return super.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
 	}
 
-	public Properties getInfo() {
-		return info;
-	}
-
 	@Override
 	public boolean isValid(int timeout) throws SQLException {
 		return true;

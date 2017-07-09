@@ -14,14 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Properties;
-
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdDatabaseMetaData;
@@ -32,11 +24,18 @@ import org.apache.calcite.avatica.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Properties;
+
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
 public class AtsdDriver extends UnregisteredDriver {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdDriver.class);
-	private static final char PARAM_SEPARATOR = ';';
 
 	static {
 		new AtsdDriver().register();
@@ -65,14 +64,14 @@ public class AtsdDriver extends UnregisteredDriver {
 		String productName = properties.getProperty(PRODUCT_NAME_KEY, DATABASE_PRODUCT_NAME);
 		String productVersion = properties.getProperty(PRODUCT_VERSION_KEY, DATABASE_PRODUCT_VERSION);
 		String property = properties.getProperty(DATABASE_VERSION_MAJOR_KEY);
-		int productVersionMajor = StringUtils.isNoneEmpty(property) ? NumberUtils.toInt(property) : 1;
+		int productVersionMajor = StringUtils.isNotEmpty(property) ? NumberUtils.toInt(property) : 1;
 		property = properties.getProperty(DATABASE_VERSION_MINOR_KEY);
-		int productVersionMinor = StringUtils.isNoneEmpty(property) ? NumberUtils.toInt(property) : 0;
+		int productVersionMinor = StringUtils.isNotEmpty(property) ? NumberUtils.toInt(property) : 0;
 		property = properties.getProperty(DRIVER_VERSION_MAJOR_KEY);
-		int driverVersionMajor = StringUtils.isNoneEmpty(property) ? NumberUtils.toInt(property)
+		int driverVersionMajor = StringUtils.isNotEmpty(property) ? NumberUtils.toInt(property)
 				: DRIVER_VERSION_MAJOR_DEFAULT;
 		property = properties.getProperty(DRIVER_VERSION_MINOR_KEY);
-		int driverVersionMinor = StringUtils.isNoneEmpty(property) ? NumberUtils.toInt(property)
+		int driverVersionMinor = StringUtils.isNotEmpty(property) ? NumberUtils.toInt(property)
 				: DRIVER_VERSION_MINOR_DEFAULT;
 		if (logger.isDebugEnabled()) {
 			logger.debug("[createDriverVersion] " + driverVersion);
@@ -112,15 +111,10 @@ public class AtsdDriver extends UnregisteredDriver {
 			logger.debug("[connect] " + url);
 		}
 		final String urlSuffix = url.substring(CONNECT_URL_PREFIX.length());
-		final int firstSeparatorIndex = urlSuffix.indexOf(PARAM_SEPARATOR);
-		final String sqlHost = firstSeparatorIndex < 0 ? urlSuffix : urlSuffix.substring(0, firstSeparatorIndex);
-
 		info.setProperty("url", urlSuffix);
-		info.setProperty("host", sqlHost);
-		info.setProperty("schema", CONNECT_URL_PREFIX);
 		info.setProperty(AvaticaConnection.NUM_EXECUTE_RETRIES_KEY, RETRIES_NUMBER);
 
-		final int afterSeparator = urlSuffix.indexOf(PARAM_SEPARATOR) + 1;
+		final int afterSeparator = urlSuffix.indexOf(CONNECTION_STRING_PARAM_SEPARATOR) + 1;
 		if (afterSeparator  < urlSuffix.length()) {
 			info = ConnectStringParser.parse(urlSuffix.substring(afterSeparator), info);
 		}

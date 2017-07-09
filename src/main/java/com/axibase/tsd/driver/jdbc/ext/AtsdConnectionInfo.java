@@ -1,26 +1,30 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
+import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Properties;
 
-import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
-
+import static com.axibase.tsd.driver.jdbc.DriverConstants.CONNECTION_STRING_PARAM_SEPARATOR;
 import static com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties.*;
 
 public class AtsdConnectionInfo {
 	private static final int MILLIS = 1000;
 
 	private final Properties info;
+	private final HostAndCatalog hostAndCatalog;
 
 	public AtsdConnectionInfo(Properties info) {
 		this.info = info;
+		this.hostAndCatalog = new HostAndCatalog(StringUtils.substringBefore(url(), CONNECTION_STRING_PARAM_SEPARATOR));
 	}
 
 	public String host() {
-		return (String) info.get("host");
+		return hostAndCatalog.host;
 	}
 
-	public String toEndpoint(String endpoint) {
-		return host() + endpoint;
+	public String protocol() {
+		return (secure() ? "https://" : "http://");
 	}
 
 	public String url() {
@@ -35,8 +39,14 @@ public class AtsdConnectionInfo {
 		return propertyOrEmpty("password");
 	}
 
+	public boolean secure() {
+		final AtsdDriverConnectionProperties property = secure;
+		final String result = info.getProperty(property.camelName());
+		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
+	}
+
 	public boolean trustCertificate() {
-		final AtsdDriverConnectionProperties property = trustServerCertificate;
+		final AtsdDriverConnectionProperties property = trust;
 		final String result = info.getProperty(property.camelName());
 		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
 	}
@@ -66,9 +76,12 @@ public class AtsdConnectionInfo {
 		return info.getProperty(property.camelName());
 	}
 
+	public String schema() {
+		return null;
+	}
+
 	public String catalog() {
-		final AtsdDriverConnectionProperties property = catalog;
-		return info.getProperty(property.camelName());
+		return hostAndCatalog.catalog;
 	}
 
 	public boolean expandTags() {
@@ -92,5 +105,23 @@ public class AtsdConnectionInfo {
 	private String propertyOrEmpty(String key) {
 		final String result = (String) info.get(key);
 		return result == null ? "" : result;
+	}
+
+	private static final class HostAndCatalog {
+		private final char CATALOG_SEPARATOR = '/';
+
+		private final String host;
+		private final String catalog;
+
+		private HostAndCatalog(String urlPrefix) {
+			final int catalogSeparatorIndex = urlPrefix.indexOf(CATALOG_SEPARATOR);
+			if (catalogSeparatorIndex < 0) {
+				this.host = urlPrefix;
+				this.catalog = null;
+			} else {
+				this.host = urlPrefix.substring(0, catalogSeparatorIndex);
+				this.catalog = urlPrefix.substring(catalogSeparatorIndex + 1);
+			}
+		}
 	}
 }

@@ -6,7 +6,7 @@ public final class DriverConstants {
 	public static final String DATABASE_PRODUCT_NAME = "Axibase";
 	public static final String DATABASE_PRODUCT_VERSION = "Axibase Time Series Database";
 	public static final String JDBC_DRIVER_NAME = "ATSD JDBC driver";
-	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.0";
+	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.1";
 	public static final int    DRIVER_VERSION_MAJOR_DEFAULT = 1;
 	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 3;
 
@@ -21,18 +21,20 @@ public final class DriverConstants {
 	public static final String DRIVER_PROPERTIES = "META-INF/axibase-atsd-jdbc.properties";
 	public static final String RETRIES_NUMBER = "1";
 	public static final boolean JDBC_COMPLIANT = false;
+	public static final String CONNECTION_STRING_PARAM_SEPARATOR = ";";
 
 	public static final String CONNECT_URL_PREFIX = "jdbc:axibase:atsd:";
-	public static final String PROTOCOL_SEPARATOR = "://";
+
 	public static final String CONNECT_TIMEOUT_PARAM = "connectTimeout";
 	public static final int    DEFAULT_CONNECT_TIMEOUT_VALUE = 5;
 	public static final String READ_TIMEOUT_PARAM = "readTimeout";
 	public static final int    DEFAULT_READ_TIMEOUT_VALUE = 0;
-	public static final String TRUST_PARAM_NAME = "trustServerCertificate";
+	public static final String SECURE_PARAM_NAME = "secure";
+	public static final boolean DEFAULT_SECURE_CONNECTION = true;
+	public static final String TRUST_PARAM_NAME = "trust";
 	public static final boolean DEFAULT_TRUST_SERVER_CERTIFICATE = false;
 	public static final String TABLES_PARAM_NAME = "tables";
 	public static final String DEFAULT_TABLES_VALUE = null;
-	public static final String CATALOG_PARAM_NAME = "catalog";
 	public static final String EXPAND_TAGS_PARAM_NAME = "expandTags";
 	public static final boolean DEFAULT_EXPAND_TAGS_VALUE = true;
 	public static final String META_COLUMNS_PARAM_NAME = "metaColumns";
@@ -52,12 +54,6 @@ public final class DriverConstants {
 	public static final int	MIN_SUPPORTED_ATSD_REVISION = 16720;
 	public static final String REVISION_LINE = "Revision";
 
-    public static final String SQL_ENDPOINT = "/api/sql";
-    public static final String SQL_META_ENDPOINT = "/api/sql/meta";
-    public static final String CANCEL_ENDPOINT = "/api/sql/cancel";
-    public static final String COMMAND_ENDPOINT = "/api/v1/command";
-	public static final String METRICS_ENDPOINT = "/api/v1/metrics";
-	public static final String VERSION_ENDPOINT = "/api/v1/version";
 	public static final String CONN_KEEP_ALIVE = "Keep-Alive";
 	public static final String AUTHORIZATION_TYPE = "Basic ";
 	public static final String CSV_AND_JSON_MIME_TYPE = "text/csv,application/json";

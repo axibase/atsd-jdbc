@@ -33,6 +33,7 @@ import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.content.json.GeneralError;
 import com.axibase.tsd.driver.jdbc.content.json.QueryDescription;
 import com.axibase.tsd.driver.jdbc.content.json.SendCommandResult;
+import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -160,7 +161,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	@Override
 	public void cancelQuery() throws AtsdException, GeneralSecurityException, IOException {
         contentDescription.addRequestHeadersForDataFetching();
-        String cancelEndpoint = contentDescription.getInfo().toEndpoint(CANCEL_ENDPOINT) + '?' + QUERY_ID_PARAM_NAME + '=' + queryId;
+        String cancelEndpoint = Location.CANCEL_ENDPOINT.getUrl(contentDescription.getInfo()) + '?' + QUERY_ID_PARAM_NAME + '=' + queryId;
 		InputStream result = executeRequest(GET_METHOD, 0, cancelEndpoint);
 		try {
 			final QueryDescription[] descriptionArray = JsonMappingUtil.mapToQueryDescriptionArray(result);
@@ -224,7 +225,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			logger.debug("[request] {} {}", method, url);
 		}
 		this.conn = getHttpURLConnection(url);
-		if (contentDescription.isSsl()) {
+		if (contentDescription.getInfo().secure()) {
 			doTrustToCertificates((HttpsURLConnection) this.conn);
 		}
 		setBaseProperties(method, queryTimeout);

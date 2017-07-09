@@ -24,6 +24,7 @@ import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import lombok.Data;
+import lombok.SneakyThrows;
 import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
@@ -35,8 +36,6 @@ public class ContentDescription {
 
 	private String endpoint;
 	private String query;
-	private String login;
-	private String password;
     private String postContent = "";
     private final Map<String, String> requestHeaders = new HashMap<>();
     private String[] headers;
@@ -62,13 +61,9 @@ public class ContentDescription {
 		this.queryId = queryId;
 	}
 
+	@SneakyThrows(UnsupportedEncodingException.class)
 	public String getEncodedQuery() {
-		try {
-			return URLEncoder.encode(query, DEFAULT_CHARSET.name());
-		} catch (UnsupportedEncodingException e) {
-			logger.error(e.getMessage());
-			return query;
-		}
+		return URLEncoder.encode(query, DEFAULT_CHARSET.name());
 	}
 
 	public void initSelectContent() {
@@ -97,10 +92,6 @@ public class ContentDescription {
 		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat.name());
 		map.put(LIMIT_PARAM_NAME, Long.toString(maxRowsCount));
 		return map;
-	}
-
-	public boolean isSsl() {
-		return StringUtils.startsWithIgnoreCase(endpoint, "https://");
 	}
 
     public void addRequestHeader(String name, String value) {

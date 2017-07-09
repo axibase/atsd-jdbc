@@ -25,8 +25,8 @@ public final class TestConstants {
 	public static final String PARAM_SEPARATOR = ";";
 	public static final String STRATEGY_FILE_PARAMETER = "strategy=file";
 	public static final String STRATEGY_STREAM_PARAMETER = "strategy=stream";
-	public static final String TRUST_PARAMETER = "trustServerCertificate=true";
-	public static final String UNTRUST_PARAMETER = "trustServerCertificate=false";
+	public static final String TRUST_PARAMETER = "trust=true";
+	public static final String UNTRUST_PARAMETER = "trust=false";
 	public static final String TRUST_PARAMETER_IN_QUERY = PARAM_SEPARATOR + TRUST_PARAMETER + PARAM_SEPARATOR;
 	public static final String UNTRUST_PARAMETER_IN_QUERY = PARAM_SEPARATOR + UNTRUST_PARAMETER + PARAM_SEPARATOR;
 }
