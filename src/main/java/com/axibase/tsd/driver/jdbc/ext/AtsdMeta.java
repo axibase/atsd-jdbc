@@ -641,7 +641,7 @@ public class AtsdMeta extends MetaImpl {
 		try {
 			AtsdDatabaseMetaData metaData = atsdConnection.getAtsdDatabaseMetaData();
 			newContext.setVersion(metaData.getConnectedAtsdVersion());
-			final IDataProvider dataProvider = new DataProvider(atsdConnectionInfo, sql, newContext);
+			final IDataProvider dataProvider = new DataProvider(atsdConnectionInfo, sql, newContext, statementType);
 			providerCache.put(statementHandle.id, dataProvider);
 			return dataProvider;
 		} catch (SQLException e) {
