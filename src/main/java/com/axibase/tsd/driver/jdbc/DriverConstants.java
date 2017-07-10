@@ -32,7 +32,7 @@ public final class DriverConstants {
 	public static final String SECURE_PARAM_NAME = "secure";
 	public static final boolean DEFAULT_SECURE_CONNECTION = true;
 	public static final String TRUST_PARAM_NAME = "trust";
-	public static final boolean DEFAULT_TRUST_SERVER_CERTIFICATE = false;
+	public static final boolean DEFAULT_TRUST_SERVER_CERTIFICATE = true;
 	public static final String TABLES_PARAM_NAME = "tables";
 	public static final String DEFAULT_TABLES_VALUE = null;
 	public static final String EXPAND_TAGS_PARAM_NAME = "expandTags";
