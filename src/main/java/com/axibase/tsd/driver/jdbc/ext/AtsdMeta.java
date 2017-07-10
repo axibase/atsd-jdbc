@@ -734,10 +734,10 @@ public class AtsdMeta extends MetaImpl {
 
 	private ColumnMetaData createColumnMetaData(int columnIndex, String tableName, String columnName, String columnLabel) {
 		DefaultColumn column = DefaultColumn.findByName(columnName);
-		return new ColumnMetaDataBuilder(assignColumnNames)
+		return new ColumnMetaDataBuilder(atsdConnectionInfo.assignColumnNames())
 				.withColumnIndex(columnIndex)
-				.withSchema(schema)
-				.withCatalog(catalog)
+				.withSchema(atsdConnectionInfo.schema())
+				.withCatalog(atsdConnectionInfo.catalog())
 				.withTable(tableName)
 				.withName(columnName)
 				.withLabel(columnLabel == null ? columnName : columnLabel)
@@ -752,7 +752,7 @@ public class AtsdMeta extends MetaImpl {
 		final ContentDescription contentDescription = new ContentDescription(url, connectionInfo, query, new StatementContext());
 		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(contentDescription)) {
 			contentProtocol.fetchMetadata();
-			return ContentMetadata.buildMetadataList(contentDescription.getJsonScheme(), catalog, assignColumnNames);
+			return ContentMetadata.buildMetadataList(contentDescription.getJsonScheme(), atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames());
 		} catch (Exception e) {
 			log.error(e.getMessage());
 		}
@@ -767,7 +767,7 @@ public class AtsdMeta extends MetaImpl {
 			log.error("[addQueryParameter] {}", e.getMessage());
 			encodedQuery = query;
 		}
-		return connectionInfo.toEndpoint(DriverConstants.SQL_META_ENDPOINT) + "?q=" + encodedQuery;
+		return Location.SQL_META_ENDPOINT.getUrl(connectionInfo) + "?q=" + encodedQuery;
 	}
 
 }

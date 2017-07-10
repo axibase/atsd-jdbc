@@ -7,7 +7,8 @@ public enum Location {
 	SQL_META_ENDPOINT("/api/sql/meta"),
 	CANCEL_ENDPOINT("/api/sql/cancel"),
 	METRICS_ENDPOINT("/api/v1/metrics"),
-	VERSION_ENDPOINT("/api/v1/version");
+	VERSION_ENDPOINT("/api/v1/version"),
+	COMMAND_ENDPOINT("/api/v1/command");
 
 	private final String endpoint;
 

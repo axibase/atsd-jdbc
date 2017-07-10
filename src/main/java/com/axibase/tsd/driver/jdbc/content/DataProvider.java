@@ -32,9 +32,6 @@ import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
 
-import static com.axibase.tsd.driver.jdbc.DriverConstants.SQL_ENDPOINT;
-import static com.axibase.tsd.driver.jdbc.DriverConstants.COMMAND_ENDPOINT;
-
 public class DataProvider implements IDataProvider {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(DataProvider.class);
 	private final ContentDescription contentDescription;
