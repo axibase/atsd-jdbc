@@ -5,7 +5,7 @@
 
 # JDBC driver
 
-The JDBC driver provides a convenient way for Java application to query the Axibase Time Series Database via SQL.
+The JDBC driver provides a convenient way for Java applications to query the Axibase Time Series Database via SQL.
 
 Refer to [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for query syntax and examples.
 
