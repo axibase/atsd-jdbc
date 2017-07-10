@@ -5,23 +5,24 @@
 
 # JDBC driver
 
-The JDBC driver provides a convenient way to query the Axibase Time Series Database via SQL. 
+The JDBC driver provides a convenient way for Java application to query the Axibase Time Series Database via SQL.
 
-Internal communication is implemented by transferring results in CSV format via HTTP or HTTPS protocols. See the [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for a description of the query syntax and examples.
+Refer to [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for query syntax and examples.
 
 ## JDBC URL
 
 The ATSD JDBC driver prefix is `jdbc:axibase:atsd:`, followed by the ATSD host and port, optional catalog, and optional driver properties.
-In driver versions before 1.3.1 driver prefix had to be followed by the HTTP/HTTPS ATSD SQL endpoint  and optional driver properties.
 
-```ls
-jdbc:axibase:atsd:atsd_hostname:8088/atsd;secure=false
-jdbc:axibase:atsd:atsd_hostname:8443;trust=true
+```
+jdbc:axibase:atsd:atsd_hostname:8443
+jdbc:axibase:atsd:atsd_hostname:8088;secure=false
 ```
 
-Before 1.3.1:
+Prior to version 1.3.1 the driver prefix had to be followed by the ATSD SQL endpoint URL.
 
-```ls
+Legacy format prior to driver version 1.3.1:
+
+```
 jdbc:axibase:atsd:http://atsd_hostname:8088/api/sql;catalog=atsd
 jdbc:axibase:atsd:https://atsd_hostname:8443/api/sql;trustServerCertificate=true
 ```
@@ -53,21 +54,28 @@ For example, database version 14150 supports all driver versions between 1.2.10 
 
 | **Name** | **Type** | **Supported drivers** | **Default** | **Description** |
 | :--- | --- | --- | ---: | --- |
-| trustServerCertificate (deprecated) | boolean | 1.0 – 1.3.0  | `false` | Skip SSL certificate validation |
-| trust | boolean | 1.3.1+ | `true` | Skip SSL certificate validation |
-| secure | boolean | 1.3.1+ | `true` | Use HTTPS protocol to communicate with ATSD |
+| trust | boolean | 1.3.1+ | `true` | Skip SSL certificate validation. |
+| secure | boolean | 1.3.1+ | `true` | Use HTTPS protocol to communicate with ATSD. |
 | connectTimeout | number | 1.2.7+ | 5 | Connection timeout, in seconds. |
-| readTimeout | number | 1.2.7+ | 0 | Read timeout, in seconds. |
+| readTimeout | number | 1.2.7+ | 0 | Read I/O timeout, in seconds. |
 | strategy | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
-| tables | comma-separated list of strings | 1.2.21+ | | List of metrics or metric expressions to be exposed as tables |
-| catalog (deprecated) | string | 1.2.21 | not set | Specify a catalog name |
-| expandTags | boolean | 1.2.21+ | `true` | Expose series tags as separate table columns |
-| metaColumns | boolean | 1.2.21+ | `false` | Make `DatabaseMetaData#getColumns` method return metric and entity tags, and entity groups |
+| tables | comma-separated list | 1.2.21+ | | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
+| expandTags | boolean | 1.2.21+ | `true` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
+| metaColumns | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
 
-Properties can be included as part of the JDBC url using a semicolon as a separator. For example: `jdbc:axibase:atsd:https://10.102.0.6:8443/api/sql;trustServerCertificate=true;strategy=file`.
+Properties can be included as part of the JDBC URL using a semicolon as a separator, for example: `jdbc:axibase:atsd:10.102.0.6:8443;tables=infla*;expandTags=false`.
+
+### Deprecated Properties
+
+| **Name** | **Type** | **Supported drivers** | **Default** | **Description** |
+| :--- | --- | --- | ---: | --- |
+| trustServerCertificate (deprecated) | boolean | 1.0 – 1.3.0  | `false` | Skip SSL server certificate validation. |
+| catalog (deprecated) | string | 1.2.21 | not set | Specify a catalog name. |
 
 ## Resultset Processing Strategy
+
+Choose the appropriate strategy based on available Java heap memory, disk space, and expected row counts produced by typical queries.
 
 |**Name**|**Description**|
 |:--|---|
@@ -75,10 +83,8 @@ Properties can be included as part of the JDBC url using a semicolon as a separa
 |`file`| Buffers data received from the database to a temporary file on the local file system and reads rows from the file on the `ResultSet.next()` invocation. |
 |`memory`| Buffers data received from the database into the application memory and returns rows on the `ResultSet.next()` invocation directly from a memory structure. |
 
-* The `stream` strategy is faster than the alternatives, at the expense of keeping the database connection open. It is not recommended if row processing may last a significant time. 
 * While the `memory` strategy may be more efficient than `file`, it requires more memory. Generally speaking, the `memory` strategy is better suited to queries returning thousands of rows, whereas the `file`/`stream` strategy can process millions of rows (provided disk space is available).
-
-Choose the appropriate strategy based on available Java heap memory, disk space, and expected row counts produced by typical queries.
+* The `stream` strategy is faster than the alternatives, at the expense of keeping the database connection open. It is not recommended if row processing may last a significant time on a slow client. 
 
 ## Integration
 
@@ -145,7 +151,7 @@ To execute a query load the driver class, open a connection, create a SQL statem
 
 ```java
     Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-    Connection connection = DriverManager.getConnection("jdbc:axibase:atsd:" + <ATSD_URL>, <USERNAME>, <PASSWORD>);
+    Connection connection = DriverManager.getConnection("jdbc:axibase:atsd:10.102.0.5:8443", "user-1", "my-pwd!");
     String query = "SELECT value, datetime FROM cpu_busy WHERE entity = 'nurswgvml007' LIMIT 1";
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(query);
@@ -177,7 +183,7 @@ To set an [`endTime`](https://github.com/axibase/atsd/blob/master/end-time-synta
 
 ## SQL Warnings
 
-The database may return SQL warnings as opposed to raising a non-recoverable error in some cases, such as unknown tag or tag value.
+The database may return SQL warnings as opposed to raising a non-recoverable error in cases, such as unknown tag or tag value.
 
 To retrieve SQL warnings, invoke the `resultSet.getWarnings()` method:
 
@@ -198,18 +204,20 @@ public class TestQuery {
 
     public static void main(String[] args) throws Exception {
 
-        Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");        
-        String username = System.getProperty("atsd.user");
-        String password = System.getProperty("atsd.password");
-        String hostUrl = System.getProperty("atsd.host");
-        String sqlUrl = "jdbc:axibase:atsd:" + hostUrl + ";trust=true";
+        Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");  
+	String host = args[0];
+	String port = args[1];
+        String username = args[2];
+        String password = args[3];
+        
+        String jdbcUrl = "jdbc:axibase:atsd:" + host + ":" port;
 
         String query = "SELECT * FROM mpstat.cpu_busy WHERE datetime > now - 1 * HOUR LIMIT 5";
         Connection connection = null;
         try {
-            System.out.println("Connecting to " + sqlUrl);
-            connection = DriverManager.getConnection(sqlUrl, username, password);
-            System.out.println("Connection established to " + sqlUrl);
+            System.out.println("Connecting to " + jdbcUrl);
+            connection = DriverManager.getConnection(jdbcUrl, username, password);
+            System.out.println("Connection established to " + jdbcUrl);
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(query);
             System.out.println("Query complete.");
@@ -239,15 +247,16 @@ public class TestQuery {
 
     Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
     
-    String atsdHost = System.getProperty("atsd.host");
-    String username = System.getProperty("atsd.user");
-    String password = System.getProperty("atsd.password");
-    String url = "jdbc:axibase:atsd:" + atsdHost + ";trust=true";
+    String host = args[0];
+    String port = args[1];
+    String username = args[2];
+    String password = args[3];
+    String jdbcUrl = "jdbc:axibase:atsd:" + host + ":" port;
     
     String query = "SELECT entity, datetime, value, tags.mount_point, tags.file_system "
             + "FROM df.disk_used_percent WHERE entity = 'NURSWGHBS001' AND datetime > now - 1 * HOUR LIMIT 10";
 
-    try (Connection conn = DriverManager.getConnection(url, username, password);
+    try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
          Statement statement = conn.createStatement();
          ResultSet resultSet = statement.executeQuery(query)) {
 
@@ -291,12 +300,14 @@ The following example shows how to extract metadata from the database:
 
     Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
 
-    String hostUrl = System.getProperty("atsd.host");
-    String userName = System.getProperty("atsd.user");
-    String password = System.getProperty("atsd.password");
-    String sqlUrl = "jdbc:axibase:atsd:" + hostUrl + ";trust=true";
+    String host = args[0];
+    String port = args[1];
+    String username = args[2];
+    String password = args[3];
+        
+    String jdbcUrl = "jdbc:axibase:atsd:" + host + ":" port;
 
-    try (Connection connection = DriverManager.getConnection(sqlUrl, userName, password)) {
+    try (Connection connection = DriverManager.getConnection(jdbcUrl, userName, password)) {
 
         DatabaseMetaData metaData = connection.getMetaData();
         String databaseProductName = metaData.getDatabaseProductName();
