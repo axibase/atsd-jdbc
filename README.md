@@ -6,7 +6,7 @@
 
 The JDBC driver provides a convenient way to query the Axibase Time Series Database via SQL. 
 
-Internal communication is implemented by means of transferring results in CSV format via HTTP or HTTPS protocols. See the [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for a description of the query syntax and examples.
+Internal communication is implemented by transferring results in CSV format via HTTP or HTTPS protocols. See the [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for a description of the query syntax and examples.
 
 ## JDBC URL
 
@@ -19,7 +19,7 @@ jdbc:axibase:atsd:https://atsd_hostname:8443/api/sql;trustServerCertificate=true
 
 ## License
 
-The project is released under [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
+This project is released under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
 
 ## Compatibility
 
@@ -34,9 +34,9 @@ The project is released under [Apache 2.0 License](http://www.apache.org/license
 | 14540 | 1.2.16 |
 | 16130 | 1.2.20 |
 
-For a given the database version, the above table specifies a range of compatible driver versions.
+For a given database version, the above table specifies a range of compatible driver versions.
 
-For example, database versions 14150 supports driver versions between 1.2.10 (inclusive) and 1.2.12 (exclusive).
+For example, database version 14150 supports all driver versions between 1.2.10 (inclusive) and 1.2.12 (exclusive).
 
 ## JDBC Connection Properties Supported by Driver
 
@@ -57,11 +57,11 @@ Properties can be included as part of the JDBC url using a semicolon as a separa
 
 |**Name**|**Description**|
 |:--|---|
-|`stream`| Reads data received from the database in batches when triggered by `ResultSet.next()` invocations. Keeps the connection open until all rows are processed by the client.|
+|`stream`| Reads data received from the database in batches when triggered by the `ResultSet.next()` invocation. This command keeps the connection open until all rows are processed by the client.|
 |`file`| Buffers data received from the database to a temporary file on the local file system and reads rows from the file on the `ResultSet.next()` invocation. |
 |`memory`| Buffers data received from the database into the application memory and returns rows on the `ResultSet.next()` invocation directly from a memory structure. |
 
-* The `stream` strategy is faster than alternatives at the expense of keeping the database connection open. It is not recommended if row processing may take a long time. 
+* The `stream` strategy is faster than the alternatives, at the expense of keeping the database connection open. It is not recommended if row processing may last a significant time. 
 * While the `memory` strategy may be more efficient than `file`, it requires more memory. Generally speaking, the `memory` strategy is better suited to queries returning thousands of rows, whereas the `file`/`stream` strategy can process millions of rows (provided disk space is available).
 
 Choose the appropriate strategy based on available Java heap memory, disk space, and expected row counts produced by typical queries.
@@ -127,7 +127,7 @@ Follow the instructions in the manager's user guide to create a custom driver ba
 
 ## Usage
 
-To execute a query, load the driver class, open a connection, create a SQL statement, execute the query, and process the result set:
+To execute a query load the driver class, open a connection, create a SQL statement, execute the query, and process the result set:
 
 ```java
     Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
