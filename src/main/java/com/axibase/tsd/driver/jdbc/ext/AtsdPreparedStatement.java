@@ -377,7 +377,25 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
     @Override
     public void addBatch(String sql) throws SQLException {
-        sql = StringUtils.stripStart(sql, null);
-        super.addBatch(sql);
+		sql = StringUtils.stripStart(sql, null);
+		logger.debug("[addBatch] sql: {}", sql);
+		super.addBatch(sql);
     }
+
+    @Override
+	public void addBatch() throws SQLException {
+		logger.debug("[addBatch]");
+		this.parameterValueBatch.add(this.copyParameterValues());
+	}
+
+	@Override
+	protected List<TypedValue> copyParameterValues() {
+		List<TypedValue> current = getParameterValues();
+		List<TypedValue> copy = new ArrayList<>(current.size());
+		for (TypedValue value : current) {
+			copy.add(value);
+		}
+		return copy;
+	}
+
 }
