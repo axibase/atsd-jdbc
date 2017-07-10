@@ -1,13 +1,18 @@
 package com.axibase.tsd.driver.jdbc.util;
 
-import java.util.*;
-
 import com.axibase.tsd.driver.jdbc.enums.*;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
 import org.apache.calcite.avatica.Meta;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.*;
+
+import static org.apache.calcite.avatica.Meta.StatementType.INSERT;
+import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
+import static org.apache.calcite.avatica.Meta.StatementType.UPDATE;
+
 
 public class EnumUtil {
 
@@ -18,12 +23,8 @@ public class EnumUtil {
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
 
-	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(new HashSet<Meta.StatementType>() {
-		{
-			add(Meta.StatementType.SELECT);
-			add(Meta.StatementType.INSERT);
-			add(Meta.StatementType.UPDATE);
-		}
+	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(
+			new HashSet<Meta.StatementType>(Arrays.asList(SELECT, INSERT, UPDATE)) {
 	});
 
 	private EnumUtil() {}
@@ -168,15 +169,14 @@ public class EnumUtil {
 	}
 
 	public static Meta.StatementType getStatementTypeByQuery(final String query) {
-		final String queryKind = query.substring(0, query.indexOf(' ')).toUpperCase();
-		final Meta.StatementType statementType;
+		final String queryKind = new StringTokenizer(query).nextToken().toUpperCase(Locale.US);
 		try {
-			statementType = Meta.StatementType.valueOf(queryKind);
+			final Meta.StatementType statementType = Meta.StatementType.valueOf(queryKind);
+			if (SUPPORTED_STATEMENT_TYPES.contains(statementType)) {
+				return statementType;
+			}
 		} catch (IllegalArgumentException exc) {
-			throw new IllegalArgumentException("Illegal statement type: " + queryKind);
-		}
-		if (SUPPORTED_STATEMENT_TYPES.contains(statementType)) {
-			return statementType;
+			// pass
 		}
 		throw new IllegalArgumentException("Unsupported statement type: " + queryKind);
 	}

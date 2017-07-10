@@ -14,21 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.protocol;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-import javax.net.ssl.*;
-
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.content.json.GeneralError;
 import com.axibase.tsd.driver.jdbc.content.json.QueryDescription;
@@ -44,6 +29,20 @@ import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
 import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.calcite.avatica.org.apache.http.entity.ContentType;
 import org.apache.commons.lang3.StringUtils;
+
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
@@ -83,10 +82,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private String atsdQueryId;
 	private String queryId;
 
-	public void setQueryId(String queryId) {
-		this.queryId = queryId;
-	}
-
 	public SdkProtocolImpl(final ContentDescription contentDescription) {
 		this.contentDescription = contentDescription;
 	}
@@ -110,7 +105,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Metadata retrieving error", e);
 			}
-			if (queryId != null) {
+			if (queryId != null) { // queryId is set if cancel method is invoked from another thread
 				throw new AtsdRuntimeException(prepareCancelMessage());
 			}
 			if (e instanceof SocketException) {
@@ -120,30 +115,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 		return inputStream;
 	}
 
-	@Override
-	public InputStream getMetrics(String metricMask) throws AtsdException, GeneralSecurityException, IOException {
-		contentDescription.addRequestHeadersForDataFetching();
-		return executeRequest(GET_METHOD, 0, prepareUrlWithMetricExpression(contentDescription.getEndpoint(), metricMask));
-	}
-
-	private String prepareUrlWithMetricExpression(String metricEndpoint, String metricMask) throws UnsupportedEncodingException {
-		StringBuilder expressionBuilder = new StringBuilder();
-		for (String mask : metricMask.split(",")) {
-			if (expressionBuilder.length() > 0) {
-				expressionBuilder.append(" or ");
-			}
-			expressionBuilder.append("name");
-			if (StringUtils.contains(mask, '*')) {
-				expressionBuilder.append(" like ");
-			} else {
-				expressionBuilder.append('=');
-			}
-			expressionBuilder.append('\'').append(mask).append('\'');
-		}
-		return metricEndpoint + "?expression=" + URLEncoder.encode(expressionBuilder.toString(), DEFAULT_CHARSET.name());
-
-	}
-
 	private String prepareCancelMessage() {
 		if (atsdQueryId != null) {
 			return "Query with driver-generated id=" + queryId +
@@ -151,11 +122,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 		} else {
 			return "Disconnect occurred while executing query with driver-generated id=" + queryId;
 		}
-	}
-
-	@Override
-	public InputStream readContent() throws AtsdException, GeneralSecurityException, IOException {
-		return readContent(0);
 	}
 
 	@Override
@@ -175,11 +141,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 			}
 			queryId = contentDescription.getQueryId();
 		}
-	}
-
-	@Override
-	public long writeContent() throws AtsdException, GeneralSecurityException, IOException {
-		return writeContent(0);
 	}
 
 	@Override

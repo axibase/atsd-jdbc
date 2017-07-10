@@ -14,12 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
@@ -27,6 +21,12 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 

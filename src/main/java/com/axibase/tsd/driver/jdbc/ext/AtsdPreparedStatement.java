@@ -14,17 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentSkipListMap;
-
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
@@ -37,6 +26,19 @@ import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
 public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdPreparedStatement.class);
@@ -350,39 +352,32 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		return getSignature() == null ? null : getSignature().sql;
 	}
 
-	@Override
-	public void addBatch(String sql) throws SQLException {
-		sql = StringUtils.stripStart(sql, null);
-		super.addBatch(sql);
-	}
-
-	@Override
-	protected List<TypedValue> copyParameterValues() {
-		List<TypedValue> current = getParameterValues();
-		List<TypedValue> copy = new ArrayList<>(current.size());
-		for (TypedValue value : current) {
-			copy.add(value);
-		}
-		return copy;
+	private AtsdConnection getAtsdConnection() {
+		return (AtsdConnection) super.getConnection();
 	}
 
 	@Override
 	@SneakyThrows(SQLException.class)
 	public ResultSetMetaData getMetaData() {
 		logger.debug("[getMetaData]");
+		final ResultSetMetaData resultSetMetaData;
 		if (super.openResultSet == null) {
-			AtsdResultSetMetaData resultSetMetaData = (AtsdResultSetMetaData) super.getMetaData();
-			if (resultSetMetaData.getSignature() == null || resultSetMetaData.getSignature().columns == null) {
-				throw new SQLFeatureNotSupportedException();
+			if (getStatementType() == SELECT) {
+				getAtsdConnection().getMeta()
+						.updatePreparedStatementResultSetMetaData(this.getSignature(), this.handle);
+				resultSetMetaData = super.getMetaData();
+			} else {
+				resultSetMetaData = null;
 			}
-			return resultSetMetaData;
+		} else {
+			resultSetMetaData = openResultSet.getMetaData();
 		}
-		return super.openResultSet.getMetaData();
+		return resultSetMetaData;
 	}
 
-	@Override
-	public AtsdConnection getConnection() {
-		return (AtsdConnection) connection;
-	}
-
+    @Override
+    public void addBatch(String sql) throws SQLException {
+        sql = StringUtils.stripStart(sql, null);
+        super.addBatch(sql);
+    }
 }

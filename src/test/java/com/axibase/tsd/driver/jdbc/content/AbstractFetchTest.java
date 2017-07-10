@@ -1,11 +1,5 @@
 package com.axibase.tsd.driver.jdbc.content;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.sql.SQLException;
-import java.util.List;
-
 import com.axibase.tsd.driver.jdbc.AtsdProperties;
 import com.axibase.tsd.driver.jdbc.TestUtil;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
@@ -16,7 +10,14 @@ import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.sql.SQLException;
+import java.util.List;
+
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyInt;
 
 public abstract class AbstractFetchTest extends AtsdProperties {
 	protected static final Logger logger = LoggerFactory.getLogger(AbstractTypeMock.class);
@@ -28,13 +29,13 @@ public abstract class AbstractFetchTest extends AtsdProperties {
 		final Class<?> thisClass = getClass();
 		final InputStream mockIs = TestUtil.getInputStreamForResource(resource, thisClass);
 		try {
-			PowerMockito.doReturn(mockIs).when(protocolImpl, "readContent");
+			PowerMockito.doReturn(mockIs).when(protocolImpl, "readContent", anyInt());
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			throw new AtsdException(e.getMessage());
 		}
 		try {
-			final InputStream inputStream = protocolImpl.readContent();
+			final InputStream inputStream = protocolImpl.readContent(0);
 			storeStrategy.store(inputStream);
 			storeStrategy.openToRead(TestUtil.prepareMetadata(resource, thisClass));
 			final List<List<Object>> fetched = storeStrategy.fetch(0L, fetchSize);

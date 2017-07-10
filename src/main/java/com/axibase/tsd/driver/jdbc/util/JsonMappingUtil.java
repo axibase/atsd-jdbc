@@ -23,6 +23,7 @@ import org.apache.calcite.avatica.com.fasterxml.jackson.databind.ObjectReader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 
 public class JsonMappingUtil {
 	private static final ObjectMapper MAPPER = prepareObjectMapper();
@@ -59,8 +60,8 @@ public class JsonMappingUtil {
 		return READER.forType(Series[].class).readValue(inputStream);
 	}
 
-	public static JsonParser getParser(String json) throws IOException {
-		return JSON_FACTORY.createParser(json);
+	public static JsonParser getParser(Reader reader) throws IOException {
+		return JSON_FACTORY.createParser(reader);
 	}
 
 	public static SendCommandResult mapToSendCommandResult(InputStream inputStream) throws IOException {

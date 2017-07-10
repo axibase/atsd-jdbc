@@ -14,15 +14,9 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
+import com.axibase.tsd.driver.jdbc.ext.AtsdJsonException;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
@@ -32,10 +26,15 @@ import org.apache.calcite.avatica.Meta.CursorFactory;
 import org.apache.calcite.avatica.Meta.MetaResultSet;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementType;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParseException;
 import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParser;
 import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonToken;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
@@ -69,24 +68,34 @@ public class ContentMetadata {
 		return metadataList;
 	}
 
+	public static List<ColumnMetaData> buildMetadataList(InputStream jsonInputStream, String catalog, boolean assignColumnNames)
+			throws IOException, AtsdException {
+		return buildMetadataList(new InputStreamReader(jsonInputStream), catalog, assignColumnNames);
+	}
+
 	public static List<ColumnMetaData> buildMetadataList(String json, String catalog, boolean assignColumnNames)
-			throws JsonParseException, MalformedURLException, IOException, AtsdException {
-		final Map<String, Object> jsonObject = getJsonScheme(json);
+			throws IOException, AtsdException {
+		return buildMetadataList(new StringReader(json), catalog, assignColumnNames);
+	}
+
+	private static List<ColumnMetaData> buildMetadataList(Reader jsonReader, String catalog, boolean assignColumnNames)
+			throws IOException, AtsdException {
+		final Map<String, Object> jsonObject = getJsonScheme(jsonReader);
 		if (jsonObject == null) {
 			throw new AtsdException("Wrong metadata content");
 		}
 		final Map<String, Object> publisher = (Map<String, Object>) jsonObject.get(PUBLISHER_SECTION);
 		if (publisher == null) {
-			throw new AtsdException("Wrong metadata publisher");
+			throw new AtsdJsonException("Wrong metadata publisher", jsonObject);
 		}
 		final String schema = null;
 		final Map<String, Object> tableSchema = (Map<String, Object>) jsonObject.get(TABLE_SCHEMA_SECTION);
 		if (tableSchema == null) {
-			throw new AtsdException("Wrong table schema");
+			throw new AtsdJsonException("Wrong table schema", jsonObject);
 		}
 		final List<Object> columns = (List<Object>) tableSchema.get(COLUMNS_SCHEME);
 		if (columns == null) {
-			throw new AtsdException("Wrong columns schema");
+			throw new AtsdJsonException("Wrong columns schema", jsonObject);
 		}
 		final int size = columns.size();
 		ColumnMetaData[] sortedByOrdinal = new ColumnMetaData[size];
@@ -126,8 +135,8 @@ public class ContentMetadata {
 				.build();
 	}
 
-	private static Map<String, Object> getJsonScheme(String json) throws IOException {
-		try (final JsonParser parser = JsonMappingUtil.getParser(json)) {
+	private static Map<String, Object> getJsonScheme(Reader jsonReader) throws IOException {
+		try (final JsonParser parser = JsonMappingUtil.getParser(jsonReader)) {
 			final JsonToken token = parser.nextToken();
 			Class<?> type;
 			if (token == JsonToken.START_OBJECT) {

@@ -14,17 +14,20 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import org.apache.calcite.avatica.AvaticaResultSet;
+import org.apache.calcite.avatica.AvaticaStatement;
+import org.apache.calcite.avatica.Meta;
+import org.apache.calcite.avatica.Meta.Frame;
+import org.apache.calcite.avatica.Meta.Signature;
+import org.apache.calcite.avatica.QueryState;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.TimeZone;
-
-import com.axibase.tsd.driver.jdbc.content.StatementContext;
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import org.apache.calcite.avatica.*;
-import org.apache.calcite.avatica.Meta.Frame;
-import org.apache.calcite.avatica.Meta.Signature;
 
 public class AtsdResultSet extends AvaticaResultSet {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdResultSet.class);
@@ -36,7 +39,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 						 ResultSetMetaData resultSetMetaData, TimeZone timeZone, Frame firstFrame) {
 		super(statement, state, signature, resultSetMetaData, timeZone, firstFrame);
 		final AtsdConnection connection = (AtsdConnection) statement.connection;
-		this.meta = (AtsdMeta) connection.getMeta();
+		this.meta = connection.getMeta();
 		this.handle = statement.handle;
 		this.context = meta.getContextFromMap(statement.handle);
 		if (logger.isTraceEnabled()) {
@@ -46,11 +49,17 @@ public class AtsdResultSet extends AvaticaResultSet {
 
 	@Override
 	public int getRow() throws SQLException {
+		if (logger.isDebugEnabled()) {
+			logger.debug("[getRow]");
+		}
 		return super.getRow() + 1; // TODO remove when Avatica fixes row positions
 	}
 
 	@Override
 	public boolean isFirst() throws SQLException {
+		if (logger.isDebugEnabled()) {
+			logger.debug("[isFirst]");
+		}
 		return this.getRow() == 1;
 	}
 
@@ -65,7 +74,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public boolean first() throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[first]");
 		}
 		return super.first();
 	}
@@ -73,7 +82,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public boolean last() throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[last]");
 		}
 		return super.last();
 	}
@@ -81,7 +90,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public boolean isBeforeFirst() throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[isBeforeFirst]");
 		}
 		return this.getRow() < 1;
 	}
@@ -89,7 +98,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public SQLWarning getWarnings() throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[getWarnings]");
 		}
 		return context != null ? context.getWarning() : null;
 	}
@@ -97,7 +106,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void clearWarnings() throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[clearWarnings]");
 		}
 		if (context != null) {
 			context.setWarning(null);
@@ -107,7 +116,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public boolean absolute(int row) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[absolute]");
 		}
 		return super.absolute(row);
 	}
@@ -115,7 +124,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public boolean relative(int rows) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[relative]");
 		}
 		return super.relative(rows);
 	}
@@ -123,7 +132,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public boolean previous() throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[previous]");
 		}
 		return super.previous();
 	}
@@ -131,7 +140,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void setFetchDirection(int direction) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[setFetchDirection]");
 		}
 		super.setFetchDirection(direction);
 	}
@@ -139,7 +148,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void setFetchSize(int fetchSize) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[setFetchSize]");
 		}
 		super.setFetchSize(fetchSize);
 	}
@@ -147,7 +156,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateNull(int columnIndex) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateNull]");
 		}
 		super.updateNull(columnIndex);
 	}
@@ -155,7 +164,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateBoolean(int columnIndex, boolean x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateBoolean]");
 		}
 		super.updateBoolean(columnIndex, x);
 	}
@@ -163,7 +172,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateByte(int columnIndex, byte x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateByte]");
 		}
 		super.updateByte(columnIndex, x);
 	}
@@ -171,7 +180,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateShort(int columnIndex, short x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateShort]");
 		}
 		super.updateShort(columnIndex, x);
 	}
@@ -179,7 +188,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateInt(int columnIndex, int x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateInt]");
 		}
 		super.updateInt(columnIndex, x);
 	}
@@ -187,7 +196,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateLong(int columnIndex, long x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateLong]");
 		}
 		super.updateLong(columnIndex, x);
 	}
@@ -195,7 +204,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateFloat(int columnIndex, float x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateFloat]");
 		}
 		super.updateFloat(columnIndex, x);
 	}
@@ -203,13 +212,16 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public void updateDouble(int columnIndex, double x) throws SQLException {
 		if (logger.isDebugEnabled()) {
-			logger.debug("[afterLast]");
+			logger.debug("[updateDouble]");
 		}
 		super.updateDouble(columnIndex, x);
 	}
 
 	@Override
 	public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
+		if (logger.isDebugEnabled()) {
+			logger.debug("[updateBigDecimal]");
+		}
 		super.updateBigDecimal(columnIndex, x);
 	}
 
