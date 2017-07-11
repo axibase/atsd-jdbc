@@ -1,6 +1,7 @@
 package com.axibase.tsd.driver.jdbc.enums;
 
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
+import lombok.Getter;
 
 public enum Location {
 	SQL_ENDPOINT("/api/sql"),
@@ -10,6 +11,7 @@ public enum Location {
 	VERSION_ENDPOINT("/api/v1/version"),
 	COMMAND_ENDPOINT("/api/v1/command");
 
+	@Getter
 	private final String endpoint;
 
 	Location(String endpoint) {

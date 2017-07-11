@@ -14,6 +14,7 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
+import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
@@ -68,13 +69,16 @@ public class ContentDescription {
 
 	public void initSelectContent() {
 		if (StringUtils.isEmpty(query)) {
-			return;
-		}
-        this.postContent = QUERY_ID_PARAM_NAME + '=' + queryId + '&' +
-                Q_PARAM_NAME + '=' + getEncodedQuery() + '&' +
-                FORMAT_PARAM_NAME + '=' + FORMAT_PARAM_VALUE + '&' +
-                METADATA_FORMAT_PARAM_NAME + '=' + metadataFormat + '&' +
-                LIMIT_PARAM_NAME + '=' + maxRowsCount;
+            return;
+        } else if (endpoint.endsWith(Location.SQL_META_ENDPOINT.getEndpoint())) {
+            this.postContent = Q_PARAM_NAME + '=' + getEncodedQuery();
+        } else {
+            this.postContent = QUERY_ID_PARAM_NAME + '=' + queryId + '&' +
+                    Q_PARAM_NAME + '=' + getEncodedQuery() + '&' +
+                    FORMAT_PARAM_NAME + '=' + FORMAT_PARAM_VALUE + '&' +
+                    METADATA_FORMAT_PARAM_NAME + '=' + metadataFormat + '&' +
+                    LIMIT_PARAM_NAME + '=' + maxRowsCount;
+        }
     }
 
 	public void addRequestHeadersForDataFetching() {
