@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
+import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_TABLE_NAME;
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
 public class AtsdMeta extends MetaImpl {
@@ -243,6 +244,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
+	@SneakyThrows(SQLDataException.class)
 	public ExecuteResult prepareAndExecute(StatementHandle statementHandle, String query, long maxRowCount,
 										   int maxRowsInFrame, PrepareCallback callback) throws NoSuchStatementException {
 		final long limit = maxRowCount < 0 ? 0 : maxRowCount;
@@ -268,6 +270,9 @@ public class AtsdMeta extends MetaImpl {
 			final ExecuteResult result = new ExecuteResult(contentMetadata.getList());
 			callback.execute();
 			return result;
+		} catch (final AtsdRuntimeException e) {
+			log.error("[prepareAndExecute] error", e);
+			throw new SQLDataException(e.getMessage(), e);
 		} catch (final RuntimeException e) {
 			log.error("[prepareAndExecute] error", e);
 			throw e;
@@ -460,9 +465,13 @@ public class AtsdMeta extends MetaImpl {
 
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo) {
 		final List<Object> metricList = new ArrayList<>();
-		final String tables = connectionInfo.tables();
-		if (StringUtils.isNotBlank(tables)) {
-			final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), tables);
+		final Set<String> tables = connectionInfo.tables();
+		if (!tables.isEmpty()) {
+			log.trace("[receiveTables] tables: {}", tables);
+			if (tables.contains(DEFAULT_TABLE_NAME)) {
+				metricList.add(generateDefaultMetaTable());
+			}
+			final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), StringUtils.join(tables, ','));
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.readInfo();
 				final Metric[] metrics = JsonMappingUtil.mapToMetrics(metricsInputStream);
