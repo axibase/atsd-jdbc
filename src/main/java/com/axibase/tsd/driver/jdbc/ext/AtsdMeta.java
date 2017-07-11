@@ -38,8 +38,6 @@ import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,28 +95,27 @@ public class AtsdMeta extends MetaImpl {
 	@SneakyThrows(SQLException.class)
 	public StatementHandle prepare(ConnectionHandle connectionHandle, String query, long maxRowCount) {
 		final int id = idGenerator.getAndIncrement();
-        log.trace("[prepare] connection: {} query: {}", id, query);
+		log.trace("[prepare] handle: {} query: {}", id, query);
 
-        if (StringUtils.isBlank(query)) {
+		if (StringUtils.isBlank(query)) {
 			throw new SQLException("Failed to prepare statement with blank query");
 		}
-        StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
-        List<ColumnMetaData> columnMetaDataList = prepareColumnMetaData(statementType, query, connectionHandle.id, id);
-        Signature signature = new Signature(columnMetaDataList, query, Collections.<AvaticaParameter>emptyList(), null,
-                statementType == SELECT ? CursorFactory.LIST : null, statementType);
-        return new StatementHandle(connectionHandle.id, id, signature);
+		final StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
+		Signature signature = new Signature(new ArrayList<ColumnMetaData>(), query, Collections.<AvaticaParameter>emptyList(), null,
+				statementType == SELECT ? CursorFactory.LIST : null, statementType);
+		return new StatementHandle(connectionHandle.id, id, signature);
 	}
 
 	public void updatePreparedStatementResultSetMetaData(Signature signature, StatementHandle handle) throws SQLException {
 		if (signature.columns.isEmpty()) {
-			final String metaEndpoint = Location.SQL_META_ENDPOINT.getUrl(atsdConnectionInfo);
+			final String metaEndpoint = prepareMetaEndpointWithQuery(signature.sql);
 			final ContentDescription contentDescription = new ContentDescription(
 					metaEndpoint, atsdConnectionInfo, signature.sql, new StatementContext(handle));
 			try (final IContentProtocol protocol = new SdkProtocolImpl(contentDescription)) {
 				final List<ColumnMetaData> columnMetaData = ContentMetadata.buildMetadataList(protocol.readContent(0),
 						atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames());
 				signature.columns.addAll(columnMetaData);
-			} catch (AtsdJsonException e)  {
+			} catch (AtsdJsonException e) {
 				final Object jsonError = e.getJson().get("error");
 				if (jsonError != null) {
 					log.error("[updatePreparedStatementResultSetMetaData] error: {}", jsonError);
@@ -126,6 +123,9 @@ public class AtsdMeta extends MetaImpl {
 				} else {
 					throw new SQLException(e);
 				}
+			} catch (AtsdRuntimeException e) {
+				log.error("[updatePreparedStatementResultSetMetaData] error: {}", e.getMessage());
+				throw new SQLDataException(e);
 			} catch (Exception e)  {
 				log.error("[updatePreparedStatementResultSetMetaData] error", e);
 				throw new SQLException(e);
@@ -729,86 +729,89 @@ public class AtsdMeta extends MetaImpl {
 		return result;
 	}
 
-	private List<ColumnMetaData> prepareColumnMetaData(final StatementType statementType, final String query, String connectionId, int statementId) {
-		log.debug("[prepareColumnMetaData] statementType: {} sql: {}", statementType, query);
-		if (Meta.StatementType.SELECT == statementType) {
-			return getColumnMetadataList(query);
-		} else {
-			log.debug("Not yet implemented for statement type: {}", statementType);
-			//return null;
-			//temporary
-			List<String> columnNames = Arrays.asList("entity", "time", "value");
-			List<ColumnMetaData> result = new ArrayList<>();
-			int index = 0;
-			for (String columnName : columnNames) {
-				result.add(createColumnMetaData(index++, "m1", columnName, columnName));
-			}
-			return result;
-		}
-	}
+//	private List<ColumnMetaData> prepareColumnMetaData(final StatementType statementType, final String query, String connectionId, int statementId) throws
+//			SQLException {
+//		log.debug("[prepareColumnMetaData] statementType: {} sql: {}", statementType, query);
+//		if (Meta.StatementType.SELECT == statementType) {
+//			return getColumnMetadataList(query);
+//		} else {
+//			log.debug("Not yet implemented for statement type: {}", statementType);
+//			//return null;
+//			//temporary
+//			List<String> columnNames = Arrays.asList("entity", "time", "value");
+//			List<ColumnMetaData> result = new ArrayList<>();
+//			int index = 0;
+//			for (String columnName : columnNames) {
+//				result.add(createColumnMetaData(index++, "m1", columnName, columnName));
+//			}
+//			return result;
+//		}
+//	}
+//
+//	private static Pair<String, List<String>> extractTableNameAndColumnNames(String query) {
+//        query = query.toLowerCase();
+//        final int begin = StringUtils.indexOfIgnoreCase(query, "select ") + 7;
+//        final int end = StringUtils.indexOfIgnoreCase(query, "from");
+//        String sqlColumns = query.substring(begin, end);
+//        String[] names = StringUtils.split(sqlColumns, ',');
+//        String tail = query.substring(end + 4).trim();
+//        int spaceIndex = tail.indexOf(' ');
+//        final String tableName = StringUtils.removeAll(spaceIndex == -1 ? tail : tail.substring(0, spaceIndex), "[\"'`]");
+//        List<String> columnNames = new ArrayList<>(names.length);
+//        for (String name : names) {
+//            if (name != null) {
+//                name = name.trim();
+//                spaceIndex = name.indexOf(' ');
+//                if (spaceIndex > 0) {
+//                    name = name.substring(0, spaceIndex);
+//                }
+//                if (name.startsWith(tableName)) {
+//                    name = name.substring(tableName.length() + 1);
+//                }
+//                columnNames.add(StringUtils.removeAll(name, "[\"'`]"));
+//            }
+//        }
+//		return new ImmutablePair<>(tableName, columnNames);
+//	}
+//
+//	private ColumnMetaData createColumnMetaData(int columnIndex, String tableName, String columnName, String columnLabel) {
+//		DefaultColumn column = DefaultColumn.findByName(columnName);
+//		return new ColumnMetaDataBuilder(atsdConnectionInfo.assignColumnNames())
+//				.withColumnIndex(columnIndex)
+//				.withSchema(atsdConnectionInfo.schema())
+//				.withCatalog(atsdConnectionInfo.catalog())
+//				.withTable(tableName)
+//				.withName(columnName)
+//				.withLabel(columnLabel == null ? columnName : columnLabel)
+//				.withAtsdType(column.getType())
+//				.withNullable(column.getNullable())
+//				.build();
+//	}
+//
+//	private List<ColumnMetaData> getColumnMetadataList(String query) throws SQLDataException {
+//		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) connection).getConnectionInfo();
+//		final String url = prepareMetaEndpointWithQuery(query);
+//		final ContentDescription contentDescription = new ContentDescription(url, connectionInfo, query, new StatementContext());
+//		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(contentDescription)) {
+//			contentProtocol.fetchMetadata();
+//			return ContentMetadata.buildMetadataList(contentDescription.getJsonScheme(), atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames());
+//		} catch (AtsdRuntimeException e) {
+//			if (StringUtils.contains(e.getMessage(), "DictionaryNotFoundException:")) {
+//				String errorMessage = StringUtils.trim(StringUtils.substringAfter(e.getMessage(), "DictionaryNotFoundException:"));
+//				log.error("[getColumnMetadataList] error: {}", errorMessage);
+//				throw new SQLDataException(errorMessage);
+//			}
+//			log.error("[getColumnMetadataList] error", e);
+//			throw new SQLDataException(e);
+//		} catch (Exception e) {
+//			log.error("[getColumnMetadataList] error", e);
+//			throw new SQLDataException(e);
+//		}
+//	}
 
-	private static Pair<String, List<String>> extractTableNameAndColumnNames(String query) {
-        query = query.toLowerCase();
-        final int begin = StringUtils.indexOfIgnoreCase(query, "select ") + 7;
-        final int end = StringUtils.indexOfIgnoreCase(query, "from");
-        String sqlColumns = query.substring(begin, end);
-        String[] names = StringUtils.split(sqlColumns, ',');
-        String tail = query.substring(end + 4).trim();
-        int spaceIndex = tail.indexOf(' ');
-        final String tableName = StringUtils.removeAll(spaceIndex == -1 ? tail : tail.substring(0, spaceIndex), "[\"'`]");
-        List<String> columnNames = new ArrayList<>(names.length);
-        for (String name : names) {
-            if (name != null) {
-                name = name.trim();
-                spaceIndex = name.indexOf(' ');
-                if (spaceIndex > 0) {
-                    name = name.substring(0, spaceIndex);
-                }
-                if (name.startsWith(tableName)) {
-                    name = name.substring(tableName.length() + 1);
-                }
-                columnNames.add(StringUtils.removeAll(name, "[\"'`]"));
-            }
-        }
-		return new ImmutablePair<>(tableName, columnNames);
-	}
-
-	private ColumnMetaData createColumnMetaData(int columnIndex, String tableName, String columnName, String columnLabel) {
-		DefaultColumn column = DefaultColumn.findByName(columnName);
-		return new ColumnMetaDataBuilder(atsdConnectionInfo.assignColumnNames())
-				.withColumnIndex(columnIndex)
-				.withSchema(atsdConnectionInfo.schema())
-				.withCatalog(atsdConnectionInfo.catalog())
-				.withTable(tableName)
-				.withName(columnName)
-				.withLabel(columnLabel == null ? columnName : columnLabel)
-				.withAtsdType(column.getType())
-				.withNullable(column.getNullable())
-				.build();
-	}
-
-	private List<ColumnMetaData> getColumnMetadataList(String query) {
-		final AtsdConnectionInfo connectionInfo = ((AtsdConnection) connection).getConnectionInfo();
-		final String url = addQueryParameter(connectionInfo, query);
-		final ContentDescription contentDescription = new ContentDescription(url, connectionInfo, query, new StatementContext());
-		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(contentDescription)) {
-			contentProtocol.fetchMetadata();
-			return ContentMetadata.buildMetadataList(contentDescription.getJsonScheme(), atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames());
-		} catch (Exception e) {
-			log.error(e.getMessage());
-		}
-		return Collections.emptyList();
-	}
-
-	private static String addQueryParameter(AtsdConnectionInfo connectionInfo, String query) {
-		String encodedQuery;
-		try {
-			encodedQuery = URLEncoder.encode(query, DriverConstants.DEFAULT_CHARSET.displayName(Locale.US));
-		} catch (UnsupportedEncodingException e) {
-			log.error("[addQueryParameter] {}", e.getMessage());
-			encodedQuery = query;
-		}
-		return Location.SQL_META_ENDPOINT.getUrl(connectionInfo) + "?q=" + encodedQuery;
+	@SneakyThrows(UnsupportedEncodingException.class)
+	private String prepareMetaEndpointWithQuery(String query) {
+		return Location.SQL_META_ENDPOINT.getUrl(atsdConnectionInfo) + "?q=" + URLEncoder.encode(query, DEFAULT_CHARSET.name());
 	}
 
 }

@@ -363,8 +363,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		final ResultSetMetaData resultSetMetaData;
 		if (super.openResultSet == null) {
 			if (getStatementType() == SELECT) {
-				getAtsdConnection().getMeta()
-						.updatePreparedStatementResultSetMetaData(this.getSignature(), this.handle);
+				getAtsdConnection().getMeta().updatePreparedStatementResultSetMetaData(this.getSignature(), this.handle);
 				resultSetMetaData = super.getMetaData();
 			} else {
 				resultSetMetaData = null;
