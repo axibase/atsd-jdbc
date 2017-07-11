@@ -67,7 +67,7 @@ public class ContentDescription {
 		return URLEncoder.encode(query, DEFAULT_CHARSET.name());
 	}
 
-	public void initSelectContent() {
+	public void initDataFetchingContent() {
 		if (StringUtils.isEmpty(query)) {
             return;
         } else if (endpoint.endsWith(Location.SQL_META_ENDPOINT.getEndpoint())) {
@@ -84,18 +84,6 @@ public class ContentDescription {
 	public void addRequestHeadersForDataFetching() {
 		addRequestHeader(HttpHeaders.ACCEPT, CSV_AND_JSON_MIME_TYPE);
 		addRequestHeader(HttpHeaders.CONTENT_TYPE, FORM_URLENCODED_TYPE);
-	}
-
-	public Map<String, String> getQueryParamsAsMap() {
-		if (StringUtils.isEmpty(query)) {
-			return Collections.emptyMap();
-		}
-		Map<String, String> map = new HashMap<>();
-		map.put(Q_PARAM_NAME, query);
-		map.put(FORMAT_PARAM_NAME, FORMAT_PARAM_VALUE);
-		map.put(METADATA_FORMAT_PARAM_NAME, metadataFormat.name());
-		map.put(LIMIT_PARAM_NAME, Long.toString(maxRowsCount));
-		return map;
 	}
 
     public void addRequestHeader(String name, String value) {

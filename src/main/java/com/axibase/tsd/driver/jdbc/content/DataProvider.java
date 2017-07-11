@@ -41,22 +41,21 @@ public class DataProvider implements IDataProvider {
 	private AtomicBoolean isHoldingConnection = new AtomicBoolean();
 
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
+		final String endpoint;
 		switch (statementType) {
 			case SELECT: {
-                final String endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
-				this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
-				this.contentDescription.initSelectContent();
+                endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
 				break;
 			}
 			case INSERT:
 			case UPDATE: {
-                final String endpoint = Location.COMMAND_ENDPOINT.getUrl(connectionInfo);
-				this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
+                endpoint = Location.COMMAND_ENDPOINT.getUrl(connectionInfo);
 				break;
 			}
 			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
 		}
-        logger.trace("Endpoint: {}", contentDescription.getEndpoint());
+		this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
+		logger.trace("Endpoint: {}", contentDescription.getEndpoint());
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
 	}

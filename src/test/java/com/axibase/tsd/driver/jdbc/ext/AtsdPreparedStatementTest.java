@@ -5,7 +5,6 @@ import ch.qos.logback.classic.Logger;
 import com.axibase.tsd.driver.jdbc.AtsdProperties;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.junit.*;
-import org.junit.rules.ExpectedException;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
@@ -16,9 +15,6 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 	private static final Map<String, Level> OVERRIDDEN_LOG_LEVELS = new HashMap<>(2);
 
 	private static AvaticaConnection connection;
-
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
 
 	@BeforeClass
 	public static void beforeClass() throws SQLException {
@@ -53,10 +49,9 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 
 	@Test
 	public void testGetMetaData_MetricDoesNotExist() throws SQLException {
-		expectedException.expect(SQLDataException.class);
-		expectedException.expectMessage("Metric 'test_metric' not found");
 		try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM test_metric")) {
-			stmt.getMetaData();
+			ResultSetMetaData rsmd = stmt.getMetaData();
+			Assert.assertEquals(7, rsmd.getColumnCount());
 		}
 	}
 

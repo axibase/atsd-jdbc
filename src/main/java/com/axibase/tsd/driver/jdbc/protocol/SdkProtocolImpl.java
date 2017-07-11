@@ -95,6 +95,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	@Override
 	public InputStream readContent(int timeout) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
+		contentDescription.initDataFetchingContent();
 		InputStream inputStream = null;
 		try {
 			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
@@ -299,23 +300,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private void setAdditionalRequestHeaders(Map<String, String> headers) {
 		for (Map.Entry<String, String> header : headers.entrySet()) {
 			conn.setRequestProperty(header.getKey(), header.getValue());
-		}
-	}
-
-	@Override
-	public void fetchMetadata() throws AtsdException, GeneralSecurityException, IOException {
-		try (InputStream inputStream = executeRequest(POST_METHOD, 0, contentDescription.getEndpoint())) {
-			MetadataRetriever.retrieveJsonScheme(inputStream, contentDescription);
-		} catch (IOException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Metadata retrieving error", e);
-			}
-			if (queryId != null) {
-				throw new AtsdRuntimeException(prepareCancelMessage());
-			}
-			if (e instanceof SocketException) {
-				throw e;
-			}
 		}
 	}
 
