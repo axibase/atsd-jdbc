@@ -21,8 +21,10 @@ import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
-import com.axibase.tsd.driver.jdbc.util.EnumUtil;
+import com.axibase.tsd.driver.jdbc.util.DbMetadataUtils;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
 
@@ -37,7 +39,11 @@ import static com.axibase.tsd.driver.jdbc.DriverConstants.REVISION_LINE;
 
 public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdDatabaseMetaData.class);
+	@Getter
+	@Setter
 	private String revision = "Unknown Revision";
+	@Getter
+	@Setter
 	private String edition = "Unknown Edition";
 
 	protected AtsdDatabaseMetaData(AvaticaConnection connection) {
@@ -176,7 +182,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getSQLKeywords]");
 		}
-		return EnumUtil.getSqlKeywords();
+		return DbMetadataUtils.getSqlKeywords();
 	}
 
 	@Override
@@ -184,7 +190,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getNumericFunctions]");
 		}
-		return EnumUtil.getNumericFunctions();
+		return DbMetadataUtils.getNumericFunctions();
 	}
 
 	@Override
@@ -192,7 +198,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[supportsBatchUpdates]");
 		}
-		return false;
+		return true;
 	}
 
 	@Override
@@ -200,7 +206,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getStringFunctions]");
 		}
-		return EnumUtil.getStringFunctions();
+		return DbMetadataUtils.getStringFunctions();
 	}
 
 	@Override
@@ -216,7 +222,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getTimeDateFunctions]");
 		}
-		return EnumUtil.getSupportedTimeFunctions();
+		return DbMetadataUtils.getSupportedTimeFunctions();
 	}
 
 	@Override
@@ -226,7 +232,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public boolean allTablesAreSelectable() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -236,7 +242,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public boolean locatorsUpdateCopy() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -261,7 +267,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public boolean supportsMinimumSQLGrammar() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -276,7 +282,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -291,7 +297,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public boolean isCatalogAtStart() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -356,7 +362,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 
 	@Override
 	public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -365,12 +371,27 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	}
 
 	@Override
+	public boolean supportsMultipleResultSets() throws SQLException {
+		return false;
+	}
+
+	@Override
 	public int getDefaultTransactionIsolation() throws SQLException {
-		return Connection.TRANSACTION_NONE;
+		return Connection.TRANSACTION_READ_COMMITTED;
+	}
+
+	@Override
+	public int getMaxCatalogNameLength() throws SQLException {
+		return 128;
 	}
 
 	@Override
 	public boolean supportsSubqueriesInComparisons() throws SQLException {
+		return true;
+	}
+
+	@Override
+	public boolean isReadOnly() throws SQLException {
 		return false;
 	}
 
@@ -380,8 +401,63 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	}
 
 	@Override
+	public int getMaxColumnNameLength() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxColumnsInGroupBy() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxColumnsInOrderBy() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxColumnsInSelect() throws SQLException {
+		return 256;
+	}
+
+	@Override
+	public int getMaxTableNameLength() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxTablesInSelect() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxUserNameLength() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxStatementLength() throws SQLException {
+		return 65536;
+	}
+
+	@Override
+	public int getMaxSchemaNameLength() throws SQLException {
+		return 128;
+	}
+
+	@Override
+	public int getMaxColumnsInTable() throws SQLException {
+		return 1024;
+	}
+
+	@Override
+	public int getMaxCharLiteralLength() throws SQLException {
+		return 128 * 1024;
+	}
+
+	@Override
 	public boolean supportsSubqueriesInIns() throws SQLException {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -462,22 +538,6 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	@Override
 	public boolean nullsAreSortedAtEnd() throws SQLException {
 		return false;
-	}
-
-	public String getRevision() {
-		return revision;
-	}
-
-	public void setRevision(String revision) {
-		this.revision = revision;
-	}
-
-	public String getEdition() {
-		return edition;
-	}
-
-	public void setEdition(String edition) {
-		this.edition = edition;
 	}
 
 	@Override

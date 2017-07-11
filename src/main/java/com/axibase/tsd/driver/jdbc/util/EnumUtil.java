@@ -1,18 +1,18 @@
 package com.axibase.tsd.driver.jdbc.util;
 
-import com.axibase.tsd.driver.jdbc.enums.*;
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
+import com.axibase.tsd.driver.jdbc.enums.ReservedWordsSQL2003;
+import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
 import com.google.common.collect.Sets;
 import org.apache.calcite.avatica.Meta;
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 
-import static org.apache.calcite.avatica.Meta.StatementType.INSERT;
-import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
-import static org.apache.calcite.avatica.Meta.StatementType.UPDATE;
+import static org.apache.calcite.avatica.Meta.StatementType.*;
 
 
 public class EnumUtil {
@@ -138,33 +138,6 @@ public class EnumUtil {
 			}
 		}
 		return result;
-	}
-
-	private static String getPeriodReservedWords() {
-		return "PERIOD,PREVIOUS,NEXT,LINEAR,EXTEND,START_TIME,END_TIME,FIRST_VALUE_TIME,CALENDAR";
-	}
-
-	public static String getSupportedTimeFunctions() {
-		ITimeDateConstant[] timeFunctions = buildTimeConstantsArray();
-		StringBuilder buffer = new StringBuilder(timeFunctions[0].toString());
-		for (int i = 1; i < timeFunctions.length; ++i) {
-			buffer.append(',').append(timeFunctions[i].toString());
-		}
-		buffer.append("LAST_TIME,DATE_FORMAT,");
-		buffer.append(getPeriodReservedWords());
-		return buffer.toString();
-	}
-
-	public static String getNumericFunctions() {
-		return StringUtils.join(NumericFunctions.values(), ',');
-	}
-
-	public static String getStringFunctions() {
-		return LexerTokens.REGEX.name();
-	}
-
-	public static String getSqlKeywords() {
-		return LexerTokens.ROW_NUMBER.name();
 	}
 
 	public static Meta.StatementType getStatementTypeByQuery(final String query) {
