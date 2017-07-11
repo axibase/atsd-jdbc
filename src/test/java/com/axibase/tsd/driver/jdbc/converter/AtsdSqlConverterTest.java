@@ -6,7 +6,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.calcite.avatica.Meta;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class AtsdSqlConverterTest {
@@ -100,6 +104,26 @@ public class AtsdSqlConverterTest {
                 "metric='temperature'";
         command = converter.convertToCommand(sql);
         expected = "series e:sensor-1 ms:123456789 t:unit=\"celcius\" m:temperature=24.5 x:temperature=\"test\"\n";
+        Assert.assertEquals(expected, command);
+    }
+
+    @Test
+    public void testConvertInsertToSeriesWithEscapedTableName() throws SQLException {
+        AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT);
+        String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', 24.5, null, " +
+                "'Celcius')";
+
+        String command = converter.convertToCommand(sql);
+        String expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:unit=\"Celcius\" m:test.temperature=24.5\n";
+        Assert.assertEquals(expected, command);
+    }
+
+    @Test
+    public void testConvertUpdateToSeriesWithEscapedTableName() throws SQLException {
+        AtsdSqlUpdateConverter converter = (AtsdSqlUpdateConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.UPDATE);
+        String sql = "update 'test.temperature' set datetime='2017-06-21T00:00:00Z', value=24.5, tags.unit='celcius' where entity='sensor-1'";
+        String command = converter.convertToCommand(sql);
+        String expected = "series e:sensor-1 d:2017-06-21T00:00:00Z t:unit=\"celcius\" m:test.temperature=24.5\n";
         Assert.assertEquals(expected, command);
     }
 

@@ -17,9 +17,10 @@ class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
         logger.debug("[prepareSql] in: {}", sql);
         final int begin = sql.indexOf('(') + 1;
         final int end = sql.indexOf(')');
+        final String beforeValues = StringUtils.replace(sql.substring(0, end), "'", "\"");
         StringBuilder buffer = new StringBuilder();
-        buffer.append(sql.substring(0, begin));
-        String[] names = StringUtils.split(sql.substring(begin, end), ',');
+        buffer.append(beforeValues.substring(0, begin));
+        String[] names = StringUtils.split(beforeValues.substring(begin, end), ',');
         String name;
         for (int i=0;i<names.length;i++) {
             name = names[i].trim();

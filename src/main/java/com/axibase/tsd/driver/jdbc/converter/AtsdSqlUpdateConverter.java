@@ -14,13 +14,18 @@ import org.apache.commons.lang3.StringUtils;
 
 class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
 
+    private static final String UPDATE = "UPDATE ";
+    private static final String SET = "SET ";
+    private static final String WHERE = "WHERE ";
+
     @Override
     protected String prepareSql(String sql) {
         logger.debug("[prepareSql] in: {}", sql);
-        final int begin = StringUtils.indexOfIgnoreCase(sql, "set ") + 4;
-        final int end = StringUtils.indexOfIgnoreCase(sql, "where ");
+        final int begin = StringUtils.indexOfIgnoreCase(sql, SET) + SET.length();
+        final int end = StringUtils.indexOfIgnoreCase(sql, WHERE);
         StringBuilder buffer = new StringBuilder();
-        buffer.append("UPDATE ").append(sql.substring(7, begin - 4)).append(" SET ");
+        final String tableName = StringUtils.replace(sql.substring(UPDATE.length(), begin - SET.length()), "'", "\"");
+        buffer.append(UPDATE).append(tableName).append(" ").append(SET);
         String[] pairs = StringUtils.split(sql.substring(begin, end), ',');
         String name;
         String value;
@@ -43,8 +48,8 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
             buffer.append('=').append(value);
         }
 
-        buffer.append(" WHERE ");
-        String tmp = sql.substring(end + 6);
+        buffer.append(" ").append(WHERE);
+        String tmp = sql.substring(end + WHERE.length());
         pairs = tmp.split("(?i)( and )");
         for (int i = 0; i < pairs.length; i++) {
             idx = pairs[i].indexOf('=');

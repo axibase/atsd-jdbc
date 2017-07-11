@@ -79,7 +79,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                     .build());
             return (T) sqlParser.parseStmt();
         } catch (SqlParseException exc) {
-            throw new SQLException("Sql parser error", exc);
+            throw new SQLException("Could not parse sql: " + sql, exc);
         }
     }
 
