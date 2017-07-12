@@ -71,7 +71,7 @@ public class AtsdDriverTest extends AtsdProperties {
 		assertTrue(properties.containsAll(Arrays.asList(AtsdDriverConnectionProperties.values())));
 		DriverPropertyInfo[] propertyInfo = driver.getPropertyInfo(null, new Properties());
 		assertNotNull(propertyInfo);
-		assertEquals(10, propertyInfo.length);
+		assertEquals(11, propertyInfo.length);
 
 	}
 

@@ -2,6 +2,7 @@ package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.AtsdProperties;
 import com.axibase.tsd.driver.jdbc.TestUtil;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
@@ -67,6 +68,6 @@ public abstract class AbstractFetchTest extends AtsdProperties {
 
 	protected static IStoreStrategy getMockStrategyObject() {
 		final StatementContext context = new StatementContext();
-		return PowerMockito.spy(StrategyFactory.create(StrategyFactory.findClassByName(READ_STRATEGY), context));
+		return PowerMockito.spy(StrategyFactory.create(StrategyFactory.findClassByName(READ_STRATEGY), context, OnMissingMetricAction.ERROR));
 	}
 }

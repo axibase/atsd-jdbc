@@ -1,6 +1,7 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -98,6 +99,12 @@ public class AtsdConnectionInfo {
 
 	public boolean timestampTz() {
 		return getBooleanValue(timestamptz);
+	}
+
+	public OnMissingMetricAction missingMetric() {
+		final AtsdDriverConnectionProperties property = missingMetric;
+		final OnMissingMetricAction result = OnMissingMetricAction.fromString(info.getProperty(property.camelName()));
+		return result == null ? (OnMissingMetricAction) property.defaultValue() : result;
 	}
 
 	private boolean getBooleanValue(AtsdDriverConnectionProperties property) {

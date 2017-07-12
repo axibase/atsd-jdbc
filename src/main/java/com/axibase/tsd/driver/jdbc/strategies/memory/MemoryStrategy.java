@@ -15,6 +15,7 @@
 package com.axibase.tsd.driver.jdbc.strategies.memory;
 
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.strategies.AbstractStrategy;
@@ -25,8 +26,8 @@ public class MemoryStrategy extends AbstractStrategy {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(MemoryStrategy.class);
 	private static final int BUFFER_SIZE = 16 * 1024;
 
-	public MemoryStrategy(StatementContext context) {
-		super(context, Strategy.MEMORY);
+	public MemoryStrategy(StatementContext context, OnMissingMetricAction action) {
+		super(context, Strategy.MEMORY, action);
 	}
 
 	@Override

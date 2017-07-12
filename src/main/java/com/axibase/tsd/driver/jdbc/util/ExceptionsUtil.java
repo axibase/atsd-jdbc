@@ -1,15 +1,17 @@
 package com.axibase.tsd.driver.jdbc.util;
 
-import java.sql.SQLException;
-
+import com.axibase.tsd.driver.jdbc.ext.AtsdMetricNotFoundException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
+import org.apache.commons.lang3.StringUtils;
+
+import java.sql.SQLException;
 
 public class ExceptionsUtil {
 	private ExceptionsUtil() {}
 
 	public static SQLException unboxException(SQLException exception) {
 		final Throwable cause = exception.getCause();
-		if (cause == null || !(cause instanceof RuntimeException)) {
+		if (!(cause instanceof RuntimeException)) {
 			return exception;
 		}
 		Throwable finalCause = exception;
@@ -19,7 +21,15 @@ public class ExceptionsUtil {
 				finalCause = cause;
 			}
 		}
-		SQLException result = new SQLException(exception.getMessage(), finalCause);
-		return result;
+
+		if (isMetricNotFoundException(cause.getMessage())) {
+			return new AtsdMetricNotFoundException(exception.getMessage(), finalCause);
+		} else {
+			return new SQLException(exception.getMessage(), finalCause);
+		}
+	}
+
+	public static boolean isMetricNotFoundException(String message) {
+		return StringUtils.startsWith(message, "Metric ") && StringUtils.endsWith(message, "not found");
 	}
 }

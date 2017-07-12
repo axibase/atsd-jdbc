@@ -14,15 +14,21 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.calcite.avatica.Meta;
+
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.util.UUID;
 
-import org.apache.calcite.avatica.Meta;
-
+@Getter
+@Setter
 public class StatementContext {
 	private SQLException exception;
 	private SQLWarning warning;
+	@Setter(AccessLevel.NONE)
 	private String queryId;
 	private int version;
 
@@ -40,46 +46,20 @@ public class StatementContext {
 		this.warning = warning;
 	}
 
-	public SQLException getException() {
-		return exception;
-	}
-
-	public void setException(SQLException exception) {
-		this.exception = exception;
-	}
-
 	public void addException(SQLException ex) {
-		if (this.exception != null)
+		if (this.exception != null) {
 			this.exception.setNextException(ex);
-		else
+		} else {
 			setException(ex);
-	}
-
-	public SQLWarning getWarning() {
-		return warning;
-	}
-
-	public void setWarning(SQLWarning warning) {
-		this.warning = warning;
+		}
 	}
 
 	public void addWarning(SQLWarning warn) {
-		if (this.warning != null)
+		if (this.warning != null) {
 			this.warning.setNextWarning(warn);
-		else
+		} else {
 			setWarning(warn);
-	}
-
-	public int getVersion() {
-		return version;
-	}
-
-	public void setVersion(int version) {
-		this.version = version;
-	}
-
-	public String getQueryId() {
-		return queryId;
+		}
 	}
 
 	public boolean isAbleToCancelAtsdQueries() {

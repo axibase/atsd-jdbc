@@ -350,8 +350,9 @@ public class AtsdMeta extends MetaImpl {
 		final int offset = (int) loffset;
 		log.trace("[fetch] statement: {} fetchMaxRowCount: {}, offset: {}", statementHandle.id, fetchMaxRowCount, offset);
 		IDataProvider provider = providerCache.get(statementHandle.id);
-		assert provider != null;
-		final ContentDescription contentDescription = provider.getContentDescription();
+		if (provider == null) {
+			throw new MissingResultsException(statementHandle);
+		}
 		final IStoreStrategy strategy = provider.getStrategy();
 		final ContentMetadata contentMetadata = metaCache.get(statementHandle.id);
 		if (contentMetadata == null) {
@@ -442,7 +443,7 @@ public class AtsdMeta extends MetaImpl {
 
 	private AtsdMetaResultSets.AtsdMetaTable generateDefaultMetaTable() {
 		return new AtsdMetaResultSets.AtsdMetaTable(atsdConnectionInfo.catalog(), atsdConnectionInfo.schema(),
-				DriverConstants.DEFAULT_TABLE_NAME, "TABLE", "SELECT metric, entity, tags.collector, " +
+				DEFAULT_TABLE_NAME, "TABLE", "SELECT metric, entity, tags.collector, " +
 				"tags.host, datetime, time, value FROM atsd_series WHERE metric = 'gc_time_percent' " +
 				"AND entity = 'atsd' AND datetime >= now - 5*MINUTE ORDER BY datetime DESC LIMIT 10");
 	}
@@ -471,13 +472,13 @@ public class AtsdMeta extends MetaImpl {
 
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo) {
 		final List<Object> metricList = new ArrayList<>();
-		final Set<String> tables = connectionInfo.tables();
-		if (!tables.isEmpty()) {
-			log.trace("[receiveTables] tables: {}", tables);
-			if (tables.contains(DEFAULT_TABLE_NAME)) {
+		final String tables = connectionInfo.tables();
+		if (StringUtils.isNotBlank(tables)) {
+			final String[] metricMasks = tables.split(",");
+			if (containsAtsdSeriesTable(metricMasks)) {
 				metricList.add(generateDefaultMetaTable());
 			}
-			final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), StringUtils.join(tables, ','));
+			final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks);
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.readInfo();
 				final Metric[] metrics = JsonMappingUtil.mapToMetrics(metricsInputStream);
@@ -493,10 +494,21 @@ public class AtsdMeta extends MetaImpl {
 		return metricList;
 	}
 
+	static boolean containsAtsdSeriesTable(String[] metricMasks) {
+		for (String metricMask : metricMasks) {
+			if (DEFAULT_TABLE_NAME.equals(metricMask) || (metricMask.endsWith("*")
+					&& DEFAULT_TABLE_NAME.startsWith(StringUtils.substring(metricMask, 0, -1)))) {
+				return true;
+			}
+
+		}
+		return false;
+	}
+
 	@SneakyThrows(UnsupportedEncodingException.class)
-	private String prepareUrlWithMetricExpression(String metricEndpoint, String metricMask) {
+	private String prepareUrlWithMetricExpression(String metricEndpoint, String[] metricMasks) {
 		StringBuilder expressionBuilder = new StringBuilder();
-		for (String mask : metricMask.split(",")) {
+		for (String mask : metricMasks) {
 			if (expressionBuilder.length() > 0) {
 				expressionBuilder.append(" or ");
 			}
@@ -562,7 +574,7 @@ public class AtsdMeta extends MetaImpl {
 					columnData.add(createColumnMetaData(column, tablePattern, position));
 				}
 			}
-			if (!DriverConstants.DEFAULT_TABLE_NAME.equals(tablePattern)) {
+			if (!DEFAULT_TABLE_NAME.equals(tablePattern)) {
 				position = DefaultColumn.values().length + 1;
 				for (String tag : getTags(tablePattern)) {
 					columnData.add(createColumnMetaData(new TagColumn(tag), tablePattern, position));

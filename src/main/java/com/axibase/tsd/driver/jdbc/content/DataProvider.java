@@ -116,7 +116,8 @@ public class DataProvider implements IDataProvider {
 	}
 
 	private IStoreStrategy defineStrategy() {
-		return StrategyFactory.create(StrategyFactory.findClassByName(this.contentDescription.getInfo().strategy()), this.context);
+		final AtsdConnectionInfo info = this.contentDescription.getInfo();
+		return StrategyFactory.create(StrategyFactory.findClassByName(info.strategy()), this.context, info.missingMetric());
 	}
 
 }

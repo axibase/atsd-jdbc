@@ -14,17 +14,21 @@
 */
 package com.axibase.tsd.driver.jdbc.strategies;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.intf.IConsumer;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import org.apache.calcite.avatica.ColumnMetaData;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public abstract class AbstractStrategy implements IStoreStrategy {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AbstractStrategy.class);
@@ -34,11 +38,11 @@ public abstract class AbstractStrategy implements IStoreStrategy {
 	protected long position;
 	protected InputStream inputStream;
 
-	protected AbstractStrategy(StatementContext context, Strategy strategy) {
+	protected AbstractStrategy(StatementContext context, Strategy strategy, OnMissingMetricAction action) {
 		this.status = new StrategyStatus();
 		this.status.setInProgress(true);
 		this.position = 0;
-		this.consumer = new Consumer(context, status, strategy.getSource());
+		this.consumer = new Consumer(context, status, strategy.getSource(), action);
 	}
 
 	@Override
