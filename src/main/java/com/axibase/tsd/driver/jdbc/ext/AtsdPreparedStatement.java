@@ -79,7 +79,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		final List<TypedValue> list = new ArrayList<>(parameters.values());
 		if (logger.isDebugEnabled()) {
 			for (TypedValue tv : list) {
-				logger.debug("[TypedValue] {}", tv.value);
+				logger.debug("[TypedValue] type: {} value: {}", tv.type, tv.value);
 			}
 		}
 		return list;

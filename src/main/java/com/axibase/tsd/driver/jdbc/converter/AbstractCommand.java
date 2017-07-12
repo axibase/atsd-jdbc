@@ -37,6 +37,13 @@ abstract class AbstractCommand {
         tags.put(name, value);
     }
 
+    public void addTags(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            return;
+        }
+        tags.putAll(map);
+    }
+
     protected void validate() {
         if (StringUtils.isBlank(entity)) {
             throw new IllegalArgumentException("Entity not defined");

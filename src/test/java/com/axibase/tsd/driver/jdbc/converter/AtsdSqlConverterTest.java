@@ -32,6 +32,22 @@ public class AtsdSqlConverterTest {
         expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:unit=\"Celcius\" m:temperature=24.5\n";
         Assert.assertEquals(expected, command);
 
+        sql = "INSERT INTO temperature (entity, datetime, value, text, tags)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
+                "'unit=Celcius')";
+
+        command = converter.convertToCommand(sql, Collections.<Object>singletonList(24.5));
+        Assert.assertEquals(expected, command);
+
+        sql = "INSERT INTO temperature (entity, datetime, value, text, tags)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
+                "'unit1=Celcius;unit2=test')";
+
+        command = converter.convertToCommand(sql, Collections.<Object>singletonList(24.5));
+        expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:unit1=\"Celcius\" t:unit2=\"test\" m:temperature=24.5\n";
+        Assert.assertEquals(expected, command);
+
+        sql = "INSERT INTO temperature (entity, datetime, value, text, tags)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
+                "'unit=Celcius')";
+
         List<List<Object>> valuesBatch = new ArrayList<>();
         valuesBatch.add(Collections.<Object>singletonList(14.5));
         valuesBatch.add(Collections.<Object>singletonList(34.5));

@@ -140,6 +140,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
+	@SneakyThrows(SQLDataException.class)
 	public ExecuteResult execute(StatementHandle statementHandle, List<TypedValue> parameterValues, int maxRowsInFirstFrame) throws NoSuchStatementException {
 		if (log.isTraceEnabled()) {
 			log.trace("[execute] maxRowsInFirstFrame: {} parameters: {} handle: {}", maxRowsInFirstFrame, parameterValues.size(),
@@ -149,9 +150,9 @@ public class AtsdMeta extends MetaImpl {
 		final String query = substitutePlaceholders(getSql(statement), parameterValues);
 		final StatementType statementType = statement.getStatementType();
 		try {
-            IDataProvider provider = createDataProvider(statementHandle, query, statementType);
-            final int timeout = getQueryTimeout(statement);
-            final ExecuteResult result;
+			IDataProvider provider = createDataProvider(statementHandle, query, statementType);
+			final int timeout = getQueryTimeout(statement);
+			final ExecuteResult result;
 			if (SELECT == statementType) {
 				final int maxRows = getMaxRows(statement);
 				provider.fetchData(maxRows, timeout);
@@ -167,6 +168,9 @@ public class AtsdMeta extends MetaImpl {
 				result = new ExecuteResult(resultSets);
 			}
 			return result;
+		} catch (SQLDataException e) {
+			log.error("[execute] error", e.getMessage());
+			throw e;
 		} catch (final RuntimeException e) {
 			log.error("[execute] error", e);
 			throw e;
@@ -201,6 +205,8 @@ public class AtsdMeta extends MetaImpl {
 					buffer.append('\'').append(TIME_FORMATTER.get().format((Time) value)).append('\'');
 				} else if (value instanceof Timestamp) {
 					buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format((Timestamp) value)).append('\'');
+				} else if (value == null) {
+					buffer.append("NULL");
 				}
 
 				buffer.append(parts[position]);
