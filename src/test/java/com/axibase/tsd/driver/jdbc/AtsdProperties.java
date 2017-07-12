@@ -14,12 +14,11 @@
 */
 package com.axibase.tsd.driver.jdbc;
 
-import java.sql.DriverManager;
-
+import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import java.sql.DriverManager;
 
 import static com.axibase.tsd.driver.jdbc.TestConstants.*;
 
@@ -40,7 +39,7 @@ public class AtsdProperties {
 		LOGIN_NAME = System.getProperty("axibase.tsd.driver.jdbc.username");
 		LOGIN_PASSWORD = System.getProperty("axibase.tsd.driver.jdbc.password");
 		HTTP_ATSD_URL = System.getProperty("axibase.tsd.driver.jdbc.url");
-		final StringBuilder sb = new StringBuilder(JDBC_ATSD_URL_PREFIX).append(HTTP_ATSD_URL);
+		final StringBuilder sb = new StringBuilder(DriverConstants.CONNECT_URL_PREFIX).append(HTTP_ATSD_URL);
 		if (TRUST_URL != null) {
 			sb.append(TRUST_URL ? TRUST_PARAMETER_IN_QUERY : UNTRUST_PARAMETER_IN_QUERY);
 		}

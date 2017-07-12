@@ -113,13 +113,14 @@ public class AtsdDriver extends UnregisteredDriver {
 		final String urlSuffix = url.substring(CONNECT_URL_PREFIX.length());
 		info.setProperty("url", urlSuffix);
 		info.setProperty(AvaticaConnection.NUM_EXECUTE_RETRIES_KEY, RETRIES_NUMBER);
-		info.setProperty("timeZone", "UTC");
 
 		final int afterSeparator = urlSuffix.indexOf(CONNECTION_STRING_PARAM_SEPARATOR) + 1;
 		if (afterSeparator  < urlSuffix.length()) {
 			info = ConnectStringParser.parse(urlSuffix.substring(afterSeparator), info);
 		}
-
+		if (new AtsdConnectionInfo(info).timestampTz()) {
+			info.setProperty("timeZone", "UTC");
+		}
 		final AtsdFactory atsdFactory = new AtsdFactory();
 		final AvaticaConnection connection = atsdFactory.newConnection(this, atsdFactory, url, info);
 		AtsdDatabaseMetaData atsdDatabaseMetaData = (AtsdDatabaseMetaData) connection.getMetaData();

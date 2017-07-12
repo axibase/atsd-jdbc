@@ -21,7 +21,6 @@ public final class TestConstants {
 	public static final String SELECT_LIMIT_1000 = " LIMIT 1000";
 	public static final String SELECT_LIMIT_100000 = " LIMIT 100000";
 	public static final String WHERE_CLAUSE = " WHERE entity = ?";
-	public static final String JDBC_ATSD_URL_PREFIX = "jdbc:axibase:atsd:";
 	public static final String PARAM_SEPARATOR = ";";
 	public static final String STRATEGY_FILE_PARAMETER = "strategy=file";
 	public static final String STRATEGY_STREAM_PARAMETER = "strategy=stream";
