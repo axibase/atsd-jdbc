@@ -5,25 +5,24 @@
 
 # JDBC driver
 
-The JDBC driver provides a convenient way for Java applications to query the Axibase Time Series Database via SQL.
+The JDBC driver provides a convenient way for Java applications to retrieve and store time-series data in the Axibase Time Series Database using SQL.
 
 Refer to [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for query syntax and examples.
 
 ## JDBC URL
 
-The ATSD JDBC driver prefix is `jdbc:axibase:atsd:`, followed by the ATSD host and port, optional catalog, and optional driver properties.
+The ATSD JDBC driver prefix is `jdbc:atsd:`, followed by the ATSD host and port, optional catalog and driver properties.
 
 ```
-jdbc:axibase:atsd:atsd_hostname:8443
-jdbc:axibase:atsd:atsd_hostname:8088;secure=false
+jdbc:atsd://hostname:port
+jdbc:atsd://10.102.0.6:8443;tables=city*
 ```
 
-Prior to version 1.3.1 the driver prefix had to be followed by the ATSD SQL endpoint URL.
+Prior to version 1.3.2 the driver prefix had to be followed by the ATSD SQL endpoint URL.
 
-Legacy format prior to driver version 1.3.1:
+Legacy format prior to driver version 1.3.2 **(deprecated)**:
 
 ```
-jdbc:axibase:atsd:http://atsd_hostname:8088/api/sql;catalog=atsd
 jdbc:axibase:atsd:https://atsd_hostname:8443/api/sql;trustServerCertificate=true
 ```
 
@@ -44,7 +43,7 @@ This project is released under the [Apache 2.0 License](http://www.apache.org/li
 | 14540 | 1.2.16 |
 | 16130 | 1.2.20 |
 | 16620 | 1.3.0  |
-| 16643 | 1.3.1  |
+| 16643 | 1.3.2  |
 
 The above table specifies a range of compatible driver versions for a given database version.
 
@@ -59,12 +58,14 @@ For example, database version 14150 supports all driver versions between 1.2.10 
 | connectTimeout | number | 1.2.7+ | 5 | Connection timeout, in seconds. |
 | readTimeout | number | 1.2.7+ | 0 | Read I/O timeout, in seconds. |
 | strategy | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
-| tables | comma-separated list | 1.2.21+ | | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
+| tables | comma-separated list | 1.2.21+ |  | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
 | expandTags | boolean | 1.2.21+ | `true` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
 | metaColumns | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
+| timestamptz | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the timezone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local timezone. |
+| missingMetric | `error|warning|none` | 1.3.2+ | `error` | Control the behavior when the referenced metric doesn't exist. If 'error', the driver will raise an `AtsdMetricNotFoundException`. If `warning`, an SQL Warning will be returned without errors. If `none`, no error or warning will be created. |
 
-Properties can be included as part of the JDBC URL using a semicolon as a separator, for example: `jdbc:axibase:atsd:10.102.0.6:8443;tables=infla*;expandTags=false`.
+Properties can be included as part of the JDBC URL using a semicolon as a separator, for example: `jdbc:atsd://10.102.0.6:8443;tables=infla*;expandTags=true`.
 
 ### Deprecated Properties
 
@@ -100,7 +101,7 @@ Add dependency to `pom.xml` in your project. The JDBC driver will be imported au
 <dependency>
     <groupId>com.axibase</groupId>
     <artifactId>atsd-jdbc</artifactId>
-    <version>1.3.1</version>
+    <version>1.3.2</version>
 </dependency>
 ```
 
@@ -112,11 +113,11 @@ $ mvn clean package -DskipTests=true
 
 ### Classpath
 
-Download the driver [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.1/atsd-jdbc-1.3.1-DEPS.jar) with dependencies and add it to the classpath of your application.
+Download the driver [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.2/atsd-jdbc-1.3.2-DEPS.jar) with dependencies and add it to the classpath of your application.
 
 ```
-* Unix: java -cp "atsd-jdbc-1.3.1-DEPS.jar:lib/*" your.package.MainClass
-* Windows java -cp "atsd-jdbc-1.3.1-DEPS.jar;lib/*" your.package.MainClass
+* Unix: java -cp "atsd-jdbc-1.3.2-DEPS.jar:lib/*" your.package.MainClass
+* Windows java -cp "atsd-jdbc-1.3.2-DEPS.jar;lib/*" your.package.MainClass
 ```
 
 ### Database Tools
@@ -151,7 +152,7 @@ To execute a query load the driver class, open a connection, create a SQL statem
 
 ```java
     Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-    Connection connection = DriverManager.getConnection("jdbc:axibase:atsd:10.102.0.5:8443", "user-1", "my-pwd!");
+    Connection connection = DriverManager.getConnection("jdbc:atsd://10.102.0.5:8443", "user-1", "my-pwd!");
     String query = "SELECT value, datetime FROM cpu_busy WHERE entity = 'nurswgvml007' LIMIT 1";
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(query);
@@ -210,7 +211,7 @@ public class TestQuery {
         String username = args[2];
         String password = args[3];
         
-        String jdbcUrl = "jdbc:axibase:atsd:" + host + ":" port;
+        String jdbcUrl = "jdbc:atsd://" + host + ":" port;
 
         String query = "SELECT * FROM mpstat.cpu_busy WHERE datetime > now - 1 * HOUR LIMIT 5";
         Connection connection = null;
@@ -251,7 +252,7 @@ public class TestQuery {
     String port = args[1];
     String username = args[2];
     String password = args[3];
-    String jdbcUrl = "jdbc:axibase:atsd:" + host + ":" port;
+    String jdbcUrl = "jdbc:atsd://" + host + ":" port;
     
     String query = "SELECT entity, datetime, value, tags.mount_point, tags.file_system "
             + "FROM df.disk_used_percent WHERE entity = 'NURSWGHBS001' AND datetime > now - 1 * HOUR LIMIT 10";
@@ -305,7 +306,7 @@ The following example shows how to extract metadata from the database:
     String username = args[2];
     String password = args[3];
         
-    String jdbcUrl = "jdbc:axibase:atsd:" + host + ":" port;
+    String jdbcUrl = "jdbc:atsd://" + host + ":" port;
 
     try (Connection connection = DriverManager.getConnection(jdbcUrl, userName, password)) {
 
@@ -357,7 +358,7 @@ Results:
 Product Name:   	Axibase
 Product Version:	Axibase Time Series Database, <ATSD_EDITION>, Revision: <ATSD_REVISION_NUMBER>
 Driver Name:    	ATSD JDBC driver
-Driver Version: 	1.3.1
+Driver Version: 	1.3.2
 
 TypeInfo:
 	Name:bigint 	    CS: false 	Type: -5 	Precision: 19
