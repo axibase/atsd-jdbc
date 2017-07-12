@@ -25,6 +25,6 @@ public class DbMetadataUtils {
 	}
 
 	public static String getSupportedTimeFunctions() {
-		return "date_parse,date_format,period";
+		return "DATE_PARSE,DATE_FORMAT,CURRENT_TIMESTAMP,DBTIMEZONE,PERIOD";
 	}
 }
