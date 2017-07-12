@@ -2,9 +2,6 @@ package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Properties;
@@ -17,12 +14,10 @@ public class AtsdConnectionInfo {
 
 	private final Properties info;
 	private final HostAndCatalog hostAndCatalog;
-	private final Set<String> tables;
 
 	public AtsdConnectionInfo(Properties info) {
 		this.info = info;
 		this.hostAndCatalog = new HostAndCatalog(StringUtils.substringBefore(url(), CONNECTION_STRING_PARAM_SEPARATOR));
-		this.tables = getTables();
 	}
 
 	public String host() {
@@ -73,8 +68,8 @@ public class AtsdConnectionInfo {
 		return result == null ? (String) property.defaultValue() : result;
 	}
 
-	public Set<String> tables() {
-		return tables;
+	public String tables() {
+		return info.getProperty(tables.camelName());
 	}
 
 	public String schema() {
@@ -115,23 +110,6 @@ public class AtsdConnectionInfo {
 	private String propertyOrEmpty(String key) {
 		final String result = (String) info.get(key);
 		return result == null ? "" : result;
-	}
-
-	private Set<String> getTables() {
-		final String value = info.getProperty(AtsdDriverConnectionProperties.tables.camelName());
-		if (value == null) {
-			return Collections.emptySet();
-		}
-
-		String[] tables = StringUtils.split(value, ',');
-		Set<String> result = new LinkedHashSet<>();
-		for (String table : tables) {
-			table = StringUtils.trim(StringUtils.removeAll(table, "[\"']"));
-			if (StringUtils.isNotEmpty(table)) {
-				result.add(table);
-			}
-		}
-		return result;
 	}
 
 	private static final class HostAndCatalog {

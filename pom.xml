@@ -66,7 +66,7 @@
 		<sonar-maven-plugin.version>3.2</sonar-maven-plugin.version>
 		<locale>en_US</locale>
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
-		<maven.build.timestamp.format>E dd-MM-yyyy HH:mm:ss z</maven.build.timestamp.format>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<version.major>14126</version.major>
 		<version.minor>0</version.minor>
@@ -129,6 +129,18 @@
 					<target>${java.target.version}</target>
 					<verbose>false</verbose>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.jcabi</groupId>
+				<artifactId>jcabi-maven-plugin</artifactId>
+				<version>0.14.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>ajc</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>ru.concerteza.buildnumber</groupId>
@@ -337,6 +349,23 @@
 				<artifactId>coveralls-maven-plugin</artifactId>
 				<version>${coveralls-maven-plugin.version}</version>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>buildnumber-maven-plugin</artifactId>
+				<version>1.4</version>
+				<executions>
+					<execution>
+						<phase>validate</phase>
+						<goals>
+							<goal>create</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<doCheck>false</doCheck>
+					<doUpdate>false</doUpdate>
+				</configuration>
+			</plugin>
 		</plugins>
 		<resources>
 			<resource>
@@ -513,6 +542,28 @@
 			<version>${powermock.version}</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>com.jcabi</groupId>
+			<artifactId>jcabi-log</artifactId>
+			<version>0.17.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.jcabi</groupId>
+			<artifactId>jcabi-aspects</artifactId>
+			<version>0.22.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjrt</artifactId>
+			<version>1.6.12</version>
+			<scope>runtime</scope>
+		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>mysql</groupId>-->
+			<!--<artifactId>mysql-connector-java</artifactId>-->
+			<!--<version>5.1.6</version>-->
+		<!--</dependency>-->
 	</dependencies>
 	<profiles>
 		<profile>
@@ -566,13 +617,15 @@
 								<manifestEntries>
 									<Build-Source-Version>${java.source.version}</Build-Source-Version>
 									<Build-Target-Version>${java.target.version}</Build-Target-Version>
+									<Build-Time>${maven.build.timestamp}</Build-Time>
+									<Build-Revision>${buildNumber}</Build-Revision>
 									<Class-Path>.</Class-Path>
 								</manifestEntries>
 							</archive>
 							<descriptors>
 								<descriptor>${project.basedir}/src/main/assembly/assembly.xml</descriptor>
 							</descriptors>
-							<finalName>${project.artifactId}-${project.version}-DEPS</finalName>
+							<finalName>${project.artifactId}-${project.version}-DEPS-${maven.build.timestamp}</finalName>
 							<appendAssemblyId>false</appendAssemblyId>
 						</configuration>
 						<executions>
@@ -615,12 +668,12 @@
 			</build>
 		</profile>
 	</profiles>
-	<distributionManagement>
-		<repository>
-			<id>sonatype</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-		</repository>
-	</distributionManagement>
+	<!--<distributionManagement>-->
+	<!--<repository>-->
+	<!--<id>sonatype</id>-->
+	<!--<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>-->
+	<!--</repository>-->
+	<!--</distributionManagement>-->
 	<developers>
 		<developer>
 			<id>raipc</id>
