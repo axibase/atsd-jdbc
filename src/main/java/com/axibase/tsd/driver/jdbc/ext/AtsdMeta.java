@@ -333,7 +333,7 @@ public class AtsdMeta extends MetaImpl {
 			String content = AtsdSqlConverterFactory.getConverter(statementType).convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(content);
 			long updateCount = provider.sendData(timeout);
-			ExecuteBatchResult result = new ExecuteBatchResult(new long[] {updateCount});
+			ExecuteBatchResult result = new ExecuteBatchResult(generateExecuteBatchResult(parameterValueBatch.size(), updateCount == 0 ? 0 : 1));
 			return result;
 		} catch (final RuntimeException e) {
 			log.error("[executeBatch] error", e);
@@ -525,8 +525,8 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
-	public MetaResultSet getSchemas(ConnectionHandle ch, String catalog, Pat schemaPattern) {
-		log.debug("[getSchemas] connection: {} catalog: {} schemaPattern: {} ", ch.id, catalog, schemaPattern);
+	public MetaResultSet getSchemas(ConnectionHandle connectionHandle, String catalog, Pat schemaPattern) {
+		log.debug("[getSchemas] connection: {} catalog: {} schemaPattern: {} ", connectionHandle.id, catalog, schemaPattern);
 		return createEmptyResultSet(MetaSchema.class);
 	}
 
@@ -752,6 +752,12 @@ public class AtsdMeta extends MetaImpl {
 		}
 
 		log.debug("[preparedValues] {}", result);
+		return result;
+	}
+
+	private static long[] generateExecuteBatchResult(int size, long value) {
+		long[] result = new long[size];
+		Arrays.fill(result, value);
 		return result;
 	}
 

@@ -174,4 +174,21 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 			}
 		}
 	}
+
+	@Test
+	public void testExecuteBatch() throws SQLException {
+		try(PreparedStatement stmt = connection.prepareStatement(INSERT)) {
+			final long time = System.currentTimeMillis();
+			for (int i=0;i<3;i++) {
+				stmt.setLong(1, time + i);
+				stmt.setString(2, "entity_" + i);
+				stmt.setDouble(3, i);
+				stmt.setString(4, null);
+				stmt.addBatch();
+			}
+			int[] res = stmt.executeBatch();
+			Assert.assertEquals(3, res.length);
+			Assert.assertArrayEquals(new int[] {1,1,1}, res);
+		}
+	}
 }
