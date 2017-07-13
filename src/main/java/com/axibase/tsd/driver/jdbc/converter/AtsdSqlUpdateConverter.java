@@ -25,7 +25,7 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         final int end = StringUtils.indexOfIgnoreCase(sql, WHERE);
         StringBuilder buffer = new StringBuilder();
         final String tableName = StringUtils.replace(sql.substring(UPDATE.length(), begin - SET.length()), "'", "\"");
-        buffer.append(UPDATE).append(tableName).append(" ").append(SET);
+        buffer.append(UPDATE).append(tableName).append(' ').append(SET);
         String[] pairs = StringUtils.split(sql.substring(begin, end), ',');
         String name;
         String value;
@@ -48,7 +48,7 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
             buffer.append('=').append(value);
         }
 
-        buffer.append(" ").append(WHERE);
+        buffer.append(' ').append(WHERE);
         String tmp = sql.substring(end + WHERE.length());
         pairs = tmp.split("(?i)( and )");
         for (int i = 0; i < pairs.length; i++) {
