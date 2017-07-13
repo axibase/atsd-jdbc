@@ -192,22 +192,26 @@ public class AtsdMeta extends MetaImpl {
 			for (TypedValue parameterValue : parameterValues) {
 				++position;
 				Object value = parameterValue.value;
-				switch(parameterValue.type) {
-					case STRING:
-						buffer.append('\'').append(value).append('\'');
-						break;
-					case JAVA_SQL_DATE:
-						buffer.append('\'').append(DATE_FORMATTER.get().format(value)).append('\'');
-						break;
-					case JAVA_SQL_TIME:
-						buffer.append('\'').append(TIME_FORMATTER.get().format(value)).append('\'');
-						break;
-					case JAVA_SQL_TIMESTAMP:
-					case JAVA_UTIL_DATE:
-						buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
-						break;
-					default:
-						buffer.append(value);
+				if (value == null) {
+					buffer.append("NULL");
+				} else {
+					switch (parameterValue.type) {
+						case STRING:
+							buffer.append('\'').append(value).append('\'');
+							break;
+						case JAVA_SQL_DATE:
+							buffer.append('\'').append(DATE_FORMATTER.get().format(value)).append('\'');
+							break;
+						case JAVA_SQL_TIME:
+							buffer.append('\'').append(TIME_FORMATTER.get().format(value)).append('\'');
+							break;
+						case JAVA_SQL_TIMESTAMP:
+						case JAVA_UTIL_DATE:
+							buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
+							break;
+						default:
+							buffer.append(value);
+					}
 				}
 				buffer.append(parts[position]);
 			}
