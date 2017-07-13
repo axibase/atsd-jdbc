@@ -220,7 +220,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setTime(int parameterIndex, Time value, Calendar calendar) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.JAVA_SQL_TIME, value));
+		parameters.put(parameterIndex, TypedValue.ofJdbc(ColumnMetaData.Rep.JAVA_SQL_TIME, value, calendar));
 	}
 
 	@Override
@@ -230,7 +230,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp value, Calendar calendar) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.JAVA_SQL_TIMESTAMP, value));
+		parameters.put(parameterIndex, TypedValue.ofJdbc(ColumnMetaData.Rep.JAVA_SQL_TIMESTAMP, value, calendar));
 	}
 
 	@Override
