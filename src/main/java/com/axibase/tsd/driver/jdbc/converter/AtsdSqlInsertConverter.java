@@ -12,6 +12,10 @@ import org.apache.commons.lang3.StringUtils;
 
 class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
 
+    AtsdSqlInsertConverter(boolean timestampTz) {
+        super(timestampTz);
+    }
+
     @Override
     protected String prepareSql(String sql) {
         logger.debug("[prepareSql] in: {}", sql);

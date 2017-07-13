@@ -159,7 +159,7 @@ public class AtsdMeta extends MetaImpl {
 				final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 				result = new ExecuteResult(contentMetadata.getList());
 			} else {
-				String content = AtsdSqlConverterFactory.getConverter(statementType).convertToCommand(query);
+				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
 				provider.getContentDescription().setPostContent(content);
 				long updateCount = provider.sendData(timeout);
 
@@ -264,7 +264,7 @@ public class AtsdMeta extends MetaImpl {
 				provider.fetchData(limit, statement.getQueryTimeout());
 				updateCount = -1;
 			} else {
-				String content = AtsdSqlConverterFactory.getConverter(statementType).convertToCommand(query);
+				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
 				provider.getContentDescription().setPostContent(content);
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
@@ -301,7 +301,7 @@ public class AtsdMeta extends MetaImpl {
 					throw new IllegalArgumentException("Invalid statement type: " + statementType);
 				}
 				final IDataProvider provider = createDataProvider(statementHandle, query, statementType);
-				String content = AtsdSqlConverterFactory.getConverter(statementType).convertToCommand(query);
+				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
 				provider.getContentDescription().setPostContent(content);
 				long updateCount = provider.sendData(statement.getQueryTimeout());
 				updateCounts[count++] = updateCount;
@@ -330,7 +330,7 @@ public class AtsdMeta extends MetaImpl {
 		try {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
             final int timeout = getQueryTimeout(statement);
-			String content = AtsdSqlConverterFactory.getConverter(statementType).convertBatchToCommands(query, preparedValueBatch);
+			String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(content);
 			long updateCount = provider.sendData(timeout);
 			ExecuteBatchResult result = new ExecuteBatchResult(generateExecuteBatchResult(parameterValueBatch.size(), updateCount == 0 ? 0 : 1));

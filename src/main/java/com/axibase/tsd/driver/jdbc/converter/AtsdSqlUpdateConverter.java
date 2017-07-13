@@ -18,6 +18,10 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
     private static final String SET = "SET ";
     private static final String WHERE = "WHERE ";
 
+    AtsdSqlUpdateConverter(boolean timestampTz) {
+        super(timestampTz);
+    }
+
     @Override
     protected String prepareSql(String sql) {
         logger.debug("[prepareSql] in: {}", sql);

@@ -7,10 +7,10 @@ public final class AtsdSqlConverterFactory {
     private AtsdSqlConverterFactory() {
     }
 
-    public static AtsdSqlConverter getConverter(StatementType statementType) {
+    public static AtsdSqlConverter getConverter(StatementType statementType, boolean timestampTz) {
         switch (statementType) {
-            case INSERT: return new AtsdSqlInsertConverter();
-            case UPDATE: return new AtsdSqlUpdateConverter();
+            case INSERT: return new AtsdSqlInsertConverter(timestampTz);
+            case UPDATE: return new AtsdSqlUpdateConverter(timestampTz);
             default: throw new IllegalArgumentException("Illegal statement type: " + statementType);
         }
     }

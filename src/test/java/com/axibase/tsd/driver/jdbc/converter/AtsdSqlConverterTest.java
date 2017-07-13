@@ -1,11 +1,17 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import org.apache.calcite.avatica.Meta;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +19,7 @@ public class AtsdSqlConverterTest {
 
     @Test
     public void testConvertInsertToSeries() throws SQLException {
-        AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT);
+        AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT, false);
         String sql = "INSERT INTO test.temperature (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', 24.5, null, " +
                 "'Celcius')";
 
@@ -78,7 +84,7 @@ public class AtsdSqlConverterTest {
 
     @Test
     public void testConverUpdateToSeries() throws SQLException {
-        AtsdSqlUpdateConverter converter = (AtsdSqlUpdateConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.UPDATE);
+        AtsdSqlUpdateConverter converter = (AtsdSqlUpdateConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.UPDATE, false);
         String sql = "update test.temperature set datetime='2017-06-21T00:00:00Z', value=24.5, tags.unit='celcius' where entity='sensor-1'";
         String command = converter.convertToCommand(sql);
         String expected = "series e:sensor-1 d:2017-06-21T00:00:00Z t:unit=\"celcius\" m:test.temperature=24.5\n";
@@ -121,7 +127,7 @@ public class AtsdSqlConverterTest {
 
     @Test
     public void testConvertInsertToSeriesWithEscapedTableName() throws SQLException {
-        AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT);
+        AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT, false);
         String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', 24.5, null, " +
                 "'Celcius')";
 
@@ -132,10 +138,29 @@ public class AtsdSqlConverterTest {
 
     @Test
     public void testConvertUpdateToSeriesWithEscapedTableName() throws SQLException {
-        AtsdSqlUpdateConverter converter = (AtsdSqlUpdateConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.UPDATE);
+        AtsdSqlUpdateConverter converter = (AtsdSqlUpdateConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.UPDATE, false);
         String sql = "update 'test.temperature' set datetime='2017-06-21T00:00:00Z', value=24.5, tags.unit='celcius' where entity='sensor-1'";
         String command = converter.convertToCommand(sql);
         String expected = "series e:sensor-1 d:2017-06-21T00:00:00Z t:unit=\"celcius\" m:test.temperature=24.5\n";
+        Assert.assertEquals(expected, command);
+    }
+
+    @Test
+    public void testConvertInsertToSeriesWithTimestamp() throws SQLException, ParseException {
+        final String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-07-12 04:05:00.34567', " +
+                "24.5, null, 'Celcius')";
+
+        AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT, true);
+        String command = converter.convertToCommand(sql);
+        String expected = "series e:sensor-01 d:2017-07-12T04:05:00.345Z t:unit=\"Celcius\" m:test.temperature=24.5\n";
+        Assert.assertEquals(expected, command);
+
+        converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT, false);
+        command = converter.convertToCommand(sql);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        Date date = sdf.parse("2017-07-12T04:05:00.345Z");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        expected = "series e:sensor-01 d:" + sdf.format(date) + " t:unit=\"Celcius\" m:test.temperature=24.5\n";
         Assert.assertEquals(expected, command);
     }
 

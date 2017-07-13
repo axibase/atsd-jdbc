@@ -3,12 +3,16 @@ package com.axibase.tsd.driver.jdbc.converter;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.calcite.avatica.com.fasterxml.jackson.databind.util.ISO8601Utils;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.sql.SqlCall;
@@ -31,7 +35,8 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     protected final LoggingFacade logger = LoggingFacade.getLogger(getClass());
 
-    private static final Pattern DATETIME_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z");
+    private static final Pattern DATETIME_ISO_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$");
+    private static final Pattern TIMESTAMP_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?$");
     private static final char TAGS_DELIMETER = ';';
 
     private static final String ENTITY = "entity";
@@ -44,6 +49,11 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     protected static final String PREFIX_TAGS = "tags.";
 
     protected T rootNode;
+    private final boolean timestampTz;
+
+    protected AtsdSqlConverter(boolean timestampTz) {
+        this.timestampTz = timestampTz;
+    }
 
     public String convertToCommand(String sql) throws SQLException {
         return convertToCommand(sql, null);
@@ -103,7 +113,8 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         logger.trace("[createSeriesCommand] columnNames: {}", columnNames);
         final List<Object> values = getColumnValues(parameterValues);
         logger.trace("[createSeriesCommand] values: {}", values);
-        return DEFAULT_TABLE_NAME.equals(tableName) ? composeSeriesCommand(logger, columnNames, values) : composeSeriesCommand(logger, tableName, columnNames, values);
+        return DEFAULT_TABLE_NAME.equals(tableName) ? composeSeriesCommand(logger, columnNames, values, timestampTz) : composeSeriesCommand(logger, tableName,
+                columnNames, values, timestampTz);
     }
 
     private String createSeriesCommandBatch(List<List<Object>> parameterValueBatch) throws SQLDataException {
@@ -116,17 +127,18 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         StringBuilder buffer = new StringBuilder();
         if (DEFAULT_TABLE_NAME.equals(tableName)) {
             for (List<Object> values : valueBatch) {
-                buffer.append(composeSeriesCommand(logger, columnNames, values));
+                buffer.append(composeSeriesCommand(logger, columnNames, values, timestampTz));
             }
         } else {
             for (List<Object> values : valueBatch) {
-                buffer.append(composeSeriesCommand(logger, tableName, columnNames, values));
+                buffer.append(composeSeriesCommand(logger, tableName, columnNames, values, timestampTz));
             }
         }
         return buffer.toString();
     }
 
-    private static String composeSeriesCommand(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values)
+    private static String composeSeriesCommand(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values,
+                                               boolean timestampTz)
             throws SQLDataException {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
@@ -148,7 +160,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
             } else if (TIME.equalsIgnoreCase(columnName)) {
                 command.setTime(validate(value, Number.class).longValue());
             } else if (DATETIME.equalsIgnoreCase(columnName)) {
-                command.setDateTime(validateDateTime(value.toString()));
+                command.setDateTime(validateDateTime(value.toString(), timestampTz));
             } else if (VALUE.equalsIgnoreCase(columnName)) {
                 command.addValue(metricName, validate(value, Number.class).doubleValue());
             } else if (TEXT.equalsIgnoreCase(columnName)) {
@@ -164,7 +176,8 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         return command.compose();
     }
 
-    private static String composeSeriesCommand(LoggingFacade logger, final List<String> columnNames, final List<Object> values) throws SQLDataException {
+    private static String composeSeriesCommand(LoggingFacade logger, final List<String> columnNames, final List<Object> values, boolean timestampTz) throws
+            SQLDataException {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
                     String.format("Number of values [%d] does not match to number of columns [%d]",
@@ -187,7 +200,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
             } else if (TIME.equalsIgnoreCase(columnName)) {
                 command.setTime(validate(value, Number.class).longValue());
             } else if (DATETIME.equalsIgnoreCase(columnName)) {
-                command.setDateTime(validateDateTime(value.toString()));
+                command.setDateTime(validateDateTime(value.toString(), timestampTz));
             } else if (VALUE.equalsIgnoreCase(columnName)) {
                 if (metricName == null) {
                     metricValue = validate(value, Number.class).doubleValue();
@@ -274,12 +287,22 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                 + ", expected type: " + targetClass.getSimpleName());
     }
 
-    private static String validateDateTime(String value) throws SQLDataException {
-        Matcher matcher = DATETIME_PATTERN.matcher(value);
+    private static String validateDateTime(String value, boolean timestampTz) throws SQLDataException {
+        Matcher matcher = DATETIME_ISO_PATTERN.matcher(value);
         if (matcher.matches()) {
             return value;
         }
-        throw new SQLDataException("Invalid datetime value: " + value + ". Expected format: yyyy-MM-dd'T'HH:mm:ss[.SSS]'Z'");
+        matcher = TIMESTAMP_PATTERN.matcher(value);
+        if (matcher.matches()) {
+            final Timestamp timestamp = Timestamp.valueOf(value);
+            final Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(timestamp.getTime());
+            if (timestampTz) {
+                calendar.set(Calendar.ZONE_OFFSET, TimeZone.getTimeZone("UTC").getRawOffset());
+            }
+            return ISO8601Utils.format(calendar.getTime(), true);
+        }
+        throw new SQLDataException("Invalid datetime value: " + value + ". Expected formats: yyyy-MM-dd'T'HH:mm:ss[.SSS]'Z', yyyy-MM-dd HH:mm:ss[.fffffffff]");
     }
 
     private static Map<String, String> parseTags(String value) throws SQLDataException {
