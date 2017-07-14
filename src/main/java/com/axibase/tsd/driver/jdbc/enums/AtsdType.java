@@ -16,6 +16,12 @@ import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_FORMATTER;
 import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_SHORT_FORMATTER;
 
 public enum AtsdType {
+	BIGINT_DATA_TYPE("bigint", "bigint", Types.BIGINT, Rep.LONG, 19, 20, 0) {
+		@Override
+		protected Object readValueHelper(String cell) {
+			return Long.valueOf(cell);
+		}
+	},
 	BOOLEAN_DATA_TYPE("boolean", "boolean", Types.BOOLEAN, Rep.BOOLEAN, 1, 1, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
@@ -69,12 +75,6 @@ public enum AtsdType {
 			return cell.startsWith("\"") ? cell : new BigDecimal(cell);
 		}
 	},
-	LONG_DATA_TYPE("long", "long", Types.NUMERIC, Rep.NUMBER, 19, 20, 0) {
-		@Override
-		protected Object readValueHelper(String cell) {
-			return Long.valueOf(cell);
-		}
-	},
 	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 6, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
@@ -92,8 +92,7 @@ public enum AtsdType {
 			return cell;
 		}
 	},
-	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP,
-			"2016-01-01T00:00:00.000".length(), "2016-01-01T00:00:00.000".length(), 3) {
+	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP, 29, 29, 9) {
 		@Override
 		public String getLiteral(boolean isPrefix) {
 			return "'";
@@ -145,11 +144,13 @@ public enum AtsdType {
 	public final int maxPrecision;
 	public final int size;
 	public final int scale;
+	public final int typeCode;
 
 	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep rep, int maxPrecision, int size, int scale) {
 		this.originalType = atsdType;
 		this.sqlType = sqlType;
 		this.sqlTypeCode = sqlTypeCode;
+		this.typeCode = getTypeCode(sqlTypeCode);
 		this.rep = rep;
 		this.maxPrecision = maxPrecision;
 		this.size = size;
@@ -175,5 +176,13 @@ public enum AtsdType {
 
 	public String getLiteral(boolean isPrefix) {
 		return null;
+	}
+
+	private int getTypeCode(int sqlTypeCode) {
+		switch (sqlTypeCode) {
+			case Types.TIMESTAMP : return 11;
+			case Types.BIGINT : return Types.NUMERIC;
+			default: return sqlTypeCode;
+		}
 	}
 }

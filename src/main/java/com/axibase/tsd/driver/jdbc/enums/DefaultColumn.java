@@ -19,7 +19,7 @@ import lombok.Getter;
 
 @Getter
 public enum DefaultColumn implements MetadataColumnDefinition {
-	TIME("time", AtsdType.LONG_DATA_TYPE, 0, false),
+	TIME("time", AtsdType.BIGINT_DATA_TYPE, 0, false),
 	DATETIME("datetime", AtsdType.TIMESTAMP_DATA_TYPE, 0, false),
 	VALUE("value", AtsdType.FLOAT_DATA_TYPE, 0, false),
 	TEXT("text", AtsdType.STRING_DATA_TYPE, 1, false),

@@ -1,5 +1,6 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import java.sql.Types;
 import org.apache.calcite.avatica.MetaImpl;
 
@@ -37,9 +38,7 @@ public class AtsdMetaResultSets {
 				String tableSchem,
 				String tableName,
 				String columnName,
-				int dataType,
-				String typeName,
-				int columnSize,
+				AtsdType atsdType,
 				int numPrecRadix,
 				int nullable,
 				int ordinalPosition,
@@ -48,9 +47,9 @@ public class AtsdMetaResultSets {
 			this.tableSchem = tableSchem;
 			this.tableName = tableName;
 			this.columnName = columnName;
-			this.dataType = dataType;
-			this.typeName = typeName;
-			this.columnSize = columnSize;
+			this.dataType = atsdType.typeCode;
+			this.typeName = atsdType.sqlType;
+			this.columnSize = atsdType.size;
 			this.bufferLength = columnSize;
 			this.decimalDigits = getDecimalDigits(dataType);
 			this.numPrecRadix = numPrecRadix;
@@ -58,7 +57,7 @@ public class AtsdMetaResultSets {
 			this.charOctetLength = Types.VARCHAR == dataType ? columnSize : null;
 			this.ordinalPosition = ordinalPosition;
 			this.isNullable = isNullable;
-			this.sqlDataType = dataType;
+			this.sqlDataType = atsdType.sqlTypeCode;
 		}
 
 		private Integer getDecimalDigits(int dataType) {
