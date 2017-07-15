@@ -30,6 +30,7 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import com.axibase.tsd.driver.jdbc.util.WildcardsUtil;
 import lombok.SneakyThrows;
 import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
@@ -54,8 +55,6 @@ import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 public class AtsdMeta extends MetaImpl {
 	private static final LoggingFacade log = LoggingFacade.getLogger(AtsdMeta.class);
 
-	public static final ThreadLocal<SimpleDateFormat> DATE_FORMATTER = prepareFormatter("yyyy-MM-dd");
-	public static final ThreadLocal<SimpleDateFormat> TIME_FORMATTER = prepareFormatter("HH:mm:ss");
 	public static final ThreadLocal<SimpleDateFormat> TIMESTAMP_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	public static final ThreadLocal<SimpleDateFormat> TIMESTAMP_SHORT_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
@@ -63,6 +62,7 @@ public class AtsdMeta extends MetaImpl {
 	private final Map<Integer, ContentMetadata> metaCache = new ConcurrentHashMap<>();
 	private final Map<Integer, IDataProvider> providerCache = new ConcurrentHashMap<>();
 	private final Map<Integer, StatementContext> contextMap = new ConcurrentHashMap<>();
+	private final Map<Integer, List<String>> queryPartsMap = new ConcurrentHashMap<>();
 	private final AtsdConnectionInfo atsdConnectionInfo;
 
 	public AtsdMeta(final AvaticaConnection conn) {
@@ -92,16 +92,18 @@ public class AtsdMeta extends MetaImpl {
 	@Override
 	@SneakyThrows(SQLException.class)
 	public StatementHandle prepare(ConnectionHandle connectionHandle, String query, long maxRowCount) {
-		final int id = idGenerator.getAndIncrement();
-		log.trace("[prepare] handle: {} query: {}", id, query);
+		final int statementHandleId = idGenerator.getAndIncrement();
+		log.trace("[prepare] handle: {} query: {}", statementHandleId, query);
 
 		if (StringUtils.isBlank(query)) {
 			throw new SQLException("Failed to prepare statement with blank query");
 		}
+		final List<String> queryParts = splitQueryByPlaceholder(query);
+		queryPartsMap.put(statementHandleId, queryParts);
 		final StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
 		Signature signature = new Signature(new ArrayList<ColumnMetaData>(), query, Collections.<AvaticaParameter>emptyList(), null,
 				statementType == SELECT ? CursorFactory.LIST : null, statementType);
-		return new StatementHandle(connectionHandle.id, id, signature);
+		return new StatementHandle(connectionHandle.id, statementHandleId, signature);
 	}
 
 	public void updatePreparedStatementResultSetMetaData(Signature signature, StatementHandle handle) throws SQLException {
@@ -144,10 +146,14 @@ public class AtsdMeta extends MetaImpl {
 			log.trace("[execute] maxRowsInFirstFrame: {} parameters: {} handle: {}", maxRowsInFirstFrame, parameterValues.size(),
 					statementHandle.toString());
 		}
-		final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
-		final String query = substitutePlaceholders(getSql(statement), parameterValues);
-		final StatementType statementType = statement.getStatementType();
-		try {
+		final List<String> queryParts = queryPartsMap.get(statementHandle.id);
+		if (queryParts == null) {
+			throw new NoSuchStatementException(statementHandle);
+		}
+		final String query = substitutePlaceholders(queryParts, parameterValues);
+        final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
+        final StatementType statementType = statement.getStatementType();
+        try {
 			IDataProvider provider = createDataProvider(statementHandle, query, statementType);
 			final int timeout = getQueryTimeout(statement);
 			final ExecuteResult result;
@@ -178,49 +184,75 @@ public class AtsdMeta extends MetaImpl {
 		}
 	}
 
-	private static String substitutePlaceholders(String query, List<TypedValue> parameterValues) {
-		if (query.contains("?")) {
-			final StringBuilder buffer = new StringBuilder(query.length());
-			final String[] parts = query.split("\\?", -1);
-			if (parts.length != parameterValues.size() + 1) {
-				throw new IndexOutOfBoundsException(
-						String.format("Number of specified values [%d] does not match to number of occurrences [%d]",
-								parameterValues.size(), parts.length - 1));
-			}
-			buffer.append(parts[0]);
-			int position = 0;
-			for (TypedValue parameterValue : parameterValues) {
-				++position;
-				Object value = parameterValue.value;
-				if (value == null) {
-					buffer.append("NULL");
-				} else {
-					switch (parameterValue.type) {
-						case STRING:
-							buffer.append('\'').append(value).append('\'');
-							break;
-						case JAVA_SQL_DATE:
-							buffer.append('\'').append(DATE_FORMATTER.get().format(value)).append('\'');
-							break;
-						case JAVA_SQL_TIME:
-							buffer.append('\'').append(TIME_FORMATTER.get().format(value)).append('\'');
-							break;
-						case JAVA_SQL_TIMESTAMP:
-						case JAVA_UTIL_DATE:
-							buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
-							break;
-						default:
-							buffer.append(value);
+	static List<String> splitQueryByPlaceholder(String query) {
+		final List<String> queryParts = new ArrayList<>();
+		final int length = query.length();
+		boolean quoted = false;
+		boolean singleQuoted = false;
+		int startOfQueryPart = 0;
+		for (int i = 0; i < length; i++) {
+			char currentChar = query.charAt(i);
+			switch (currentChar) {
+				case '?':
+					if (!quoted && !singleQuoted) {
+						queryParts.add(query.substring(startOfQueryPart, i));
+						startOfQueryPart = i + 1;
 					}
-				}
-				buffer.append(parts[position]);
+					break;
+				case '\'':
+					if (!quoted) {
+						singleQuoted = !singleQuoted;
+					}
+					break;
+				case '"':
+					if (!singleQuoted) {
+						quoted = !quoted;
+					}
+					break;
 			}
-
-			final String result = buffer.toString();
-			log.debug("[substitutePlaceholders] {}", result);
-			return result;
 		}
-		return query;
+		queryParts.add(StringUtils.substring(query, startOfQueryPart));
+		return queryParts;
+	}
+
+	private static String substitutePlaceholders(List<String> queryParts, List<TypedValue> parameterValues) {
+		final int parametersSize = parameterValues.size();
+		final int queryPartsSize = queryParts.size();
+		if (queryPartsSize - 1 != parametersSize) {
+			throw new AtsdRuntimeException(String.format("Number of specified values [%d] does not match the number of placeholder occurrences [%d]",
+					parametersSize, queryPartsSize - 1));
+		}
+		if (queryPartsSize == 1) {
+			return queryParts.get(0);
+		}
+		final StringBuilder buffer = new StringBuilder();
+		for (int i = 0; i < parametersSize; i++) {
+			buffer.append(queryParts.get(i));
+			appendTypedValue(parameterValues.get(i), buffer);
+		}
+		buffer.append(queryParts.get(parametersSize));
+		final String result = buffer.toString();
+		log.debug("[substitutePlaceholders] {}", result);
+		return result;
+	}
+
+	private static void appendTypedValue(TypedValue parameterValue, StringBuilder buffer) {
+		Object value = parameterValue.value;
+        if (value == null) {
+            buffer.append("NULL");
+            return;
+        }
+        switch(parameterValue.type) {
+			case STRING:
+				buffer.append('\'').append(value).append('\'');
+				break;
+			case JAVA_SQL_TIMESTAMP:
+			case JAVA_UTIL_DATE:
+				buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
+				break;
+			default:
+				buffer.append(value);
+		}
 	}
 
 	private int getMaxRows(Statement statement) {
@@ -398,6 +430,7 @@ public class AtsdMeta extends MetaImpl {
 	private void closeProviderCaches(StatementHandle statementHandle) {
 		metaCache.remove(statementHandle.id);
 		contextMap.remove(statementHandle.id);
+		queryPartsMap.remove(statementHandle.id);
 		log.trace("[closeProviderCaches]");
 	}
 
@@ -438,7 +471,7 @@ public class AtsdMeta extends MetaImpl {
         log.debug("[getTables] connection: {} catalog: {} schemaPattern: {} tableNamePattern: {} typeList: {}", connectionHandle.id, catalog, schemaPattern,
                 tableNamePattern, typeList);
         if (typeList == null || typeList.contains("TABLE")) {
-			final Iterable<Object> iterable = receiveTables(atsdConnectionInfo);
+			final Iterable<Object> iterable = receiveTables(atsdConnectionInfo, tableNamePattern.s);
 			return getResultSet(iterable, AtsdMetaResultSets.AtsdMetaTable.class);
 		}
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaTable.class);
@@ -474,34 +507,43 @@ public class AtsdMeta extends MetaImpl {
 				.toString();
 	}
 
-	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo) {
+	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
 		final List<Object> metricList = new ArrayList<>();
 		final String tables = connectionInfo.tables();
 		if (StringUtils.isNotBlank(tables)) {
 			final String[] metricMasks = tables.split(",");
-			if (containsAtsdSeriesTable(metricMasks)) {
+			if (containsAtsdSeriesTable(metricMasks) && WildcardsUtil.wildcardMatch(DEFAULT_TABLE_NAME, pattern)) {
 				metricList.add(generateDefaultMetaTable());
 			}
-			final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks);
-			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
-				final InputStream metricsInputStream = contentProtocol.readInfo();
-				final Metric[] metrics = JsonMappingUtil.mapToMetrics(metricsInputStream);
-				for (Metric metric : metrics) {
-					metricList.add(generateMetaTable(metric.getName()));
-				}
-			} catch (Exception e) {
-				log.error(e.getMessage());
-				//don't fill metric tables in case of error
+			for (String metricName : getAndFilterMetricsFromAtsd(metricMasks, connectionInfo, pattern)) {
+				metricList.add(generateMetaTable(metricName));
 			}
 		}
-		log.trace("[receiveTables] {}", metricList);
 		return metricList;
 	}
 
-	static boolean containsAtsdSeriesTable(String[] metricMasks) {
+	private static List<String> getAndFilterMetricsFromAtsd(String[] metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
+		final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks);
+		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
+			final InputStream metricsInputStream = contentProtocol.readInfo();
+			final Metric[] metrics = JsonMappingUtil.mapToMetrics(metricsInputStream);
+			List<String> result = new ArrayList<>();
+			for (Metric metric : metrics) {
+				if (WildcardsUtil.wildcardMatch(metric.getName(), pattern)) {
+					result.add(metric.getName());
+				}
+			}
+            log.trace("[receiveTables] {}", result);
+            return result;
+		} catch (Exception e) {
+			log.error(e.getMessage());
+			return Collections.emptyList();
+		}
+	}
+
+	private static boolean containsAtsdSeriesTable(String[] metricMasks) {
 		for (String metricMask : metricMasks) {
-			if (DEFAULT_TABLE_NAME.equals(metricMask) || (metricMask.endsWith("*")
-					&& DEFAULT_TABLE_NAME.startsWith(StringUtils.substring(metricMask, 0, -1)))) {
+			if (WildcardsUtil.atsdWildcardMatch(DEFAULT_TABLE_NAME, metricMask)) {
 				return true;
 			}
 
@@ -510,7 +552,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@SneakyThrows(UnsupportedEncodingException.class)
-	private String prepareUrlWithMetricExpression(String metricEndpoint, String[] metricMasks) {
+	private static String prepareUrlWithMetricExpression(String metricEndpoint, String[] metricMasks) {
 		StringBuilder expressionBuilder = new StringBuilder();
 		for (String mask : metricMasks) {
 			if (expressionBuilder.length() > 0) {
@@ -564,25 +606,34 @@ public class AtsdMeta extends MetaImpl {
 
 	@Override
 	public MetaResultSet getColumns(ConnectionHandle ch, String catalog, Pat schemaPattern, Pat tableNamePattern, Pat columnNamePattern) {
-		log.debug("[getColumns] connection: {} catalog: {} schemaPattern: {} tableNamePattern: {} columnNamePattern: {}", ch.id, catalog, schemaPattern,
-				tableNamePattern, columnNamePattern);
-		final String tablePattern = tableNamePattern.s;
-		if (tablePattern != null) {
-			DefaultColumn[] columns = getDefaultColumns(columnNamePattern == null ? null : columnNamePattern.s);
-			List<Object> columnData = new ArrayList<>(columns.length);
-			int position;
-            final boolean showMetaColumns = atsdConnectionInfo.metaColumns();
-            for (DefaultColumn column : columns) {
-				position = column.ordinal() + 1;
-				if (showMetaColumns || !column.isMetaColumn()) {
-					columnData.add(createColumnMetaData(column, tablePattern, position));
-				}
-			}
-			if (!DEFAULT_TABLE_NAME.equals(tablePattern)) {
-				position = DefaultColumn.values().length + 1;
-				for (String tag : getTags(tablePattern)) {
-					columnData.add(createColumnMetaData(new TagColumn(tag), tablePattern, position));
+        log.debug("[getColumns] connection: {} catalog: {} schemaPattern: {} tableNamePattern: {} columnNamePattern: {}", ch.id, catalog, schemaPattern,
+                tableNamePattern, columnNamePattern);
+        final String tables = atsdConnectionInfo.tables();
+		if (StringUtils.isNotBlank(tables)) {
+			final String[] metricMasks = tables.split(",");
+			final String colNamePattern = columnNamePattern.s;
+			final List<DefaultColumn> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
+
+			List<Object> columnData = new ArrayList<>();
+			final List<String> tableNames = WildcardsUtil.hasWildcards(tableNamePattern.s) ?
+					getAndFilterMetricsFromAtsd(metricMasks, atsdConnectionInfo, tableNamePattern.s):
+					Collections.singletonList(tableNamePattern.s);
+			for (String tableName : tableNames) {
+				int position = 1;
+				for (DefaultColumn column : columns) {
+					columnData.add(createColumnMetaData(column, tableName, position));
 					++position;
+				}
+				if (DEFAULT_TABLE_NAME.equals(tableName) ||
+						(!WildcardsUtil.hasWildcards(colNamePattern) && !colNamePattern.startsWith("tags."))) {
+					continue;
+				}
+				for (String tag : getTags(tableName)) {
+					final TagColumn column = new TagColumn(tag);
+					if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), colNamePattern)) {
+						columnData.add(createColumnMetaData(column, tableName, position));
+						++position;
+					}
 				}
 			}
 			return getResultSet(columnData, AtsdMetaResultSets.AtsdMetaColumn.class);
@@ -590,13 +641,15 @@ public class AtsdMeta extends MetaImpl {
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaColumn.class);
 	}
 
-	private static DefaultColumn[] getDefaultColumns(String name) {
-		if (StringUtils.isBlank(name)) {
-			return DefaultColumn.values();
+	private static List<DefaultColumn> filterColumns(String columnPattern, boolean showMetaColumns) {
+		List<DefaultColumn> result = new ArrayList<>();
+		for (DefaultColumn column : DefaultColumn.values()) {
+			if ((showMetaColumns || !column.isMetaColumn())
+					&& WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), columnPattern)) {
+				result.add(column);
+			}
 		}
-
-		DefaultColumn defaultColumn = DefaultColumn.findByName(name);
-		return new DefaultColumn[] { defaultColumn };
+		return result;
 	}
 
 	private Set<String> getTags(String metric) {
