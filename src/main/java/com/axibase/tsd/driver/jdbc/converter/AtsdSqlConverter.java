@@ -160,7 +160,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
             } else if (TIME.equalsIgnoreCase(columnName)) {
                 command.setTime(validate(value, Number.class).longValue());
             } else if (DATETIME.equalsIgnoreCase(columnName)) {
-                command.setDateTime(validateDateTime(value.toString(), timestampTz));
+                command.setDateTime(validateDateTime(value, timestampTz));
             } else if (VALUE.equalsIgnoreCase(columnName)) {
                 command.addValue(metricName, validate(value, Number.class).doubleValue());
             } else if (TEXT.equalsIgnoreCase(columnName)) {
@@ -200,7 +200,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
             } else if (TIME.equalsIgnoreCase(columnName)) {
                 command.setTime(validate(value, Number.class).longValue());
             } else if (DATETIME.equalsIgnoreCase(columnName)) {
-                command.setDateTime(validateDateTime(value.toString(), timestampTz));
+                command.setDateTime(validateDateTime(value, timestampTz));
             } else if (VALUE.equalsIgnoreCase(columnName)) {
                 if (metricName == null) {
                     metricValue = validate(value, Number.class).doubleValue();
@@ -287,14 +287,19 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                 + ", expected type: " + targetClass.getSimpleName());
     }
 
-    private static String validateDateTime(String value, boolean timestampTz) throws SQLDataException {
-        Matcher matcher = DATETIME_ISO_PATTERN.matcher(value);
-        if (matcher.matches()) {
-            return value;
+    private static String validateDateTime(Object value, boolean timestampTz) throws SQLDataException {
+        if (!String.class.isInstance(value)) {
+            throw new SQLDataException("Invalid value: " + value + ". Current type: " + value.getClass().getSimpleName()
+                    + ", expected type: " + Timestamp.class.getSimpleName());
         }
-        matcher = TIMESTAMP_PATTERN.matcher(value);
+        final String dateTime = value.toString();
+        Matcher matcher = DATETIME_ISO_PATTERN.matcher(dateTime);
         if (matcher.matches()) {
-            final Timestamp timestamp = Timestamp.valueOf(value);
+            return dateTime;
+        }
+        matcher = TIMESTAMP_PATTERN.matcher(dateTime);
+        if (matcher.matches()) {
+            final Timestamp timestamp = Timestamp.valueOf(dateTime);
             final Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(timestamp.getTime());
             if (timestampTz) {
