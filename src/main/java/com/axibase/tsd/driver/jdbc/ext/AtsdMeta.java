@@ -475,8 +475,27 @@ public class AtsdMeta extends MetaImpl {
         log.debug("[getTables] connection: {} catalog: {} schemaPattern: {} tableNamePattern: {} typeList: {}", connectionHandle.id, catalog, schemaPattern,
                 tableNamePattern, typeList);
         if (typeList == null || typeList.contains("TABLE")) {
-			final Iterable<Object> iterable = receiveTables(atsdConnectionInfo, tableNamePattern.s);
-			return getResultSet(iterable, AtsdMetaResultSets.AtsdMetaTable.class);
+        	final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
+			final List<Object> tables = receiveTables(atsdConnectionInfo, pattern);
+
+			if(log.isDebugEnabled()) {
+				log.debug("[getTables] count: {}", tables.size());
+				StringBuilder sb = new StringBuilder();
+				sb.append('[');
+				AtsdMetaResultSets.AtsdMetaTable metaTable;
+				final int limit = tables.size() > 20 ? 20 : tables.size();
+				for (int i=0;i<limit;i++) {
+					metaTable = (AtsdMetaResultSets.AtsdMetaTable) tables.get(i);
+					if(sb.length() > 1) {
+						sb.append(',');
+					}
+					sb.append(metaTable.tableName);
+				}
+				sb.append(']');
+				log.debug("[getTables] tables: {}", sb.toString());
+			}
+
+			return getResultSet(tables, AtsdMetaResultSets.AtsdMetaTable.class);
 		}
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaTable.class);
 
@@ -527,6 +546,9 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	private static List<String> getAndFilterMetricsFromAtsd(String[] metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
+		if (StringUtils.isNotBlank(pattern)) {
+			metricMasks = new String[] { pattern };
+		}
 		final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks);
 		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 			final InputStream metricsInputStream = contentProtocol.readInfo();
@@ -537,7 +559,6 @@ public class AtsdMeta extends MetaImpl {
 					result.add(metric.getName());
 				}
 			}
-            log.trace("[receiveTables] {}", result);
             return result;
 		} catch (Exception e) {
 			log.error(e.getMessage());
@@ -619,9 +640,10 @@ public class AtsdMeta extends MetaImpl {
 			final List<DefaultColumn> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
 
 			List<Object> columnData = new ArrayList<>();
-			final List<String> tableNames = WildcardsUtil.hasWildcards(tableNamePattern.s) ?
-					getAndFilterMetricsFromAtsd(metricMasks, atsdConnectionInfo, tableNamePattern.s):
-					Collections.singletonList(tableNamePattern.s);
+			final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
+			final List<String> tableNames = WildcardsUtil.hasWildcards(pattern) ?
+					getAndFilterMetricsFromAtsd(metricMasks, atsdConnectionInfo, pattern):
+					Collections.singletonList(pattern);
 			for (String tableName : tableNames) {
 				int position = 1;
 				for (DefaultColumn column : columns) {
@@ -640,6 +662,23 @@ public class AtsdMeta extends MetaImpl {
 					}
 				}
 			}
+
+			if (log.isDebugEnabled()) {
+				log.debug("[getColumns] count: {}", columnData.size());
+				StringBuilder sb = new StringBuilder();
+                sb.append('[');
+                AtsdMetaResultSets.AtsdMetaColumn metaColumn;
+                for (Object column : columnData) {
+                    metaColumn = (AtsdMetaResultSets.AtsdMetaColumn) column;
+                    if(sb.length() > 1) {
+                        sb.append(',');
+                    }
+                    sb.append("{name=").append(metaColumn.columnName).append(", ").append("type=").append(metaColumn.typeName).append('}');
+                }
+                sb.append(']');
+                log.debug("[getColumns] columns: {}", sb.toString());
+            }
+
 			return getResultSet(columnData, AtsdMetaResultSets.AtsdMetaColumn.class);
 		}
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaColumn.class);
