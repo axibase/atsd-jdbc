@@ -537,10 +537,21 @@ public class AtsdMeta extends MetaImpl {
 			if (containsAtsdSeriesTable(metricMasks) && WildcardsUtil.wildcardMatch(DEFAULT_TABLE_NAME, pattern)) {
 				metricList.add(generateDefaultMetaTable());
 			}
-			for (String metricName : getAndFilterMetricsFromAtsd(metricMasks, connectionInfo, pattern)) {
+
+			final List<String> metricNames = getAndFilterMetricsFromAtsd(metricMasks, connectionInfo, pattern);
+			if (metricNames != Collections.EMPTY_LIST) {
+				for (String metricMask : metricMasks) {
+					if (!metricNames.contains(metricMask) && isNotPatternExpression(metricMask)) {
+						metricNames.add(metricMask);
+					}
+				}
+			}
+
+			for (String metricName : metricNames) {
 				metricList.add(generateMetaTable(metricName));
 			}
 		}
+
 		return metricList;
 	}
 
@@ -654,14 +665,20 @@ public class AtsdMeta extends MetaImpl {
 					++position;
 				}
 				if (DEFAULT_TABLE_NAME.equals(tableName) ||
-						(!WildcardsUtil.hasWildcards(colNamePattern) && !colNamePattern.startsWith("tags."))) {
+						(!WildcardsUtil.hasWildcards(colNamePattern) && !colNamePattern.startsWith(TagColumn.PREFIX))) {
 					continue;
 				}
-				for (String tag : getTags(tableName)) {
-					final TagColumn column = new TagColumn(tag);
-					if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), colNamePattern)) {
-						columnData.add(createColumnMetaData(column, tableName, position));
-						++position;
+				Set<String> tags = getTags(tableName);
+				if (tags.isEmpty() && StringUtils.startsWith(colNamePattern, TagColumn.PREFIX) && isNotPatternExpression(colNamePattern)) {
+					final TagColumn column = new TagColumn(StringUtils.substringAfter(colNamePattern, TagColumn.PREFIX));
+					columnData.add(createColumnMetaData(column, tableName, position));
+				} else {
+					for (String tag : tags) {
+						final TagColumn column = new TagColumn(tag);
+						if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), colNamePattern)) {
+							columnData.add(createColumnMetaData(column, tableName, position));
+							++position;
+						}
 					}
 				}
 			}
@@ -857,4 +874,7 @@ public class AtsdMeta extends MetaImpl {
 		return result;
 	}
 
+	private static boolean isNotPatternExpression(String input) {
+		return StringUtils.containsNone(input, WildcardsUtil.WILDCARDS);
+	}
 }

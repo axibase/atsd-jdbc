@@ -18,6 +18,9 @@ import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
 
 public class TagColumn implements MetadataColumnDefinition {
+
+	public static final String PREFIX = "tags.";
+
 	private final String tagName;
 
 	public TagColumn(String tagName) {
@@ -31,7 +34,7 @@ public class TagColumn implements MetadataColumnDefinition {
 
 	@Override
 	public String getColumnNamePrefix() {
-		return "tags.'" + tagName + "'";
+		return PREFIX + "'" + tagName + "'";
 	}
 
 	@Override

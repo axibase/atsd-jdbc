@@ -12,6 +12,8 @@ public class WildcardsUtil {
 	private static final char ATSD_WILDCARD = '*';
 	private static final int NOT_FOUND = -1;
 
+	public static final char[] WILDCARDS = new char[] {NONE_OR_MORE_SYMBOLS, ATSD_WILDCARD};
+
 	public static boolean hasWildcards(String text) {
 		return text == null || text.indexOf(ONE_ANY_SYMBOL) != NOT_FOUND || text.indexOf(NONE_OR_MORE_SYMBOLS) != NOT_FOUND;
 	}
