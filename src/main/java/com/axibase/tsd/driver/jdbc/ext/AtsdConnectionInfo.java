@@ -3,7 +3,10 @@ package com.axibase.tsd.driver.jdbc.ext;
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.StrTokenizer;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.CONNECTION_STRING_PARAM_SEPARATOR;
@@ -14,10 +17,12 @@ public class AtsdConnectionInfo {
 
 	private final Properties info;
 	private final HostAndCatalog hostAndCatalog;
+	private final List<String> tablePatterns;
 
 	public AtsdConnectionInfo(Properties info) {
 		this.info = info;
 		this.hostAndCatalog = new HostAndCatalog(StringUtils.substringBefore(url(), CONNECTION_STRING_PARAM_SEPARATOR));
+		this.tablePatterns = splitTablePatterns();
 	}
 
 	public String host() {
@@ -68,8 +73,8 @@ public class AtsdConnectionInfo {
 		return result == null ? (String) property.defaultValue() : result;
 	}
 
-	public String tables() {
-		return info.getProperty(tables.camelName());
+	public List<String> tables() {
+		return tablePatterns;
 	}
 
 	public String schema() {
@@ -110,6 +115,16 @@ public class AtsdConnectionInfo {
 	private String propertyOrEmpty(String key) {
 		final String result = (String) info.get(key);
 		return result == null ? "" : result;
+	}
+
+
+	private List<String> splitTablePatterns() {
+		final String value = info.getProperty(tables.camelName());
+		if (value == null) {
+			return Collections.emptyList();
+		} else {
+			return new StrTokenizer(value, ',', '"').getTokenList();
+		}
 	}
 
 	private static final class HostAndCatalog {

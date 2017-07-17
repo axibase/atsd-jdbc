@@ -532,9 +532,8 @@ public class AtsdMeta extends MetaImpl {
 
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
 		final List<Object> metricList = new ArrayList<>();
-		final String tables = connectionInfo.tables();
-		if (StringUtils.isNotBlank(tables)) {
-			final String[] metricMasks = tables.split(",");
+		final List<String> metricMasks = connectionInfo.tables();
+		if (!metricMasks.isEmpty()) {
 			if (containsAtsdSeriesTable(metricMasks) && WildcardsUtil.wildcardMatch(DEFAULT_TABLE_NAME, pattern)) {
 				metricList.add(generateDefaultMetaTable());
 			}
@@ -545,11 +544,9 @@ public class AtsdMeta extends MetaImpl {
 		return metricList;
 	}
 
-	private static List<String> getAndFilterMetricsFromAtsd(String[] metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
-		if (StringUtils.isNotBlank(pattern)) {
-			metricMasks = new String[] { pattern };
-		}
-		final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks);
+	private static List<String> getAndFilterMetricsFromAtsd(List<String> metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
+		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsd(pattern);
+		final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks, atsdPattern);
 		try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 			final InputStream metricsInputStream = contentProtocol.readInfo();
 			final Metric[] metrics = JsonMappingUtil.mapToMetrics(metricsInputStream);
@@ -566,7 +563,7 @@ public class AtsdMeta extends MetaImpl {
 		}
 	}
 
-	private static boolean containsAtsdSeriesTable(String[] metricMasks) {
+	private static boolean containsAtsdSeriesTable(List<String> metricMasks) {
 		for (String metricMask : metricMasks) {
 			if (WildcardsUtil.atsdWildcardMatch(DEFAULT_TABLE_NAME, metricMask)) {
 				return true;
@@ -577,10 +574,14 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@SneakyThrows(UnsupportedEncodingException.class)
-	private static String prepareUrlWithMetricExpression(String metricEndpoint, String[] metricMasks) {
-		StringBuilder expressionBuilder = new StringBuilder();
+	private static String prepareUrlWithMetricExpression(String metricEndpoint, List<String> metricMasks, String tablesFilter) {
+		final boolean applyFilter = StringUtils.isNotBlank(tablesFilter);
+		final StringBuilder expressionBuilder = new StringBuilder();
+		if (applyFilter) {
+			expressionBuilder.append('(');
+		}
 		for (String mask : metricMasks) {
-			if (expressionBuilder.length() > 0) {
+			if (expressionBuilder.length() > 1) {
 				expressionBuilder.append(" or ");
 			}
 			expressionBuilder.append("name");
@@ -590,6 +591,9 @@ public class AtsdMeta extends MetaImpl {
 				expressionBuilder.append('=');
 			}
 			expressionBuilder.append('\'').append(mask).append('\'');
+		}
+		if (applyFilter) {
+			expressionBuilder.append(") and name like '").append(tablesFilter).append('\'');
 		}
 		return metricEndpoint + "?expression=" + URLEncoder.encode(expressionBuilder.toString(), DEFAULT_CHARSET.name());
 
@@ -633,9 +637,8 @@ public class AtsdMeta extends MetaImpl {
 	public MetaResultSet getColumns(ConnectionHandle ch, String catalog, Pat schemaPattern, Pat tableNamePattern, Pat columnNamePattern) {
         log.debug("[getColumns] connection: {} catalog: {} schemaPattern: {} tableNamePattern: {} columnNamePattern: {}", ch.id, catalog, schemaPattern,
                 tableNamePattern, columnNamePattern);
-        final String tables = atsdConnectionInfo.tables();
-		if (StringUtils.isNotBlank(tables)) {
-			final String[] metricMasks = tables.split(",");
+        final List<String> metricMasks = atsdConnectionInfo.tables();
+		if (!metricMasks.isEmpty()) {
 			final String colNamePattern = columnNamePattern.s;
 			final List<DefaultColumn> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
 

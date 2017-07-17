@@ -13,6 +13,16 @@ public class WildcardsUtilTest {
 		assertThat(WildcardsUtil.wildcardMatch("atsd_series","atsd_series"), is(true));
 		assertThat(WildcardsUtil.wildcardMatch("disk_used","_isk_%"), is(true));
 		assertThat(WildcardsUtil.wildcardMatch("disk_used","_sk_%"), is(false));
+		assertThat(WildcardsUtil.wildcardMatch("disabled_entity_received_per_second","%t"), is(false));
+	}
+
+	@Test
+	public void testSqlToAtsdWildcardsConvertion() {
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("%t"), is("*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("%_t"), is("*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("%_%%%__%t"), is("*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("__t__"), is("*t*"));
+
 	}
 
 }
