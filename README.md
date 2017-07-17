@@ -59,7 +59,7 @@ For example, database version 14150 supports all driver versions between 1.2.10 
 | readTimeout | number | 1.2.7+ | 0 | Read I/O timeout, in seconds. |
 | strategy | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
 | tables | comma-separated list | 1.2.21+ |  | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
-| expandTags | boolean | 1.2.21+ | `true` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
+| expandTags | boolean | 1.2.21+ | `false` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
 | metaColumns | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
 | timestamptz | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the timezone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local timezone. |
