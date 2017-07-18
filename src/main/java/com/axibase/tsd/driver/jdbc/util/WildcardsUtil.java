@@ -9,13 +9,24 @@ import java.util.List;
 public class WildcardsUtil {
 	private static final char ONE_ANY_SYMBOL = '_';
 	private static final char NONE_OR_MORE_SYMBOLS = '%';
-	private static final char ATSD_WILDCARD = '*';
+	private static final char ATSD_MATCH_ONE_WILDCARD = '?';
+	private static final char ATSD_MATCH_MANY_WILDCARD = '*';
+	private static final String ATSD_WILDCARDS = "?*";
+	private static final String SQL_WILDCARDS = "_%";
 	private static final int NOT_FOUND = -1;
 
 	public static final char[] WILDCARDS = new char[] {NONE_OR_MORE_SYMBOLS, ATSD_WILDCARD};
 
 	public static boolean hasWildcards(String text) {
-		return text == null || text.indexOf(ONE_ANY_SYMBOL) != NOT_FOUND || text.indexOf(NONE_OR_MORE_SYMBOLS) != NOT_FOUND;
+		return hasWildcards(text, ONE_ANY_SYMBOL, NONE_OR_MORE_SYMBOLS);
+	}
+
+	private static boolean hasWildcards(String text, char oneSymbolWildcard, char manySymbolsWildcard) {
+		return text == null || text.indexOf(oneSymbolWildcard) != NOT_FOUND || text.indexOf(manySymbolsWildcard) != NOT_FOUND;
+	}
+
+	public static boolean isRetrieveAllPattern(String text) {
+		return text == null || (text.length() == 1 && text.charAt(0) == NONE_OR_MORE_SYMBOLS);
 	}
 
 	public static boolean wildcardMatch(String text, String pattern) {
@@ -23,7 +34,7 @@ public class WildcardsUtil {
 	}
 
 	public static boolean atsdWildcardMatch(String text, String pattern) {
-		return wildcardMatch(text, pattern, '\0', ATSD_WILDCARD);
+		return wildcardMatch(text, pattern, ATSD_MATCH_ONE_WILDCARD, ATSD_MATCH_MANY_WILDCARD);
 	}
 
 	private static boolean wildcardMatch(String text, String pattern, char anySymbol, char manySymbol) {
@@ -37,7 +48,7 @@ public class WildcardsUtil {
 		final String oneAnySymbolStr = String.valueOf(anySymbol);
 		final String noneOrMoreSymbolsStr = String.valueOf(manySymbol);
 		final int stringLength = text.length();
-		final String[] wildcardTokens = splitOnTokens(pattern, oneAnySymbolStr, noneOrMoreSymbolsStr);
+		final String[] wildcardTokens = splitOnTokens(pattern, oneAnySymbolStr, noneOrMoreSymbolsStr, anySymbol, manySymbol);
 		boolean anyChars = false;
 		int textIdx = 0;
 		int wildcardTokensIdx = 0;
@@ -108,13 +119,13 @@ public class WildcardsUtil {
 	/**
 	 * Splits a string into a number of tokens.
 	 * The text is split by '_' and '%'.
-	 * Multiple '%' are  are collapsed into a single '%'.
+	 * Multiple '%' are collapsed into a single '%', patterns like "%_" will be transferred to "_%"
 	 *
 	 * @param text  the text to split
 	 * @return the array of tokens, never null
 	 */
-	private static String[] splitOnTokens(String text, String oneAnySymbolStr, String noneOrMoreSymbolsStr) {
-		if (!hasWildcards(text)) {
+	private static String[] splitOnTokens(String text, String oneAnySymbolStr, String noneOrMoreSymbolsStr, char oneAnySymbol, char noneOrMoreSymbols) {
+		if (!hasWildcards(text, oneAnySymbol, noneOrMoreSymbols)) {
 			return new String[] { text };
 		}
 		List<String> list = new ArrayList<>();
@@ -124,24 +135,21 @@ public class WildcardsUtil {
 		for (int i = 0; i < length; i++) {
 			final char current = text.charAt(i);
 
-			switch (current) {
-				case ONE_ANY_SYMBOL:
-					flushBuffer(buffer, list);
-					if (!list.isEmpty() && noneOrMoreSymbolsStr.equals(list.get(list.size() - 1))) {
-						list.set(list.size() - 1, oneAnySymbolStr);
-						list.add(noneOrMoreSymbolsStr);
-					} else {
-						list.add(oneAnySymbolStr);
-					}
-					break;
-				case NONE_OR_MORE_SYMBOLS:
-					flushBuffer(buffer, list);
-					if (list.isEmpty() || !noneOrMoreSymbolsStr.equals(list.get(list.size() - 1))) {
-						list.add(noneOrMoreSymbolsStr);
-					}
-					break;
-				default:
-					buffer.append(current);
+			if (current == oneAnySymbol) {
+				flushBuffer(buffer, list);
+				if (!list.isEmpty() && noneOrMoreSymbolsStr.equals(list.get(list.size() - 1))) {
+					list.set(list.size() - 1, oneAnySymbolStr);
+					list.add(noneOrMoreSymbolsStr);
+				} else {
+					list.add(oneAnySymbolStr);
+				}
+			} else if (current == noneOrMoreSymbols) {
+				flushBuffer(buffer, list);
+				if (list.isEmpty() || !noneOrMoreSymbolsStr.equals(list.get(list.size() - 1))) {
+					list.add(noneOrMoreSymbolsStr);
+				}
+			} else {
+				buffer.append(current);
 			}
 		}
 		if (buffer.length() != 0) {
@@ -152,22 +160,7 @@ public class WildcardsUtil {
 	}
 
 	public static String replaceSqlWildcardsWithAtsd(String text) {
-		if (text == null) {
-			return null;
-		}
-		final int textLength = text.length();
-		StringBuilder buffer = new StringBuilder(textLength);
-		for (int i = 0; i < textLength; ++i) {
-			final char currentChar = text.charAt(i);
-			if (currentChar == ONE_ANY_SYMBOL || currentChar == NONE_OR_MORE_SYMBOLS) {
-				if (i == 0 || buffer.charAt(buffer.length() - 1) != ATSD_WILDCARD) {
-					buffer.append(ATSD_WILDCARD);
-				}
-			} else {
-				buffer.append(currentChar);
-			}
-		}
-		return buffer.toString();
+		return StringUtils.replaceChars(text, SQL_WILDCARDS, ATSD_WILDCARDS);
 	}
 
 	private static void flushBuffer(StringBuilder buffer, List<String> list) {
