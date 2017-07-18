@@ -365,7 +365,7 @@ public class AtsdMeta extends MetaImpl {
 		if (SELECT == statementType) {
 			throw new IllegalArgumentException("Invalid statement type: " + statementType);
 		}
-		final String query = getSql(statement);
+		final String query = ((AtsdPreparedStatement) statement).getSql();
 		final List<List<Object>> preparedValueBatch = prepareValueBatch(parameterValueBatch);
 		try {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
@@ -837,15 +837,6 @@ public class AtsdMeta extends MetaImpl {
 		if (log.isDebugEnabled()) {
 			log.debug("[rollback] " + ch.id + "->" + ch.toString());
 		}
-	}
-
-	private static String getSql(AvaticaStatement statement) {
-		if (statement instanceof AtsdStatement) {
-			return ((AtsdStatement) statement).getSql();
-		} else if (statement instanceof AtsdPreparedStatement) {
-			return ((AtsdPreparedStatement) statement).getSql();
-		}
-		throw new IllegalArgumentException("Unsupported statement class: " + statement.getClass().getSimpleName());
 	}
 
 	private static List<List<Object>> prepareValueBatch(List<List<TypedValue>> parameterValueBatch) {
