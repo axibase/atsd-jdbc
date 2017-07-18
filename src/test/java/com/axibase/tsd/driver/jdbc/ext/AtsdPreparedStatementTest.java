@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.axibase.tsd.driver.jdbc.AtsdProperties;
 import org.apache.calcite.avatica.AvaticaConnection;
+import org.apache.calcite.avatica.com.fasterxml.jackson.databind.util.ISO8601Utils;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,7 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 	@Test
 	public void testSetters_InvalidDateTime() throws SQLException {
 		expectedException.expect(SQLException.class);
-		expectedException.expectMessage("Invalid datetime value: 123. Expected format: yyyy-MM-dd'T'HH:mm:ss[.SSS]'Z'");
+		expectedException.expectMessage("Invalid datetime value: 123. Expected formats: yyyy-MM-dd'T'HH:mm:ss[.SSS]'Z', yyyy-MM-dd HH:mm:ss[.fffffffff]");
 		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
 		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 			stmt.setString(1, "123");
@@ -191,4 +192,33 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 			Assert.assertArrayEquals(new int[] {1,1,1}, res);
 		}
 	}
+
+	@Test
+	public void testInsertDateTimeAsNumber() throws SQLException {
+		final long time = System.currentTimeMillis();
+		expectedException.expect(SQLException.class);
+		expectedException.expectMessage("Invalid value: " + time + ". Current type: BigDecimal, expected type: Timestamp");
+		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			stmt.setDouble(1, time);
+			stmt.setString(2, "entity_1");
+			stmt.setDouble(3, 123);
+			stmt.setString(4, null);
+			Assert.assertEquals(1, stmt.executeUpdate());
+		}
+	}
+
+	@Test
+	public void testInsertDateTimeAsString() throws SQLException {
+		final String dateTime = ISO8601Utils.format(new java.util.Date(), true);
+		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			stmt.setString(1, dateTime);
+			stmt.setString(2, "entity_1");
+			stmt.setDouble(3, 123);
+			stmt.setString(4, null);
+			Assert.assertEquals(1, stmt.executeUpdate());
+		}
+	}
+
 }

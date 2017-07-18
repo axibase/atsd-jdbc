@@ -15,10 +15,12 @@ public class WildcardsUtil {
 	private static final String SQL_WILDCARDS = "_%";
 	private static final int NOT_FOUND = -1;
 
-	public static final char[] WILDCARDS = new char[] {NONE_OR_MORE_SYMBOLS, ATSD_WILDCARD};
-
 	public static boolean hasWildcards(String text) {
 		return hasWildcards(text, ONE_ANY_SYMBOL, NONE_OR_MORE_SYMBOLS);
+	}
+
+	public static boolean hasAtsdWildcards(String text) {
+		return hasWildcards(text, ATSD_MATCH_ONE_WILDCARD, ATSD_MATCH_MANY_WILDCARD);
 	}
 
 	private static boolean hasWildcards(String text, char oneSymbolWildcard, char manySymbolsWildcard) {
@@ -175,4 +177,5 @@ public class WildcardsUtil {
 		private final int tokenIndex;
 		private final int charIndex;
 	}
+
 }

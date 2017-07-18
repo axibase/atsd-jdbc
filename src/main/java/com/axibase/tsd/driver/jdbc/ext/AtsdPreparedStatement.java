@@ -25,7 +25,6 @@ import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.calcite.avatica.remote.TypedValue;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -376,9 +375,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
     @Override
     public void addBatch(String sql) throws SQLException {
-		sql = StringUtils.stripStart(sql, null);
-		logger.debug("[addBatch] sql: {}", sql);
-		super.addBatch(sql);
+		throw new UnsupportedOperationException();
     }
 
     @Override
