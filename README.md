@@ -58,12 +58,12 @@ For example, database version 14150 supports all driver versions between 1.2.10 
 | connectTimeout | number | 1.2.7+ | 5 | Connection timeout, in seconds. |
 | readTimeout | number | 1.2.7+ | 0 | Read I/O timeout, in seconds. |
 | strategy | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
-| tables | comma-separated list | 1.2.21+ |  | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
+| tables | comma-separated list | 1.2.21+ | `*` | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
 | expandTags | boolean | 1.2.21+ | `false` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
 | metaColumns | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
 | timestamptz | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the timezone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local timezone. |
-| missingMetric | `error|warning|none` | 1.3.2+ | `error` | Control the behavior when the referenced metric doesn't exist. If 'error', the driver will raise an `AtsdMetricNotFoundException`. If `warning`, an SQL Warning will be returned without errors. If `none`, no error or warning will be created. |
+| missingMetric | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control the behavior when the referenced metric doesn't exist. If 'error', the driver will raise an `AtsdMetricNotFoundException`. If `warning`, an SQL Warning will be returned without errors. If `none`, no error or warning will be created. |
 
 Properties can be included as part of the JDBC URL using a semicolon as a separator, for example: `jdbc:atsd://10.102.0.6:8443;tables=infla*;expandTags=true`.
 
