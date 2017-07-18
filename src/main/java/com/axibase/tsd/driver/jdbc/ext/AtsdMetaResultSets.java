@@ -1,7 +1,5 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import java.sql.Types;
 import org.apache.calcite.avatica.MetaImpl;
 
 public class AtsdMetaResultSets {
@@ -15,58 +13,52 @@ public class AtsdMetaResultSets {
 		public final int dataType;
 		public final String typeName;
 		public final int columnSize;
-		public final Integer bufferLength;
+		public final Integer bufferLength = null;
 		public final Integer decimalDigits;
 		public final int numPrecRadix;
 		public final int nullable;
-		public final String remarks = "";
+		public final String remarks = null;
 		public final String columnDef = null;
 		public final int sqlDataType;
-		public final int sqlDatetimeSub = 0;
-		public final Integer charOctetLength;
+		public final String sqlDatetimeSub = null;
+		public final int charOctetLength;
 		public final int ordinalPosition;
 		public final String isNullable;
 		public final String scopeCatalog = null;
 		public final String scopeSchema = null;
 		public final String scopeTable = null;
 		public final Short sourceDataType = null;
-		public final String isAutoincrement = "NO";
-		public final String isGeneratedcolumn = "NO";
+		public final String isAutoincrement = "";
+		public final String isGeneratedcolumn = "";
 
 		public AtsdMetaColumn(
 				String tableCat,
 				String tableSchem,
 				String tableName,
 				String columnName,
-				AtsdType atsdType,
+				int dataType,
+				String typeName,
+				int columnSize,
+				Integer decimalDigits,
 				int numPrecRadix,
 				int nullable,
+				int charOctetLength,
 				int ordinalPosition,
 				String isNullable) {
 			this.tableCat = tableCat;
 			this.tableSchem = tableSchem;
 			this.tableName = tableName;
 			this.columnName = columnName;
-			this.dataType = atsdType.typeCode;
-			this.typeName = atsdType.sqlType;
-			this.columnSize = atsdType.size;
-			this.bufferLength = columnSize;
-			this.decimalDigits = getDecimalDigits(dataType);
+			this.dataType = dataType;
+			this.typeName = typeName;
+			this.columnSize = columnSize;
+			this.decimalDigits = decimalDigits;
 			this.numPrecRadix = numPrecRadix;
 			this.nullable = nullable;
-			this.charOctetLength = Types.VARCHAR == dataType ? columnSize : null;
+			this.charOctetLength = charOctetLength;
 			this.ordinalPosition = ordinalPosition;
 			this.isNullable = isNullable;
-			this.sqlDataType = atsdType.sqlTypeCode;
-		}
-
-		private Integer getDecimalDigits(int dataType) {
-			switch (dataType) {
-				case Types.BIGINT:
-				case Types.INTEGER:
-				case Types.SMALLINT: return 0;
-				default: return null;
-			}
+			this.sqlDataType = dataType;
 		}
 
 		@Override
@@ -102,11 +94,6 @@ public class AtsdMetaResultSets {
 		public String getName() {
 			return tableName;
 		}
-
-		public String toString() {
-			return "AtsdMetaTable {catalog= " + tableCat + ", schema=" + tableSchem + ", name=" + tableName + ", type=" + tableType + ", remarks=" + remarks + "}";
-		}
-
 	}
 
 	public static class AtsdMetaTypeInfo implements MetaImpl.Named {

@@ -151,7 +151,7 @@ public class ContentMetadata {
 	}
 
 	public static ColumnMetaData.AvaticaType getAvaticaType(AtsdType type) {
-		return new ColumnMetaData.AvaticaType(type.sqlTypeCode, type.sqlType, type.rep);
+		return new ColumnMetaData.AvaticaType(type.sqlTypeCode, type.sqlType, type.avaticaType);
 	}
 
 	public static class ColumnMetaDataBuilder {
