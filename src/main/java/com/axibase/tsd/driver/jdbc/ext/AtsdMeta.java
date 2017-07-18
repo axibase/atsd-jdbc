@@ -760,13 +760,9 @@ public class AtsdMeta extends MetaImpl {
 				atsdConnectionInfo.schema(),
 				table,
 				column.getColumnNamePrefix(),
-				columnType.sqlTypeCode,
-				columnType.sqlType,
-				columnType.size,
-				null,
+				columnType,
 				10,
 				column.getNullable(),
-				0,
 				ordinal,
 				column.getNullableAsString()
 		);

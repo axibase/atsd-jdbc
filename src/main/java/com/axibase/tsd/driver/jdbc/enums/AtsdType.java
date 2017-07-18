@@ -92,8 +92,7 @@ public enum AtsdType {
 			return cell;
 		}
 	},
-	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP,
-			"2016-01-01T00:00:00.000".length(), "2016-01-01T00:00:00.000".length(), 3) {
+	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP, 29, 29, 9) {
 		@Override
 		public String getLiteral(boolean isPrefix) {
 			return "'";
@@ -141,16 +140,18 @@ public enum AtsdType {
 	public final String originalType;
 	public final String sqlType;
 	public final int sqlTypeCode;
-	public final Rep avaticaType;
+	public final Rep rep;
 	public final int maxPrecision;
 	public final int size;
 	public final int scale;
+	public final int typeCode;
 
-	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep avaticaType, int maxPrecision, int size, int scale) {
+	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep rep, int maxPrecision, int size, int scale) {
 		this.originalType = atsdType;
 		this.sqlType = sqlType;
 		this.sqlTypeCode = sqlTypeCode;
-		this.avaticaType = avaticaType;
+		this.typeCode = getTypeCode(sqlTypeCode);
+		this.rep = rep;
 		this.maxPrecision = maxPrecision;
 		this.size = size;
 		this.scale = scale;
@@ -175,5 +176,13 @@ public enum AtsdType {
 
 	public String getLiteral(boolean isPrefix) {
 		return null;
+	}
+
+	private int getTypeCode(int sqlTypeCode) {
+		switch (sqlTypeCode) {
+			case Types.TIMESTAMP : return 11;
+			case Types.BIGINT : return Types.NUMERIC;
+			default: return sqlTypeCode;
+		}
 	}
 }
