@@ -1,16 +1,16 @@
 package com.axibase.tsd.driver.jdbc.enums;
 
+import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
+import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import org.apache.calcite.avatica.ColumnMetaData.Rep;
+import org.apache.commons.lang3.StringUtils;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Date;
-
-import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import org.apache.calcite.avatica.ColumnMetaData.Rep;
-import org.apache.commons.lang3.StringUtils;
 
 import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_FORMATTER;
 import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_SHORT_FORMATTER;
@@ -136,6 +136,7 @@ public enum AtsdType {
 	};
 
 	protected static final LoggingFacade log = LoggingFacade.getLogger(AtsdType.class);
+	private static final int TIMESTAMP_ODBC_TYPE = 11;
 
 	public final String originalType;
 	public final String sqlType;
@@ -144,13 +145,13 @@ public enum AtsdType {
 	public final int maxPrecision;
 	public final int size;
 	public final int scale;
-	public final int typeCode;
+	private final int odbcTypeCode;
 
 	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep rep, int maxPrecision, int size, int scale) {
 		this.originalType = atsdType;
 		this.sqlType = sqlType;
 		this.sqlTypeCode = sqlTypeCode;
-		this.typeCode = getTypeCode(sqlTypeCode);
+		this.odbcTypeCode = getOdbcTypeCode(sqlTypeCode);
 		this.rep = rep;
 		this.maxPrecision = maxPrecision;
 		this.size = size;
@@ -178,11 +179,15 @@ public enum AtsdType {
 		return null;
 	}
 
-	private int getTypeCode(int sqlTypeCode) {
+	private int getOdbcTypeCode(int sqlTypeCode) {
 		switch (sqlTypeCode) {
-			case Types.TIMESTAMP : return 11;
+			case Types.TIMESTAMP : return TIMESTAMP_ODBC_TYPE;
 			case Types.BIGINT : return Types.NUMERIC;
 			default: return sqlTypeCode;
 		}
+	}
+
+	public int getTypeCode(boolean odbcCompatibility) {
+		return odbcCompatibility ? odbcTypeCode : sqlTypeCode;
 	}
 }

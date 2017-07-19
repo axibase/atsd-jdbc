@@ -756,6 +756,7 @@ public class AtsdMeta extends MetaImpl {
 	private Object createColumnMetaData(MetadataColumnDefinition column, String table, int ordinal) {
 		final AtsdType columnType = column.getType();
 		return new AtsdMetaResultSets.AtsdMetaColumn(
+				atsdConnectionInfo.odbcCompatibility(),
 				atsdConnectionInfo.catalog(),
 				atsdConnectionInfo.schema(),
 				table,

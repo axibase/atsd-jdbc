@@ -22,7 +22,8 @@ public enum AtsdDriverConnectionProperties implements ConnectionProperty {
 	metaColumns(DriverConstants.META_COLUMNS_PARAM_NAME, DriverConstants.DEFAULT_META_COLUMNS_VALUE, Type.BOOLEAN),
 	assignColumnNames(DriverConstants.ASSIGN_INNER_COLUMN_NAMES_PARAM, DriverConstants.DEFAULT_ASSIGN_INNER_COLUMN_NAMES_VALUE, Type.BOOLEAN),
 	timestamptz(DriverConstants.USE_TIMESTAMP_WITH_TIME_ZONE_PARAM, DriverConstants.DEFAULT_USE_TIMESTAMP_WITH_TIME_ZONE_VALUE, Type.BOOLEAN),
-	missingMetric(DriverConstants.ON_MISSING_METRIC_PARAM, DriverConstants.DEFAULT_ON_MISSING_METRIC_VALUE, Type.ENUM);
+	missingMetric(DriverConstants.ON_MISSING_METRIC_PARAM, DriverConstants.DEFAULT_ON_MISSING_METRIC_VALUE, Type.ENUM),
+	odbcCompatibility(DriverConstants.ODBC_COMPATIBILITY_PARAM, DriverConstants.DEFAULT_ODBC_COMPATIBILITY_VALUE, Type.BOOLEAN);
 
 	private final String name;
 	private final Object defaultValue;
