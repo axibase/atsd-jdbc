@@ -816,12 +816,9 @@ public class AtsdMeta extends MetaImpl {
 		return contentMetadata;
 	}
 
-	private static AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType type) {
-		return new AtsdMetaResultSets.AtsdMetaTypeInfo(type.sqlType, type.sqlTypeCode, type.maxPrecision,
-				type.getLiteral(true), type.getLiteral(false),
-				(short) DatabaseMetaData.typeNullable, type == AtsdType.STRING_DATA_TYPE,
-				(short) DatabaseMetaData.typeSearchable, false, false, false,
-				(short) 0, (short) 0, 10);
+	private AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType atsdType) {
+		return new AtsdMetaResultSets.AtsdMetaTypeInfo(atsdConnectionInfo.odbcCompatibility(), atsdType, (short) DatabaseMetaData.typeNullable,
+				(short) DatabaseMetaData.typeSearchable, false, false, false, (short) 0, (short) 0, 10);
 	}
 
 	// Since Calcite 1.6.0

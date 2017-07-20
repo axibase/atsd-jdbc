@@ -187,7 +187,7 @@ public enum AtsdType {
 		}
 	}
 
-	public int getTypeCode(boolean odbcCompatibility) {
-		return odbcCompatibility ? odbcTypeCode : sqlTypeCode;
+	public int getTypeCode(boolean odbcCompatible) {
+		return odbcCompatible ? odbcTypeCode : sqlTypeCode;
 	}
 }

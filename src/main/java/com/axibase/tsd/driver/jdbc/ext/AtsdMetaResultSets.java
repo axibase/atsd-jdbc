@@ -132,15 +132,16 @@ public class AtsdMetaResultSets {
 		public final Integer sqlDatetimeSub = null;
 		public final Integer numPrecRadix;
 
-		public AtsdMetaTypeInfo(String typeName, int dataType, Integer precision, String literalPrefix, String literalSuffix, short nullable, boolean caseSensitive, short searchable, boolean unsignedAttribute, boolean fixedPrecScale, boolean autoIncrement, Short minimumScale, Short maximumScale, Integer numPrecRadix) {
-			this.typeName = typeName;
-			this.dataType = dataType;
-			this.sqlDataType = dataType;
-			this.precision = precision;
-			this.literalPrefix = literalPrefix;
-			this.literalSuffix = literalSuffix;
+		public AtsdMetaTypeInfo(boolean odbcCompatible, AtsdType atsdType, short nullable, short searchable, boolean unsignedAttribute, boolean fixedPrecScale,
+								boolean autoIncrement, Short minimumScale, Short maximumScale, Integer numPrecRadix) {
+			this.typeName = atsdType.sqlType;
+			this.dataType = atsdType.getTypeCode(odbcCompatible);
+			this.sqlDataType = atsdType.sqlTypeCode;
+			this.precision = atsdType.maxPrecision;
+			this.literalPrefix = atsdType.getLiteral(true);
+			this.literalSuffix = atsdType.getLiteral(false);
 			this.nullable = nullable;
-			this.caseSensitive = cast(caseSensitive);
+			this.caseSensitive = cast(atsdType == AtsdType.STRING_DATA_TYPE);
 			this.searchable = searchable;
 			this.unsignedAttribute = cast(unsignedAttribute);
 			this.fixedPrecScale = cast(fixedPrecScale);
