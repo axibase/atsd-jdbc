@@ -7,7 +7,7 @@ You may use any logging library supported by SLF4J, but in the examples we will 
 
 To turn on logging for particular ATSD JDBC methods, you need to configure appenders for ATSD JDBC driver classes in the existing logging configuration.
 
-Let's take Squirrel SQL client as an example. Open the file $SQUIRREL_HOME/log4j.properties and add the following lines that will allow output of ATSD JDBC driver tracing messages to the `atsd_jdbc.log` file in the user's home directory:
+Let's take [SQuirrel SQL](http://www.squirrelsql.org/) client as an example. Open the file $SQUIRREL_HOME/log4j.properties and add the following lines that will allow output of ATSD JDBC driver tracing messages to the `atsd_jdbc.log` file in the user's home directory:
 
 ```
 log4j.appender.file=org.apache.log4j.RollingFileAppender
