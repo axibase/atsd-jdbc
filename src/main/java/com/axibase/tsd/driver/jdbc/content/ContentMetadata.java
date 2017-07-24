@@ -20,6 +20,7 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdJsonException;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import lombok.Getter;
 import org.apache.calcite.avatica.AvaticaParameter;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.Meta.CursorFactory;
@@ -39,6 +40,7 @@ import java.util.Map;
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
 @SuppressWarnings("unchecked")
+@Getter
 public class ContentMetadata {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(ContentMetadata.class);
 
@@ -48,24 +50,12 @@ public class ContentMetadata {
 
 	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames)
 			throws AtsdException, IOException {
-		metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog)
+		metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog, assignColumnNames)
 				: Collections.<ColumnMetaData>emptyList();
 		sign = new Signature(metadataList, sql, Collections.<AvaticaParameter>emptyList(), null, CursorFactory.LIST,
 				StatementType.SELECT);
 		list = Collections.unmodifiableList(
 				Collections.singletonList(MetaResultSet.create(connectionId, statementId, false, sign, null)));
-	}
-
-	public Signature getSign() {
-		return sign;
-	}
-
-	public List<MetaResultSet> getList() {
-		return list;
-	}
-
-	public List<ColumnMetaData> getMetadataList() {
-		return metadataList;
 	}
 
 	public static List<ColumnMetaData> buildMetadataList(InputStream jsonInputStream, String catalog, boolean assignColumnNames)
@@ -151,7 +141,7 @@ public class ContentMetadata {
 	}
 
 	public static ColumnMetaData.AvaticaType getAvaticaType(AtsdType type) {
-		return new ColumnMetaData.AvaticaType(type.sqlTypeCode, type.sqlType, type.avaticaType);
+		return new ColumnMetaData.AvaticaType(type.sqlTypeCode, type.sqlType, type.rep);
 	}
 
 	public static class ColumnMetaDataBuilder {

@@ -30,9 +30,6 @@ public interface IDataProvider extends AutoCloseable {
 
 	long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
-	long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException;
-
-	long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException;
-
 	void cancelQuery();
+
 }

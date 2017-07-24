@@ -176,7 +176,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setObject(int parameterIndex, Object value, int targetSqlType) throws SQLException {
-		final ColumnMetaData.Rep rep = EnumUtil.getAtsdTypeBySqlType(targetSqlType, AtsdType.JAVA_OBJECT_TYPE).avaticaType;
+		final ColumnMetaData.Rep rep = EnumUtil.getAtsdTypeBySqlType(targetSqlType, AtsdType.JAVA_OBJECT_TYPE).rep;
 		parameters.put(parameterIndex, TypedValue.ofSerial(rep, value));
 	}
 

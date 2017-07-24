@@ -1,6 +1,5 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
-import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.calcite.sql.SqlBasicCall;
@@ -31,11 +30,7 @@ class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
             if (i > 0) {
                 buffer.append(", ");
             }
-            if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
-                buffer.append('\"').append(name).append('\"');
-            } else {
-                buffer.append(name);
-            }
+            appendColumnName(buffer, name);
         }
         buffer.append(sql.substring(end));
         String result = buffer.toString();
@@ -64,16 +59,8 @@ class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
         SqlBasicCall valuesNode = (SqlBasicCall) sourceNode.getOperandList().get(0);
         List<SqlNode> operands = valuesNode.getOperandList();
         List<Object> result = new ArrayList<>(operands.size());
-        Object value;
         for (SqlNode operand : operands) {
-            value = getOperandValue(operand);
-            if (value instanceof DynamicParam) {
-                if (parameterValues == null || parameterValues.isEmpty()) {
-                    throw new IllegalArgumentException("Parameter values is null or empty");
-                }
-                value = parameterValues.get(((DynamicParam) value).index);
-            }
-            result.add(value);
+            result.add(getOperandValue(operand, parameterValues));
         }
         return result;
     }

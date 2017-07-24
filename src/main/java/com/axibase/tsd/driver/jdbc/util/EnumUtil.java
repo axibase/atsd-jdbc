@@ -2,6 +2,8 @@ package com.axibase.tsd.driver.jdbc.util;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
+import com.axibase.tsd.driver.jdbc.enums.EntityColumn;
+import com.axibase.tsd.driver.jdbc.enums.MetricColumn;
 import com.axibase.tsd.driver.jdbc.enums.ReservedWordsSQL2003;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
@@ -45,6 +47,12 @@ public class EnumUtil {
 	private static Map<String, AtsdType> createColumnPrefixAtsdTypeMapping() {
 		Map<String, AtsdType> mapping = new HashMap<>();
 		for (DefaultColumn type : DefaultColumn.values()) {
+			mapping.put(type.getColumnNamePrefix(), type.getType());
+		}
+		for (EntityColumn type : EntityColumn.values()) {
+			mapping.put(type.getColumnNamePrefix(), type.getType());
+		}
+		for (MetricColumn type : MetricColumn.values()) {
 			mapping.put(type.getColumnNamePrefix(), type.getType());
 		}
 		return Collections.unmodifiableMap(mapping);

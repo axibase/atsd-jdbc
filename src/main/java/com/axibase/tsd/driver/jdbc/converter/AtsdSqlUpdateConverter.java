@@ -1,14 +1,18 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
+import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,6 +21,11 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
     private static final String UPDATE = "UPDATE ";
     private static final String SET = "SET ";
     private static final String WHERE = "WHERE ";
+    private static final String IS = " IS ";
+    private static final String LIKE = " LIKE ";
+    private static final String ESCAPE = " ESCAPE ";
+
+    private final Map<String, String> escapeMap = new HashMap<>();
 
     AtsdSqlUpdateConverter(boolean timestampTz) {
         super(timestampTz);
@@ -29,7 +38,7 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         final int end = StringUtils.indexOfIgnoreCase(sql, WHERE);
         StringBuilder buffer = new StringBuilder();
         final String tableName = StringUtils.replace(sql.substring(UPDATE.length(), begin - SET.length()), "'", "\"");
-        buffer.append(UPDATE).append(tableName).append(' ').append(SET);
+        buffer.append(UPDATE).append(tableName).append(SET);
         String[] pairs = StringUtils.split(sql.substring(begin, end), ',');
         String name;
         String value;
@@ -44,39 +53,59 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
             if (i > 0) {
                 buffer.append(", ");
             }
-            if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
-                buffer.append('\"').append(name).append('\"');
-            } else {
-                buffer.append(name);
-            }
+            appendColumnName(buffer, name);
             buffer.append('=').append(value);
         }
 
         buffer.append(' ').append(WHERE);
         String tmp = sql.substring(end + WHERE.length());
         pairs = tmp.split("(?i)( and )");
+        String pair;
         for (int i = 0; i < pairs.length; i++) {
-            idx = pairs[i].indexOf('=');
-            if (idx == -1 || idx == pairs[i].length() - 1) {
-                throw new AtsdRuntimeException("Invalid part of clause: " + pairs[i]);
+            pair = StringUtils.trim(pairs[i]);
+            idx = pair.indexOf('=');
+            if (idx == -1 || idx == pair.length() - 1) {
+                idx = StringUtils.indexOfIgnoreCase(pair, IS);
+                if (idx != -1) {
+                    value = pair.substring(idx).toUpperCase();
+                } else {
+                    idx = StringUtils.indexOfIgnoreCase(pair, LIKE);
+                    if (idx == -1) {
+                        throw new AtsdRuntimeException("Invalid part of clause: " + pair);
+                    }
+
+                    int idxOfEscape = StringUtils.indexOfIgnoreCase(pair, ESCAPE);
+                    if (idxOfEscape == -1) {
+                        value = LIKE + pair.substring(idx + LIKE.length());
+                    } else {
+                        StringBuilder valueBuffer = new StringBuilder();
+                        valueBuffer.append(LIKE)
+                                .append(pair.substring(idx + LIKE.length(), idxOfEscape).trim())
+                                .append(ESCAPE)
+                                .append(pair.substring(idxOfEscape + ESCAPE.length()));
+                        value = valueBuffer.toString();
+                    }
+                }
+            } else {
+                value = '=' + pair.substring(idx + 1).trim();
             }
-            name = pairs[i].substring(0, idx).trim().toLowerCase();
-            value = pairs[i].substring(idx + 1).trim();
+            name = pair.substring(0, idx).trim().toLowerCase();
             if (i > 0) {
                 buffer.append(" AND ");
             }
-            if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_TAGS)) {
+            if (EnumUtil.isReservedSqlToken(name.toUpperCase()) || name.startsWith(PREFIX_ENTITY)
+                    || name.startsWith(PREFIX_METRIC) || name.startsWith(PREFIX_SERIES_TAGS)) {
                 buffer.append('\"').append(name).append('\"');
             } else {
-                int valueIndex = name.indexOf(VALUE);
+                int valueIndex = name.indexOf(AtsdColumn.VALUE);
                 if (valueIndex != -1) {
                     if (valueIndex > 0 && name.charAt(valueIndex) != '"') {
-                        name = StringUtils.replace(name, VALUE, "\"value\"");
+                        name = StringUtils.replace(name, AtsdColumn.VALUE, "\"value\"");
                     }
                 }
                 buffer.append(name);
             }
-            buffer.append('=').append(value);
+            buffer.append(value);
         }
         String result = buffer.toString();
         logger.debug("[prepareSql] out: {}", result);
@@ -121,36 +150,40 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
     protected List<Object> getColumnValues(List<Object> parameterValues) {
         SqlNodeList expressionList = rootNode.getSourceExpressionList();
         List<Object> result = new ArrayList<>(expressionList.size());
-        Object value;
         for (SqlNode node : expressionList) {
-            value = getOperandValue(node);
-            if (value instanceof DynamicParam) {
-                if (parameterValues == null || parameterValues.isEmpty()) {
-                    throw new IllegalArgumentException("Parameter values: " + parameterValues);
-                }
-                value = parameterValues.get(((DynamicParam) value).index);
-            }
-            result.add(value);
+            result.add(getOperandValue(node, parameterValues));
         }
 
         SqlBasicCall conditionNode = (SqlBasicCall) rootNode.getCondition();
-        List<Object> tmp = getColumnValues(conditionNode);
+        List<Object> tmp = getColumnValues(conditionNode, parameterValues);
         result.addAll(tmp);
 
         return result;
     }
 
-    private static List<Object> getColumnValues(final SqlBasicCall inputNode) {
+    private static List<Object> getColumnValues(final SqlBasicCall inputNode, List<Object> parameterValues) {
         List<SqlNode> operands = inputNode.getOperandList();
         List<Object> result = new ArrayList<>(1);
-        for (SqlNode operand : operands) {
-            if (SqlKind.LITERAL == operand.getKind()) {
-                result.add(getOperandValue(operand));
-                if (operands.size() == 2) {
-                    break;
+        if (isOperatorKindOf(inputNode.getOperator(), SqlKind.IS_NULL) && operands.size() == 1) {
+            result.add(null);
+        } else if (isOperatorKindOf(inputNode.getOperator(), SqlKind.LIKE) && operands.size() == 3) {
+            Object value = getOperandValue(inputNode.getOperandList().get(1), parameterValues);
+            if (!(value instanceof String)) {
+                throw new IllegalArgumentException("Invalid value: " + value + ". Actual type: " + value.getClass().getSimpleName() + ", expected type: " +
+                        "String");
+            }
+            String escapeValue = (String) getOperandValue(inputNode.getOperandList().get(2), parameterValues);
+            result.add(StringUtils.remove((String) value, escapeValue));
+        } else {
+            for (SqlNode operand : operands) {
+                if (SqlKind.LITERAL == operand.getKind()) {
+                    result.add(getOperandValue(operand, parameterValues));
+                    if (operands.size() == 2) {
+                        break;
+                    }
+                } else if (operand instanceof SqlBasicCall) {
+                    result.addAll(getColumnValues((SqlBasicCall) operand, parameterValues));
                 }
-            } else if (operand instanceof SqlBasicCall) {
-                result.addAll(getColumnValues((SqlBasicCall) operand));
             }
         }
         return result;
@@ -165,4 +198,7 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         return result;
     }
 
+    private static boolean isOperatorKindOf(SqlOperator operator, SqlKind kind) {
+        return operator == null || kind == null ? false : operator.getKind() == kind;
+    }
 }

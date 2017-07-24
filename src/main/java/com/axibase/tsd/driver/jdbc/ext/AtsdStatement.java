@@ -14,6 +14,9 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import org.apache.calcite.avatica.AvaticaConnection;
@@ -22,8 +25,6 @@ import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.commons.lang3.StringUtils;
-
-import java.sql.SQLException;
 
 public class AtsdStatement extends AvaticaStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdStatement.class);
@@ -101,8 +102,27 @@ public class AtsdStatement extends AvaticaStatement {
 
 	@Override
 	public void addBatch(String sql) throws SQLException {
+		logger.debug("[addBatch]");
 		sql = StringUtils.stripStart(sql, null);
 		super.addBatch(sql);
+	}
+
+	@Override
+	public boolean execute(String sql) throws SQLException {
+		logger.debug("[execute]");
+		return super.execute(sql);
+	}
+
+	@Override
+	public ResultSet executeQuery(String sql) throws SQLException {
+		logger.debug("[executeQuery]");
+		return super.executeQuery(sql);
+	}
+
+	@Override
+	public int[] executeBatch() throws SQLException {
+		logger.debug("[executeBatch]");
+		return super.executeBatch();
 	}
 
 }

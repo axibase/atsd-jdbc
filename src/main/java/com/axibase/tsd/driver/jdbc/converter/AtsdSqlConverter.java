@@ -3,7 +3,10 @@ package com.axibase.tsd.driver.jdbc.converter;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Timestamp;
+import com.axibase.tsd.driver.jdbc.util.EnumUtil;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -31,6 +34,8 @@ import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_TABLE_NAME;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
+import static com.axibase.tsd.driver.jdbc.util.AtsdColumn.*;
+
 public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     protected final LoggingFacade logger = LoggingFacade.getLogger(getClass());
@@ -39,14 +44,11 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     private static final Pattern TIMESTAMP_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?$");
     private static final char TAGS_DELIMETER = ';';
 
-    private static final String ENTITY = "entity";
-    private static final String TIME = "time";
-    private static final String DATETIME = "datetime";
-    private static final String METRIC = "metric";
-    protected static final String VALUE = "value";
-    private static final String TEXT = "text";
-    protected static final String TAGS = "tags";
-    protected static final String PREFIX_TAGS = "tags.";
+    protected static final String PREFIX_ENTITY = "entity.";
+    private static final String PREFIX_ENTITY_TAGS = ENTITY_TAGS + '.';
+    protected static final String PREFIX_METRIC = "metric.";
+    private static final String PREFIX_METRIC_TAGS = METRIC_TAGS + '.';
+    protected static final String PREFIX_SERIES_TAGS = TAGS + '.';
 
     protected T rootNode;
     private final boolean timestampTz;
@@ -55,24 +57,24 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         this.timestampTz = timestampTz;
     }
 
-    public String convertToCommand(String sql) throws SQLException {
-        return convertToCommand(sql, null);
+    public List<String> convertToCommands(String sql) throws SQLException {
+        return convertToCommands(sql, null);
     }
 
-    public String convertToCommand(String sql, List<Object> parameterValues) throws SQLException {
-        logger.debug("[convertToCommand] parameterCount: {}", getSize(parameterValues));
+    public List<String> convertToCommands(String sql, List<Object> parameterValues) throws SQLException {
+        logger.debug("[convertToCommands] parameterCount: {}", getSize(parameterValues));
         try {
             sql = prepareSql(sql);
         } catch (RuntimeException e) {
             throw new SQLException("SQL prepare error: " + sql, e);
         }
         this.rootNode = parseSql(sql);
-        final String result = createSeriesCommand(parameterValues);
-        logger.trace("[convertToCommand] result: {}", result);
+        final List<String> result = createCommands(parameterValues);
+        logger.trace("[convertToCommands] result: {}", result);
         return result;
     }
 
-    public String convertBatchToCommands(String sql, List<List<Object>> parameterValuesBatch) throws SQLException {
+    public List<String> convertBatchToCommands(String sql, List<List<Object>> parameterValuesBatch) throws SQLException {
         logger.debug("[convertBatchToCommands] batchSize: {}", getSize(parameterValuesBatch));
         try {
             sql = prepareSql(sql);
@@ -80,7 +82,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
             throw new SQLException("SQL prepare error: " + sql, e);
         }
         this.rootNode = parseSql(sql);
-        final String result =createSeriesCommandBatch(parameterValuesBatch);
+        final List<String> result = createCommandBatch(parameterValuesBatch);
         logger.trace("[convertBatchToCommands] result: {}", result);
         return result;
     }
@@ -105,137 +107,281 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         }
     }
 
-    private String createSeriesCommand(List<Object> parameterValues) throws SQLDataException {
-        logger.debug("[createSeriesCommand]");
+    private List<String> createCommands(List<Object> parameterValues) throws SQLException {
+        logger.debug("[createCommands]");
         final String tableName = getTargetTableName();
         final List<String> columnNames = getColumnNames();
-        logger.debug("[createSeriesCommand] tableName: {} columnCount: {}", tableName, columnNames.size());
-        logger.trace("[createSeriesCommand] columnNames: {}", columnNames);
+        logger.debug("[createCommands] tableName: {} columnCount: {}", tableName, columnNames.size());
+        logger.trace("[createCommands] columnNames: {}", columnNames);
         final List<Object> values = getColumnValues(parameterValues);
-        logger.trace("[createSeriesCommand] values: {}", values);
-        return DEFAULT_TABLE_NAME.equals(tableName) ? composeSeriesCommand(logger, columnNames, values, timestampTz) : composeSeriesCommand(logger, tableName,
+        logger.trace("[createCommands] values: {}", values);
+        return DEFAULT_TABLE_NAME.equals(tableName) ? composeCommands(logger, columnNames, values, timestampTz) : composeCommands(logger, tableName,
                 columnNames, values, timestampTz);
     }
 
-    private String createSeriesCommandBatch(List<List<Object>> parameterValueBatch) throws SQLDataException {
-        logger.debug("[createSeriesCommandBatch]");
+    private List<String> createCommandBatch(List<List<Object>> parameterValueBatch) throws SQLException {
+        logger.debug("[createCommandBatch]");
         final String tableName = getTargetTableName();
         final List<String> columnNames = getColumnNames();
-        logger.debug("[createSeriesCommandBatch] tableName: {} columnCount: {}", tableName, columnNames.size());
-        logger.trace("[createSeriesCommandBatch] columnNames: {}", columnNames);
+        logger.debug("[createCommandBatch] tableName: {} columnCount: {}", tableName, columnNames.size());
+        logger.trace("[createCommandBatch] columnNames: {}", columnNames);
         final List<List<Object>> valueBatch = getColumnValuesBatch(parameterValueBatch);
-        StringBuilder buffer = new StringBuilder();
+        List<String> commands = new ArrayList<>();
         if (DEFAULT_TABLE_NAME.equals(tableName)) {
             for (List<Object> values : valueBatch) {
-                buffer.append(composeSeriesCommand(logger, columnNames, values, timestampTz));
+                commands.addAll(composeCommands(logger, columnNames, values, timestampTz));
             }
         } else {
             for (List<Object> values : valueBatch) {
-                buffer.append(composeSeriesCommand(logger, tableName, columnNames, values, timestampTz));
+                commands.addAll(composeCommands(logger, tableName, columnNames, values, timestampTz));
             }
         }
-        return buffer.toString();
+        return commands;
     }
 
-    private static String composeSeriesCommand(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values,
-                                               boolean timestampTz)
-            throws SQLDataException {
+    private static List<String> composeCommands(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values,
+                                                boolean timestampTz) throws SQLException {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
                     String.format("Number of values [%d] does not match to number of columns [%d]",
                             values.size(), columnNames.size()));
         }
-        SeriesCommand command = new SeriesCommand();
+        final CommandBuilder commandBuilder = new CommandBuilder();
+        commandBuilder.setMetricName(metricName);
         String columnName;
         Object value;
-        for (int i = 0; i<columnNames.size(); i++) {
+        for (int i = 0; i < columnNames.size(); i++) {
             columnName = columnNames.get(i);
             value = values.get(i);
             if (value == null) {
                 continue;
             }
 
-            if (ENTITY.equalsIgnoreCase(columnName)) {
-                command.setEntity(String.valueOf(value));
-            } else if (TIME.equalsIgnoreCase(columnName)) {
-                command.setTime(validate(value, Number.class).longValue());
-            } else if (DATETIME.equalsIgnoreCase(columnName)) {
-                command.setDateTime(validateDateTime(value, timestampTz));
-            } else if (VALUE.equalsIgnoreCase(columnName)) {
-                command.addValue(metricName, validate(value, Number.class).doubleValue());
-            } else if (TEXT.equalsIgnoreCase(columnName)) {
-                command.addValue(metricName, value.toString());
-            } else if (TAGS.equalsIgnoreCase(columnName)) {
-                command.addTags(parseTags(value.toString()));
-            } else if (columnName.startsWith(PREFIX_TAGS)) {
-                String tagName = columnName.substring(PREFIX_TAGS.length());
-                command.addTag(tagName, String.valueOf(value));
+            switch (columnName) {
+                case ENTITY:
+                    commandBuilder.setEntity(value.toString());
+                    break;
+                case ENTITY_GROUPS:
+                    throw new SQLFeatureNotSupportedException(ENTITY_GROUPS);
+                case ENTITY_INTERPOLATE:
+                    commandBuilder.setEntityInterpolate(validate(value, String.class));
+                    break;
+                case ENTITY_LABEL:
+                    commandBuilder.setEntityLabel(validate(value, String.class));
+                    break;
+                case ENTITY_TAGS:
+                    commandBuilder.addEntityTags(parseTags(value.toString()));
+                    break;
+                case ENTITY_TIME_ZONE:
+                    commandBuilder.setEntityTimeZone(validate(value, String.class));
+                    break;
+                case TIME:
+                    commandBuilder.setTime(validate(value, Number.class).longValue());
+                    break;
+                case DATETIME:
+                    commandBuilder.setDateTime(validateDateTime(value, timestampTz));
+                    break;
+                case VALUE:
+                    commandBuilder.addSeriesValue(metricName, validate(value, Number.class).doubleValue());
+                    break;
+                case TEXT:
+                    commandBuilder.addSeriesValue(metricName, value.toString());
+                    break;
+                case TAGS:
+                    commandBuilder.addSeriesTags(parseTags(value.toString()));
+                    break;
+                case METRIC_DATA_TYPE:
+                    break;
+                case METRIC_DESCRIPTION:
+                    break;
+                case METRIC_ENABLED:
+                    break;
+                case METRIC_FILTER:
+                    break;
+                case METRIC_INTERPOLATE:
+                    break;
+                case METRIC_INVALID_VALUE_ACTION:
+                    break;
+                case METRIC_LABEL:
+                    break;
+                case METRIC_LAST_INSERT_TIME:
+                    break;
+                case METRIC_MAX_VALUE:
+                    break;
+                case METRIC_MIN_VALUE:
+                    break;
+                case METRIC_NAME:
+                    break;
+                case METRIC_PERSISTENT:
+                    break;
+                case METRIC_RETENTION_INTERVAL_DAYS:
+                    break;
+                case METRIC_TAGS:
+                    commandBuilder.addMetricTags(parseTags(value.toString()));
+                    break;
+                case METRIC_TIME_PRECISION:
+                    break;
+                case METRIC_TIME_ZONE:
+                    break;
+                case METRIC_VERSIONING:
+                    break;
+                default: {
+                    if (columnName.startsWith(PREFIX_SERIES_TAGS)) {
+                        String tagName = columnName.substring(PREFIX_SERIES_TAGS.length());
+                        commandBuilder.addSeriesTag(tagName, String.valueOf(value));
+                    } else if (columnName.startsWith(PREFIX_ENTITY_TAGS)) {
+                        String tagName = columnName.substring(PREFIX_ENTITY_TAGS.length());
+                        commandBuilder.addEntityTag(tagName, String.valueOf(value));
+                    } else if (columnName.startsWith(PREFIX_METRIC_TAGS)) {
+                        String tagName = columnName.substring(PREFIX_METRIC_TAGS.length());
+                        commandBuilder.addMetricTag(tagName, String.valueOf(value));
+                    }
+                }
             }
         }
-        logger.trace("Command: {}", command);
-        return command.compose();
+        List<String> commands = commandBuilder.buildCommands();
+        logger.trace("Commands: {}", commands);
+        return commands;
     }
 
-    private static String composeSeriesCommand(LoggingFacade logger, final List<String> columnNames, final List<Object> values, boolean timestampTz) throws
-            SQLDataException {
+    private static List<String> composeCommands(LoggingFacade logger, final List<String> columnNames, final List<Object> values, boolean timestampTz)
+            throws SQLDataException, SQLFeatureNotSupportedException {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
                     String.format("Number of values [%d] does not match to number of columns [%d]",
                             values.size(), columnNames.size()));
         }
-        SeriesCommand command = new SeriesCommand();
+        final CommandBuilder commandBuilder = new CommandBuilder();
         String columnName;
         Object value;
         String metricName = null;
         Double metricValue = null;
         String metricText = null;
-        for (int i = 0; i<columnNames.size(); i++) {
+        for (int i = 0; i < columnNames.size(); i++) {
             columnName = columnNames.get(i);
             value = values.get(i);
             if (value == null) {
                 continue;
             }
-            if (ENTITY.equalsIgnoreCase(columnName)) {
-                command.setEntity(value.toString());
-            } else if (TIME.equalsIgnoreCase(columnName)) {
-                command.setTime(validate(value, Number.class).longValue());
-            } else if (DATETIME.equalsIgnoreCase(columnName)) {
-                command.setDateTime(validateDateTime(value, timestampTz));
-            } else if (VALUE.equalsIgnoreCase(columnName)) {
-                if (metricName == null) {
-                    metricValue = validate(value, Number.class).doubleValue();
-                } else {
-                    command.addValue(metricName, validate(value, Number.class).doubleValue());
+
+            switch (columnName) {
+                case ENTITY:
+                    commandBuilder.setEntity(validate(value, String.class));
+                    break;
+                case ENTITY_GROUPS:
+                    throw new SQLFeatureNotSupportedException(ENTITY_GROUPS);
+                case ENTITY_INTERPOLATE:
+                    commandBuilder.setEntityInterpolate(validate(value, String.class));
+                    break;
+                case ENTITY_LABEL:
+                    commandBuilder.setEntityLabel(validate(value, String.class));
+                    break;
+                case ENTITY_TAGS:
+                    commandBuilder.addEntityTags(parseTags(value.toString()));
+                    break;
+                case ENTITY_TIME_ZONE:
+                    commandBuilder.setEntityTimeZone(validate(value, String.class));
+                    break;
+                case TIME:
+                    commandBuilder.setTime(validate(value, Number.class).longValue());
+                    break;
+                case DATETIME:
+                    commandBuilder.setDateTime(validateDateTime(value, timestampTz));
+                    break;
+                case METRIC: {
+                    String str = validate(value, String.class);
+                    if (StringUtils.isNotBlank(str)) {
+                        metricName = str;
+                        commandBuilder.setMetricName(metricName);
+                        if (metricValue != null) {
+                            commandBuilder.addSeriesValue(metricName, metricValue);
+                            metricValue = null;
+                        }
+                        if (metricText != null) {
+                            commandBuilder.addSeriesValue(metricName, metricText);
+                            metricText = null;
+                        }
+                    } else {
+                        commandBuilder.addSeriesValue(columnName, str);
+                    }
+                    break;
                 }
-            } else if (TEXT.equalsIgnoreCase(columnName)) {
-                if (metricName == null) {
-                    metricText = value.toString();
-                } else {
-                    command.addValue(metricName, value.toString());
+                case VALUE: {
+                    if (metricName == null) {
+                        metricValue = validate(value, Number.class).doubleValue();
+                    } else {
+                        commandBuilder.addSeriesValue(metricName, validate(value, Number.class).doubleValue());
+                    }
+                    break;
                 }
-            } else if (TAGS.equalsIgnoreCase(columnName)) {
-                command.addTags(parseTags(value.toString()));
-            } else if (columnName.startsWith(PREFIX_TAGS) && value != null) {
-                String tagName = columnName.substring(columnName.indexOf('.') + 1);
-                command.addTag(tagName, value.toString());
-            } else if (METRIC.equalsIgnoreCase(columnName) && value instanceof String && StringUtils.isNotBlank((String) value)) {
-                metricName = (String) value;
-                if (metricValue != null) {
-                    command.addValue(metricName, metricValue);
-                    metricValue = null;
+                case TEXT: {
+                    if (metricName == null) {
+                        metricText = value.toString();
+                    } else {
+                        commandBuilder.addSeriesValue(metricName, value.toString());
+                    }
+                    break;
                 }
-                if (metricText != null) {
-                    command.addValue(metricName, metricText);
-                    metricText = null;
+                case TAGS:
+                    commandBuilder.addSeriesTags(parseTags(value.toString()));
+                    break;
+                case METRIC_DATA_TYPE:
+                    break;
+                case METRIC_DESCRIPTION:
+                    break;
+                case METRIC_ENABLED:
+                    break;
+                case METRIC_FILTER:
+                    break;
+                case METRIC_INTERPOLATE:
+                    break;
+                case METRIC_INVALID_VALUE_ACTION:
+                    break;
+                case METRIC_LABEL:
+                    break;
+                case METRIC_LAST_INSERT_TIME:
+                    break;
+                case METRIC_MAX_VALUE:
+                    break;
+                case METRIC_MIN_VALUE:
+                    break;
+                case METRIC_NAME:
+                    break;
+                case METRIC_PERSISTENT:
+                    break;
+                case METRIC_RETENTION_INTERVAL_DAYS:
+                    break;
+                case METRIC_TAGS:
+                    commandBuilder.addMetricTags(parseTags(value.toString()));
+                    break;
+                case METRIC_TIME_PRECISION:
+                    break;
+                case METRIC_TIME_ZONE:
+                    break;
+                case METRIC_VERSIONING:
+                    break;
+                default: {
+                    if (columnName.startsWith(PREFIX_SERIES_TAGS)) {
+                        String tagName = columnName.substring(PREFIX_SERIES_TAGS.length());
+                        commandBuilder.addSeriesTag(tagName, String.valueOf(value));
+                    } else if (columnName.startsWith(PREFIX_ENTITY_TAGS)) {
+                        String tagName = columnName.substring(PREFIX_ENTITY_TAGS.length());
+                        commandBuilder.addEntityTag(tagName, String.valueOf(value));
+                    } else if (columnName.startsWith(PREFIX_METRIC_TAGS)) {
+                        String tagName = columnName.substring(PREFIX_METRIC_TAGS.length());
+                        commandBuilder.addMetricTag(tagName, String.valueOf(value));
+                    } else if (value instanceof Number) {
+                        commandBuilder.addSeriesValue(columnName, validate(value, Number.class).doubleValue());
+                    } else if (value instanceof String) {
+                        commandBuilder.addSeriesValue(columnName, (String) value);
+                    }
                 }
-            } else if (value instanceof Number) {
-                command.addValue(columnName, validate(value, Number.class).doubleValue());
-            } else if (value instanceof String) {
-                command.addValue(columnName, (String) value);
             }
         }
-        logger.trace("Command: {}", command);
-        return command.compose();
+
+        List<String> commands = commandBuilder.buildCommands();
+        logger.trace("Commands: {}", commands);
+        return commands;
     }
 
     private static int getSize(List list) {
@@ -250,9 +396,12 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         }
     }
 
-    protected static Object getOperandValue(SqlNode node) {
+    protected static Object getOperandValue(SqlNode node, List<Object> parameterValues) {
         if (SqlKind.DYNAMIC_PARAM == node.getKind()) {
-            return DynamicParam.create(((SqlDynamicParam) node).getIndex());
+            if (parameterValues == null || parameterValues.isEmpty()) {
+                throw new IllegalArgumentException("Parameter values: " + parameterValues);
+            }
+            return parameterValues.get(((SqlDynamicParam) node).getIndex());
         }
         if (SqlKind.LITERAL != node.getKind()) {
             if (SqlKind.IDENTIFIER == node.getKind()) {
@@ -342,17 +491,19 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         return StringUtils.isBlank(tagValue) ? null : new ImmutablePair<>(tagName, tagValue);
     }
 
-    public static final class DynamicParam {
-
-        final int index;
-
-        private DynamicParam(int index) {
-            this.index = index;
+    protected static void appendColumnName(final StringBuilder buffer, String name) {
+        if (EnumUtil.isReservedSqlToken(name.toUpperCase())) {
+            buffer.append('\"').append(name.toLowerCase()).append('\"');
+        } else {
+            name = name.toLowerCase();
+            if (name.startsWith(PREFIX_ENTITY)
+                    || name.startsWith(PREFIX_METRIC)
+                    || name.startsWith(PREFIX_SERIES_TAGS)) {
+                buffer.append('\"').append(name).append('\"');
+            } else{
+                buffer.append(name);
+            }
         }
-
-        private static DynamicParam create(int index) {
-            return new DynamicParam(index);
-        }
-
     }
+
 }

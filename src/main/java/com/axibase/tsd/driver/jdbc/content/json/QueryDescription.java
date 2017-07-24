@@ -18,7 +18,7 @@ package com.axibase.tsd.driver.jdbc.content.json;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.*;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
 
 public class QueryDescription {
 	@JsonProperty("queryId")

@@ -21,7 +21,9 @@ import com.axibase.tsd.driver.jdbc.content.json.Series;
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
+import com.axibase.tsd.driver.jdbc.enums.EntityColumn;
 import com.axibase.tsd.driver.jdbc.enums.Location;
+import com.axibase.tsd.driver.jdbc.enums.MetricColumn;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.intf.IDataProvider;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
@@ -167,8 +169,8 @@ public class AtsdMeta extends MetaImpl {
 				final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 				result = new ExecuteResult(contentMetadata.getList());
 			} else {
-				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
-				provider.getContentDescription().setPostContent(content);
+				List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
+				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(timeoutMillis);
 
 				MetaResultSet metaResultSet = MetaResultSet.count(statementHandle.connectionId, statementHandle.id, updateCount);
@@ -293,8 +295,8 @@ public class AtsdMeta extends MetaImpl {
 				provider.fetchData(limit, statement.getQueryTimeout());
 				updateCount = -1;
 			} else {
-				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
-				provider.getContentDescription().setPostContent(content);
+				List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
+				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
 			final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
@@ -330,8 +332,8 @@ public class AtsdMeta extends MetaImpl {
 					throw new IllegalArgumentException("Invalid statement type: " + statementType);
 				}
 				final IDataProvider provider = createDataProvider(statementHandle, query, statementType);
-				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
-				provider.getContentDescription().setPostContent(content);
+				List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
+				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(statement.getQueryTimeout());
 				updateCounts[count++] = updateCount;
 			}
@@ -359,10 +361,10 @@ public class AtsdMeta extends MetaImpl {
 		try {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
             final int timeoutMillis = statement.getQueryTimeout();
-			String content = AtsdSqlConverterFactory
+			List<String> content = AtsdSqlConverterFactory
 					.getConverter(statementType, atsdConnectionInfo.timestampTz())
 					.convertBatchToCommands(query, preparedValueBatch);
-			provider.getContentDescription().setPostContent(content);
+			provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 			long updateCount = provider.sendData(timeoutMillis);
 			ExecuteBatchResult result = new ExecuteBatchResult(generateExecuteBatchResult(parameterValueBatch.size(), updateCount == 0 ? 0 : 1));
 			return result;
@@ -506,12 +508,18 @@ public class AtsdMeta extends MetaImpl {
 
 	private String generateTableRemark(String table) {
 		StringBuilder buffer = new StringBuilder("SELECT");
-		for (DefaultColumn defaultColumn : DefaultColumn.values()) {
-			if (atsdConnectionInfo.metaColumns() || !defaultColumn.isMetaColumn()) {
-				if (defaultColumn.ordinal() != 0) {
-					buffer.append(',');
-				}
-				buffer.append(' ').append(defaultColumn.getColumnNamePrefix());
+		for (DefaultColumn column : DefaultColumn.values()) {
+			if (column.ordinal() != 0) {
+				buffer.append(',');
+			}
+			buffer.append(' ').append(column.getColumnNamePrefix());
+		}
+		if (atsdConnectionInfo.metaColumns()) {
+			for (EntityColumn column : EntityColumn.values()) {
+				buffer.append(", ").append(column.getColumnNamePrefix());
+			}
+			for (MetricColumn column : MetricColumn.values()) {
+				buffer.append(", ").append(column.getColumnNamePrefix());
 			}
 		}
 		return buffer
@@ -650,7 +658,7 @@ public class AtsdMeta extends MetaImpl {
         final List<String> metricMasks = atsdConnectionInfo.tables();
 		if (!metricMasks.isEmpty()) {
 			final String colNamePattern = columnNamePattern.s;
-			final List<DefaultColumn> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
+			final List<MetadataColumnDefinition> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
 
 			List<Object> columnData = new ArrayList<>();
 			final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
@@ -659,7 +667,7 @@ public class AtsdMeta extends MetaImpl {
 					Collections.singleton(pattern);
 			for (String tableName : tableNames) {
 				int position = 1;
-				for (DefaultColumn column : columns) {
+				for (MetadataColumnDefinition column : columns) {
 					columnData.add(createColumnMetaData(column, tableName, position));
 					++position;
 				}
@@ -706,15 +714,26 @@ public class AtsdMeta extends MetaImpl {
 		return WildcardsUtil.hasWildcards(pattern) || pattern.startsWith(TagColumn.PREFIX);
 	}
 
-	private static List<DefaultColumn> filterColumns(String columnPattern, boolean showMetaColumns) {
-		List<DefaultColumn> result = new ArrayList<>();
+	private static List<MetadataColumnDefinition> filterColumns(String columnPattern, boolean showMetaColumns) {
+		List<MetadataColumnDefinition> result = new ArrayList<>();
 		for (DefaultColumn column : DefaultColumn.values()) {
-			if ((showMetaColumns || !column.isMetaColumn())
-					&& WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), columnPattern)) {
-				result.add(column);
+			filterColumn(columnPattern, column, result);
+		}
+		if (showMetaColumns) {
+			for (EntityColumn column : EntityColumn.values()) {
+				filterColumn(columnPattern, column, result);
+			}
+			for (MetricColumn column : MetricColumn.values()) {
+				filterColumn(columnPattern, column, result);
 			}
 		}
 		return result;
+	}
+
+	private static void filterColumn(String columnPattern, MetadataColumnDefinition column, final List<MetadataColumnDefinition> columns) {
+		if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), columnPattern)) {
+			columns.add(column);
+		}
 	}
 
 	private Set<String> getTags(String metric) {
@@ -747,17 +766,14 @@ public class AtsdMeta extends MetaImpl {
 	private Object createColumnMetaData(MetadataColumnDefinition column, String table, int ordinal) {
 		final AtsdType columnType = column.getType();
 		return new AtsdMetaResultSets.AtsdMetaColumn(
+				atsdConnectionInfo.odbcCompatibility(),
 				atsdConnectionInfo.catalog(),
 				atsdConnectionInfo.schema(),
 				table,
 				column.getColumnNamePrefix(),
-				columnType.sqlTypeCode,
-				columnType.sqlType,
-				columnType.size,
-				null,
+				columnType,
 				10,
 				column.getNullable(),
-				0,
 				ordinal,
 				column.getNullableAsString()
 		);
@@ -810,12 +826,9 @@ public class AtsdMeta extends MetaImpl {
 		return contentMetadata;
 	}
 
-	private static AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType type) {
-		return new AtsdMetaResultSets.AtsdMetaTypeInfo(type.sqlType, type.sqlTypeCode, type.maxPrecision,
-				type.getLiteral(true), type.getLiteral(false),
-				(short) DatabaseMetaData.typeNullable, type == AtsdType.STRING_DATA_TYPE,
-				(short) DatabaseMetaData.typeSearchable, false, false, false,
-				(short) 0, (short) 0, 10);
+	private AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType atsdType) {
+		return new AtsdMetaResultSets.AtsdMetaTypeInfo(atsdConnectionInfo.odbcCompatibility(), atsdType, (short) DatabaseMetaData.typeNullable,
+				(short) DatabaseMetaData.typeSearchable, false, false, atsdType == AtsdType.STRING_DATA_TYPE, (short) 0, (short) 0, 10);
 	}
 
 	// Since Calcite 1.6.0

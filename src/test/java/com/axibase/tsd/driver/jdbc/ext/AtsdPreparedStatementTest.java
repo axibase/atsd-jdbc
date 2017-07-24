@@ -221,4 +221,19 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 		}
 	}
 
+	@Test
+	public void testInsertWithEntityColumns() throws SQLException {
+		final String dateTime = ISO8601Utils.format(new java.util.Date(), true);
+		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags, entity.label, entity.tags) VALUES (?,?,?,?,?,?)";
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			stmt.setString(1, dateTime);
+			stmt.setString(2, "entity_1");
+			stmt.setDouble(3, 123);
+			stmt.setString(4, null);
+			stmt.setString(5, "label_1");
+			stmt.setString(6, "test1=value1");
+			Assert.assertEquals(2, stmt.executeUpdate());
+		}
+	}
+
 }

@@ -113,6 +113,10 @@ public class AtsdConnectionInfo {
 		return result == null ? (OnMissingMetricAction) property.defaultValue() : result;
 	}
 
+	public boolean odbcCompatibility() {
+		return getBooleanValue(odbcCompatibility);
+	}
+
 	private boolean getBooleanValue(AtsdDriverConnectionProperties property) {
 		final String result = info.getProperty(property.camelName());
 		return result == null ? (Boolean) property.defaultValue() : Boolean.parseBoolean(result);
