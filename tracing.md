@@ -33,7 +33,7 @@ Create ATSD JDBC driver configuration in DataGrip.
 
 Create a driver connection.
 
-![](datagrip-connection.png)
+![](images/datagrip-connection.png)
 
 Provide a path to the logging configuration in the VM Option text bar.
 
@@ -63,6 +63,7 @@ log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} %t %-5p %c{
 This will allow the output of all driver trace messages to C:\JDBC.log file.
 
 Run the ODBC Data Sources and choose the configured ATSD Gateway. Change the classpath by adding logging dependencies and directory.
+
 ![](images/gateway-config.png)
 
 Copy the classpath. Create a CLASSPATH environment variable and paste the value.
