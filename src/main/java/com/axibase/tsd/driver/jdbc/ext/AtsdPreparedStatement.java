@@ -14,6 +14,20 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.EnumUtil;
+import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
+import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
+import lombok.SneakyThrows;
+import org.apache.calcite.avatica.AvaticaConnection;
+import org.apache.calcite.avatica.AvaticaPreparedStatement;
+import org.apache.calcite.avatica.ColumnMetaData;
+import org.apache.calcite.avatica.Meta;
+import org.apache.calcite.avatica.Meta.Signature;
+import org.apache.calcite.avatica.Meta.StatementHandle;
+import org.apache.calcite.avatica.remote.TypedValue;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -25,17 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
-import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
-import org.apache.calcite.avatica.AvaticaConnection;
-import org.apache.calcite.avatica.AvaticaPreparedStatement;
-import org.apache.calcite.avatica.ColumnMetaData;
-import org.apache.calcite.avatica.Meta;
-import org.apache.calcite.avatica.Meta.Signature;
-import org.apache.calcite.avatica.Meta.StatementHandle;
-import org.apache.calcite.avatica.remote.TypedValue;
-import org.apache.commons.lang3.StringUtils;
+import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
 public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdPreparedStatement.class);
@@ -45,9 +49,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	protected AtsdPreparedStatement(AvaticaConnection connection, StatementHandle h, Signature signature,
 									int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		super(connection, h, signature, resultSetType, resultSetConcurrency, resultSetHoldability);
-		if (logger.isTraceEnabled()) {
-			logger.trace("[new] " + this.handle.id);
-		}
+		logger.trace("[new] {}", this.handle.id);
 	}
 
 	@Override
@@ -78,7 +80,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		final List<TypedValue> list = new ArrayList<>(parameters.values());
 		if (logger.isDebugEnabled()) {
 			for (TypedValue tv : list) {
-				logger.debug("[TypedValue] " + tv.value);
+				logger.debug("[TypedValue] type: {} value: {}", tv.type, tv.value);
 			}
 		}
 		return list;
@@ -159,22 +161,23 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setObject(int parameterIndex, Object value, int targetSqlType) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.STRING, value));
+		final ColumnMetaData.Rep rep = EnumUtil.getAtsdTypeBySqlType(targetSqlType, AtsdType.JAVA_OBJECT_TYPE).avaticaType;
+		parameters.put(parameterIndex, TypedValue.ofSerial(rep, value));
 	}
 
 	@Override
@@ -184,52 +187,52 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setRef(int parameterIndex, Ref value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setBlob(int parameterIndex, Blob value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setClob(int parameterIndex, Clob value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setArray(int parameterIndex, Array value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setDate(int parameterIndex, Date value, Calendar calendar) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.JAVA_SQL_DATE, value));
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setDate(int parameterIndex, Date value) throws SQLException {
-		setDate(parameterIndex, value, getCalendar());
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time value, Calendar calendar) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.JAVA_SQL_TIME, value));
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setTime(int parameterIndex, Time value) throws SQLException {
-		setTime(parameterIndex, value, getCalendar());
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp value, Calendar calendar) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.JAVA_SQL_TIMESTAMP, value));
+		parameters.put(parameterIndex, TypedValue.ofJdbc(ColumnMetaData.Rep.JAVA_SQL_TIMESTAMP, value, calendar));
 	}
 
 	@Override
@@ -239,17 +242,17 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setURL(int parameterIndex, URL value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
 	public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	@Override
@@ -264,67 +267,67 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setNClob(int parameterIndex, NClob value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setAsciiStream(int parameterIndex, InputStream value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setBinaryStream(int parameterIndex, InputStream value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setClob(int parameterIndex, Reader reader) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	public void setTimeExpression(int parameterIndex, String value) throws SQLException {
@@ -332,14 +335,56 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		setObject(parameterIndex, expression);
 	}
 
+    @Override
+    public Meta.StatementType getStatementType() {
+        return getSignature() == null ? null : getSignature().statementType;
+    }
+
+    @Override
+    public int getUpdateCount() throws SQLException {
+        return getStatementType() != Meta.StatementType.SELECT ? super.getUpdateCount() : -1;
+    }
+
+    @Override
+    public long getLargeUpdateCount() throws SQLException {
+        return getStatementType() != Meta.StatementType.SELECT ? super.getLargeUpdateCount() : -1L;
+    }
+
 	String getSql() {
 		return getSignature() == null ? null : getSignature().sql;
 	}
 
+	private AtsdConnection getAtsdConnection() {
+		return (AtsdConnection) super.getConnection();
+	}
+
 	@Override
-	public void addBatch(String sql) throws SQLException {
-		sql = StringUtils.stripStart(sql, null);
-		super.addBatch(sql);
+	@SneakyThrows(SQLException.class)
+	public ResultSetMetaData getMetaData() {
+		logger.debug("[getMetaData]");
+		final ResultSetMetaData resultSetMetaData;
+		if (super.openResultSet == null) {
+			if (getStatementType() == SELECT) {
+				getAtsdConnection().getMeta().updatePreparedStatementResultSetMetaData(this.getSignature(), this.handle);
+				resultSetMetaData = super.getMetaData();
+			} else {
+				resultSetMetaData = null;
+			}
+		} else {
+			resultSetMetaData = openResultSet.getMetaData();
+		}
+		return resultSetMetaData;
+	}
+
+    @Override
+    public void addBatch(String sql) throws SQLException {
+		throw new UnsupportedOperationException();
+    }
+
+    @Override
+	public void addBatch() throws SQLException {
+		logger.debug("[addBatch]");
+		this.parameterValueBatch.add(this.copyParameterValues());
 	}
 
 	@Override
@@ -350,11 +395,6 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 			copy.add(value);
 		}
 		return copy;
-	}
-
-	@Override
-	public Meta.StatementType getStatementType() {
-		return getSignature() == null ? null : getSignature().statementType;
 	}
 
 }

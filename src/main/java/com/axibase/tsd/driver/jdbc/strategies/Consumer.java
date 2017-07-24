@@ -15,6 +15,16 @@
 package com.axibase.tsd.driver.jdbc.strategies;
 
 
+import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.content.json.*;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
+import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
+import com.axibase.tsd.driver.jdbc.intf.IConsumer;
+import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import org.apache.calcite.avatica.ColumnMetaData;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -23,14 +33,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.axibase.tsd.driver.jdbc.content.StatementContext;
-import com.axibase.tsd.driver.jdbc.content.json.*;
-import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
-import com.axibase.tsd.driver.jdbc.intf.IConsumer;
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
-import org.apache.calcite.avatica.ColumnMetaData;
-import org.apache.commons.lang3.StringUtils;
+import static com.axibase.tsd.driver.jdbc.util.ExceptionsUtil.isMetricNotFoundException;
 
 
 public class Consumer implements IConsumer {
@@ -38,13 +41,15 @@ public class Consumer implements IConsumer {
 
 	protected final StrategyStatus status;
 	protected final StatementContext context;
+	protected final OnMissingMetricAction onMissingMetricAction;
 	protected final String source;
 	protected RowIterator iterator;
 
-	public Consumer(final StatementContext context, final StrategyStatus status, String source) {
+	public Consumer(final StatementContext context, final StrategyStatus status, String source, OnMissingMetricAction action) {
 		this.context = context;
 		this.status = status;
 		this.source = source;
+		this.onMissingMetricAction = action;
 	}
 
 	@Override
@@ -79,10 +84,7 @@ public class Consumer implements IConsumer {
 
 	@Override
 	public void fillComments() {
-		processComments(context, iterator.getCommentSection());
-	}
-
-	private static void processComments(StatementContext context, CharSequence comments) {
+		final CharSequence comments = iterator.getCommentSection();
 		if (StringUtils.isBlank(comments)) {
 			return;
 		}
@@ -92,8 +94,8 @@ public class Consumer implements IConsumer {
 		}
 		try {
 			final Comments commentsObject = JsonMappingUtil.mapToComments(json);
-			fillWarnings(commentsObject.getWarnings(), context);
-			fillErrors(commentsObject.getErrors(), context);
+			fillWarnings(commentsObject.getWarnings());
+			fillErrors(commentsObject.getErrors());
 		} catch (IOException e){
 			if (logger.isDebugEnabled()) {
 				logger.debug("Wrong error format: {}", e.getMessage());
@@ -101,25 +103,42 @@ public class Consumer implements IConsumer {
 		}
 	}
 
-	private static void fillWarnings(List<WarningSection> warningSections, StatementContext context) {
+	private void addWarning(AtsdExceptionRepresentation section) {
+		SQLWarning sqlw = new SQLWarning(section.getMessage(), section.getState());
+		List<StackTraceElement> list = getStackTrace(section);
+		sqlw.setStackTrace(list.toArray(new StackTraceElement[list.size()]));
+		context.addWarning(sqlw);
+	}
+
+	private SQLException addError(AtsdExceptionRepresentation section) {
+		SQLException sqlException = new SQLException(section.getMessage(), section.getState());
+		List<StackTraceElement> list = getStackTrace(section);
+		sqlException.setStackTrace(list.toArray(new StackTraceElement[list.size()]));
+		context.addException(sqlException);
+		return sqlException;
+	}
+
+	private void fillWarnings(List<WarningSection> warningSections) {
 		if (warningSections != null) {
 			for (AtsdExceptionRepresentation section : warningSections) {
-				SQLWarning sqlw = new SQLWarning(section.getMessage(), section.getState());
-				List<StackTraceElement> list = getStackTrace(section);
-				sqlw.setStackTrace(list.toArray(new StackTraceElement[list.size()]));
-				context.addWarning(sqlw);
+				addWarning(section);
 			}
 		}
 	}
 
-	private static void fillErrors(List<ErrorSection> errorSections, StatementContext context) {
+	private void fillErrors(List<ErrorSection> errorSections) {
 		SQLException sqlException = null;
 		if (errorSections != null) {
 			for (ErrorSection section : errorSections) {
-				sqlException = new SQLException(section.getMessage(), section.getState());
-				List<StackTraceElement> list = getStackTrace(section);
-				sqlException.setStackTrace(list.toArray(new StackTraceElement[list.size()]));
-				context.addException(sqlException);
+				if (isMetricNotFoundException(section.getMessage())) {
+					if (onMissingMetricAction == OnMissingMetricAction.ERROR) {
+						sqlException = addError(section);
+					} else if (onMissingMetricAction == OnMissingMetricAction.WARNING) {
+						addWarning(section);
+					}
+				} else {
+					sqlException = addError(section);
+				}
 			}
 		}
 		if (sqlException != null) {

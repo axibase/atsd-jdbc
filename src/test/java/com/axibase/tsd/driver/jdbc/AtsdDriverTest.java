@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
-import static com.axibase.tsd.driver.jdbc.TestConstants.JDBC_ATSD_URL_PREFIX;
 import static org.junit.Assert.*;
 
 @RunWith(PowerMockRunner.class)
@@ -71,7 +70,7 @@ public class AtsdDriverTest extends AtsdProperties {
 		assertTrue(properties.containsAll(Arrays.asList(AtsdDriverConnectionProperties.values())));
 		DriverPropertyInfo[] propertyInfo = driver.getPropertyInfo(null, new Properties());
 		assertNotNull(propertyInfo);
-		assertEquals(7, propertyInfo.length);
+		assertEquals(11, propertyInfo.length);
 
 	}
 
@@ -97,7 +96,7 @@ public class AtsdDriverTest extends AtsdProperties {
 	public void testConnectToWrongUrl() throws Exception {
 		exception.expect(SQLException.class);
 		exception.expectMessage("Unknown host specified");
-		Connection connection = driver.connect(JDBC_ATSD_URL_PREFIX + "https://unknown:443/api/sql", new Properties());
+		Connection connection = driver.connect(DriverConstants.CONNECT_URL_PREFIX + "unknown:443", new Properties());
 		connection.close();
 	}
 

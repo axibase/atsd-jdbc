@@ -1,14 +1,16 @@
 package com.axibase.tsd.driver.jdbc;
 
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
+
 import java.nio.charset.Charset;
 
 public final class DriverConstants {
 	public static final String DATABASE_PRODUCT_NAME = "Axibase";
 	public static final String DATABASE_PRODUCT_VERSION = "Axibase Time Series Database";
 	public static final String JDBC_DRIVER_NAME = "ATSD JDBC driver";
-	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.2.22";
+	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.2";
 	public static final int    DRIVER_VERSION_MAJOR_DEFAULT = 1;
-	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 2;
+	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 3;
 
 	public static final String PRODUCT_NAME_KEY = "product.name";
 	public static final String PRODUCT_VERSION_KEY = "product.version";
@@ -21,21 +23,30 @@ public final class DriverConstants {
 	public static final String DRIVER_PROPERTIES = "META-INF/axibase-atsd-jdbc.properties";
 	public static final String RETRIES_NUMBER = "1";
 	public static final boolean JDBC_COMPLIANT = false;
+	public static final String CONNECTION_STRING_PARAM_SEPARATOR = ";";
 
-	public static final String CONNECT_URL_PREFIX = "jdbc:axibase:atsd:";
-	public static final String PARAM_SEPARATOR = ";";
-	public static final String PROTOCOL_SEPARATOR = "://";
+	public static final String CONNECT_URL_PREFIX = "jdbc:atsd://";
+
 	public static final String CONNECT_TIMEOUT_PARAM = "connectTimeout";
 	public static final int    DEFAULT_CONNECT_TIMEOUT_VALUE = 5;
 	public static final String READ_TIMEOUT_PARAM = "readTimeout";
 	public static final int    DEFAULT_READ_TIMEOUT_VALUE = 0;
-	public static final String TRUST_PARAM_NAME = "trustServerCertificate";
-	public static final boolean DEFAULT_TRUST_SERVER_CERTIFICATE = false;
+	public static final String SECURE_PARAM_NAME = "secure";
+	public static final boolean DEFAULT_SECURE_CONNECTION = true;
+	public static final String TRUST_PARAM_NAME = "trust";
+	public static final boolean DEFAULT_TRUST_SERVER_CERTIFICATE = true;
 	public static final String TABLES_PARAM_NAME = "tables";
-	public static final String DEFAULT_TABLES_VALUE = null;
-	public static final String CATALOG_PARAM_NAME = "catalog";
+	public static final String DEFAULT_TABLES_VALUE = "*";
 	public static final String EXPAND_TAGS_PARAM_NAME = "expandTags";
-	public static final boolean DEFAULT_EXPAND_TAGS_VALUE = true;
+	public static final boolean DEFAULT_EXPAND_TAGS_VALUE = false;
+	public static final String META_COLUMNS_PARAM_NAME = "metaColumns";
+	public static final boolean DEFAULT_META_COLUMNS_VALUE = false;
+	public static final String ASSIGN_INNER_COLUMN_NAMES_PARAM = "assignColumnNames";
+	public static final boolean DEFAULT_ASSIGN_INNER_COLUMN_NAMES_VALUE = false;
+	public static final String USE_TIMESTAMP_WITH_TIME_ZONE_PARAM = "timestamptz";
+	public static final boolean DEFAULT_USE_TIMESTAMP_WITH_TIME_ZONE_VALUE = true;
+	public static final String ON_MISSING_METRIC_PARAM = "missingMetric";
+	public static final OnMissingMetricAction DEFAULT_ON_MISSING_METRIC_VALUE = OnMissingMetricAction.WARNING;
 
 	public static final String QUERY_ID_PARAM_NAME = "queryId";
 	public static final String Q_PARAM_NAME = "q";
@@ -46,16 +57,9 @@ public final class DriverConstants {
 	public static final String METADATA_FORMAT_PARAM_NAME = "metadataFormat";
 	public static final String LIMIT_PARAM_NAME = "limit";
 
-	public static final int    ATSD_VERSION_SUPPORTING_BODY_METADATA = 13919;
-	public static final int    ATSD_VERSION_COMPRESSED_ERRORS = 14185;
-	public static final int    ATSD_VERSION_SUPPORTS_CANCEL_QUERIES = 14451;
-	public static final int    ATSD_VERSION_DIFFERS_NULL_AND_EMPTY = 14540;
+	public static final int	MIN_SUPPORTED_ATSD_REVISION = 16743;
 	public static final String REVISION_LINE = "Revision";
 
-	public static final String COMMAND_ENDPOINT = "/api/v1/command";
-	public static final String METRICS_ENDPOINT = "/api/v1/metrics";
-	public static final String VERSION_ENDPOINT = "/api/v1/version";
-	public static final String CANCEL_METHOD = "/cancel";
 	public static final String CONN_KEEP_ALIVE = "Keep-Alive";
 	public static final String AUTHORIZATION_TYPE = "Basic ";
 	public static final String CSV_AND_JSON_MIME_TYPE = "text/csv,application/json";

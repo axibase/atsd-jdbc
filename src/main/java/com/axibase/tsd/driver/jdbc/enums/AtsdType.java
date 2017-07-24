@@ -16,43 +16,43 @@ import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_FORMATTER;
 import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_SHORT_FORMATTER;
 
 public enum AtsdType {
-	BIGINT_DATA_TYPE("bigint", "bigint", Types.BIGINT, Rep.LONG, 19, 10) {
+	BIGINT_DATA_TYPE("bigint", "bigint", Types.BIGINT, Rep.LONG, 19, 20, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Long.valueOf(cell);
 		}
 	},
-	BOOLEAN_DATA_TYPE("boolean", "boolean", Types.BOOLEAN, Rep.BOOLEAN, 1, 1) {
+	BOOLEAN_DATA_TYPE("boolean", "boolean", Types.BOOLEAN, Rep.BOOLEAN, 1, 1, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Boolean.valueOf(cell);
 		}
 	},
-	DECIMAL_TYPE("decimal", "decimal", Types.DECIMAL, Rep.OBJECT, -1, 10) {
+	DECIMAL_TYPE("decimal", "decimal", Types.DECIMAL, Rep.NUMBER, 0, 128 * 1024, 0) {
 		@Override
 		public Object readValueHelper(String values) {
 			return new BigDecimal(values);
 		}
 	},
-	DOUBLE_DATA_TYPE("double", "double", Types.DOUBLE, Rep.DOUBLE, 52, 10) {
+	DOUBLE_DATA_TYPE("double", "double", Types.DOUBLE, Rep.DOUBLE, 15, 25, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Double.valueOf(cell);
 		}
 	},
-	FLOAT_DATA_TYPE("float", "float", Types.FLOAT, Rep.FLOAT, 23, 10) {
+	FLOAT_DATA_TYPE("float", "float", Types.REAL, Rep.FLOAT, 7, 15, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
-			return Double.valueOf(cell);
+			return Float.valueOf(cell);
 		}
 	},
-	INTEGER_DATA_TYPE("integer", "integer", Types.INTEGER, Rep.INTEGER, 10, 10) {
+	INTEGER_DATA_TYPE("integer", "integer", Types.INTEGER, Rep.INTEGER, 10, 11, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Integer.valueOf(cell);
 		}
 	},
-	JAVA_OBJECT_TYPE("java_object", "java_object", Types.JAVA_OBJECT, Rep.OBJECT, 2147483647, 128 * 1024) {
+	JAVA_OBJECT_TYPE("java_object", "java_object", Types.JAVA_OBJECT, Rep.OBJECT, 2147483647, 128 * 1024, 0) {
 		@Override
 		public Object readValue(String[] values, int index, boolean nullable, ParserRowContext context) {
 			final String cell = values[index];
@@ -60,7 +60,7 @@ public enum AtsdType {
 				return "";
 			}
 			final char firstCharacter = cell.charAt(0);
-			if (!isNumberStart(firstCharacter) || firstCharacter == '"' || context.hasQuote(index)) {
+			if (!isNumberStart(firstCharacter) || context.hasQuote(index)) {
 				return cell;
 			}
 			return Double.valueOf(cell);
@@ -75,25 +75,13 @@ public enum AtsdType {
 			return cell.startsWith("\"") ? cell : new BigDecimal(cell);
 		}
 	},
-	LONG_DATA_TYPE("long", "bigint", Types.BIGINT, Rep.LONG, 19, 10) {
-		@Override
-		protected Object readValueHelper(String cell) {
-			return Long.valueOf(cell);
-		}
-	},
-	SHORT_DATA_TYPE("short", "smallint", Types.SMALLINT, Rep.SHORT, 5, 10) {
+	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 6, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Short.valueOf(cell);
 		}
 	},
-	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 10) {
-		@Override
-		protected Object readValueHelper(String cell) {
-			return Short.valueOf(cell);
-		}
-	},
-	STRING_DATA_TYPE("string", "varchar", Types.VARCHAR, Rep.STRING, 2147483647, 128 * 1024) {
+	STRING_DATA_TYPE("string", "varchar", Types.VARCHAR, Rep.STRING, 128 * 1024, 128 * 1024, 0) {
 		@Override
 		public String getLiteral(boolean isPrefix) {
 			return "'";
@@ -105,10 +93,10 @@ public enum AtsdType {
 		}
 	},
 	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP,
-			"2016-01-01T00:00:00.000".length(), 10) {
+			"2016-01-01T00:00:00.000".length(), "2016-01-01T00:00:00.000".length(), 3) {
 		@Override
 		public String getLiteral(boolean isPrefix) {
-			return isPrefix ? "TIMESTAMP '" : "'";
+			return "'";
 		}
 
 		@Override
@@ -156,14 +144,16 @@ public enum AtsdType {
 	public final Rep avaticaType;
 	public final int maxPrecision;
 	public final int size;
+	public final int scale;
 
-	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep avaticaType, int maxPrecision, int size) {
+	AtsdType(String atsdType, String sqlType, int sqlTypeCode, Rep avaticaType, int maxPrecision, int size, int scale) {
 		this.originalType = atsdType;
 		this.sqlType = sqlType;
 		this.sqlTypeCode = sqlTypeCode;
 		this.avaticaType = avaticaType;
 		this.maxPrecision = maxPrecision;
 		this.size = size;
+		this.scale = scale;
 	}
 
 	protected abstract Object readValueHelper(String cell);

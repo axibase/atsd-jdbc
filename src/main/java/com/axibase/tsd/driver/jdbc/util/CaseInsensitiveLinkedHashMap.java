@@ -8,10 +8,6 @@ public class CaseInsensitiveLinkedHashMap<V> extends LinkedHashMap<String, V> {
 
     private final Set<String> keys = new HashSet<>();
 
-    public CaseInsensitiveLinkedHashMap() {
-        super();
-    }
-
     public V put(String key, V value) {
         if (notContainsIgnoreCase(key)) {
             return super.put(key, value);

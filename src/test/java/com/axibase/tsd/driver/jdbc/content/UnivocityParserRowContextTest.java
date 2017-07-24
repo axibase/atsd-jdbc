@@ -30,7 +30,7 @@ public class UnivocityParserRowContextTest {
 		try {
 			Method method = RowIterator.class.getDeclaredMethod("prepareParserSettings", Integer.TYPE);
 			method.setAccessible(true);
-			return (CsvParserSettings) method.invoke(null, DriverConstants.ATSD_VERSION_DIFFERS_NULL_AND_EMPTY);
+			return (CsvParserSettings) method.invoke(null, DriverConstants.MIN_SUPPORTED_ATSD_REVISION);
 		} catch (Exception e) {
 			fail(e.getMessage());
 			return null;

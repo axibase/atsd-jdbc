@@ -23,17 +23,11 @@ import java.security.GeneralSecurityException;
 public interface IContentProtocol extends AutoCloseable {
 
 	InputStream readInfo() throws AtsdException, GeneralSecurityException, IOException;
-	
-	InputStream readContent() throws AtsdException, GeneralSecurityException, IOException;
 
-	InputStream readContent(int timeout) throws AtsdException, GeneralSecurityException, IOException;
+	InputStream readContent(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
-	InputStream getMetrics(String metricMask) throws AtsdException, GeneralSecurityException, IOException;
+    void cancelQuery() throws AtsdException, GeneralSecurityException, IOException;
 
-	void cancelQuery() throws AtsdException, GeneralSecurityException, IOException;
-
-	long writeContent() throws AtsdException, GeneralSecurityException, IOException;
-
-	long writeContent(int timeout) throws AtsdException, GeneralSecurityException, IOException;
+	long writeContent(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
 }

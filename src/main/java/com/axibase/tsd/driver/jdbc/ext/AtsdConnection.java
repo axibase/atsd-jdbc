@@ -14,18 +14,17 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
 
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import org.apache.calcite.avatica.*;
 
 public class AtsdConnection extends AvaticaConnection {
-	@SuppressWarnings("unused")
-	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdConnection.class);
 	protected static final Trojan TROJAN = createTrojan();
 	
 	protected AtsdConnection(UnregisteredDriver driver, AvaticaFactory factory, String url, Properties info) {
@@ -40,22 +39,13 @@ public class AtsdConnection extends AvaticaConnection {
 		return super.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
 	}
 
-	public Properties getInfo() {
-		return info;
-	}
-
 	@Override
 	public boolean isValid(int timeout) throws SQLException {
 		return true;
 	}
 
-	Meta getMeta(){
-		return TROJAN.getMeta(this);
-	}
-
-	@Override
-	public String getCatalog() {
-		return super.getCatalog();
+	AtsdMeta getMeta(){
+		return (AtsdMeta) TROJAN.getMeta(this);
 	}
 
 	@Override
@@ -75,4 +65,28 @@ public class AtsdConnection extends AvaticaConnection {
 	AtsdConnectionInfo getConnectionInfo() {
 		return new AtsdConnectionInfo(this.info);
 	}
+
+    AtsdDatabaseMetaData getAtsdDatabaseMetaData() throws SQLException {
+        return (AtsdDatabaseMetaData) super.getMetaData();
+    }
+
+	@Override
+	public PreparedStatement prepareStatement(String sql) throws SQLException {
+		sql = StringUtils.stripStart(sql, null);
+		return super.prepareStatement(sql);
+	}
+
+	@Override
+	protected long[] executeBatchUpdateInternal(AvaticaPreparedStatement pstmt) throws SQLException {
+		try {
+			return super.executeBatchUpdateInternal(pstmt);
+		} catch (SQLException e) {
+			throw ExceptionsUtil.unboxException(e);
+		}
+	}
+
+	AvaticaFactory getFactory() {
+		return factory;
+	}
+
 }

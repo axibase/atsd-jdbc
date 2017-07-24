@@ -1,18 +1,20 @@
 package com.axibase.tsd.driver.jdbc.protocol;
 
+import com.axibase.tsd.driver.jdbc.content.ContentDescription;
+import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import lombok.experimental.UtilityClass;
+import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.axibase.tsd.driver.jdbc.content.ContentDescription;
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.ArrayUtils;
-
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
 
-public class MetadataRetriever {
+@UtilityClass
+class MetadataRetriever {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(MetadataRetriever.class);
 
 	private static final String SCHEME_HEADER = "Link";
@@ -22,9 +24,6 @@ public class MetadataRetriever {
 	private static final byte[] ENCODED_JSON_SCHEME_BEGIN = "#eyJAY29udGV4dCI6".getBytes(DEFAULT_CHARSET); // #{"@context":
 	private static final byte LINEFEED = (byte)'\n';
 	private static final int BUFFER_SIZE = 1024;
-
-	private MetadataRetriever() {
-	}
 
 	private static InputStream readJsonSchemeAndReturnRest(InputStream inputStream, ByteArrayOutputStream result,
 	                                                       ContentDescription contentDescription) throws IOException {
@@ -40,7 +39,7 @@ public class MetadataRetriever {
 				final String jsonScheme = new String(decoded, DEFAULT_CHARSET);
 				contentDescription.setJsonScheme(jsonScheme);
 				if (logger.isTraceEnabled()) {
-					logger.trace("JSON scheme: " + jsonScheme);
+					logger.trace("JSON scheme: {}", jsonScheme);
 				}
 				result.reset();
 				final int newSize = length - index - 1;
@@ -80,7 +79,7 @@ public class MetadataRetriever {
 			final String encoded = value.substring(START_LINK.length(), value.length() - END_LINK.length());
 			String json = new String(Base64.decodeBase64(encoded), DEFAULT_CHARSET);
 			if (logger.isTraceEnabled()) {
-				logger.trace("JSON schema: " + json);
+				logger.trace("JSON schema: {}", json);
 			}
 			contentDescription.setJsonScheme(json);
 		}

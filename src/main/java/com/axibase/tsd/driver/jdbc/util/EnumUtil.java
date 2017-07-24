@@ -1,16 +1,20 @@
 package com.axibase.tsd.driver.jdbc.util;
 
-import java.util.*;
-
-import com.axibase.tsd.driver.jdbc.enums.*;
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
+import com.axibase.tsd.driver.jdbc.enums.ReservedWordsSQL2003;
+import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
+import lombok.experimental.UtilityClass;
 import org.apache.calcite.avatica.Meta;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.StringUtils;
 
+import java.util.*;
 
+import static org.apache.calcite.avatica.Meta.StatementType.*;
+
+@UtilityClass
 public class EnumUtil {
 
 	private static final Set<String> reservedWordsSql2003 = createSetFromEnum(ReservedWordsSQL2003.values());
@@ -20,7 +24,7 @@ public class EnumUtil {
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
 
-	private EnumUtil() {}
+	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SELECT, INSERT, UPDATE)));
 
 	private static Map<String, AtsdType> createAtsdNameTypeMapping() {
 		Map<String, AtsdType> mapping = new HashMap<>();
@@ -70,10 +74,10 @@ public class EnumUtil {
 		return result;
 	}
 
-	public static AtsdType getAtsdTypeBySqlType(int typeCode) {
+	public static AtsdType getAtsdTypeBySqlType(int typeCode, AtsdType defaultType) {
 		AtsdType result = sqlAtsdTypesMaping.get(typeCode);
 		if (result == null) {
-			result = AtsdType.STRING_DATA_TYPE; // use string type by default
+			result = defaultType;
 		}
 		return result;
 	}
@@ -134,39 +138,17 @@ public class EnumUtil {
 		return result;
 	}
 
-	private static String getPeriodReservedWords() {
-		return "PERIOD,PREVIOUS,NEXT,LINEAR,EXTEND,START_TIME,END_TIME,FIRST_VALUE_TIME,CALENDAR";
-	}
-
-	public static String getSupportedTimeFunctions() {
-		ITimeDateConstant[] timeFunctions = buildTimeConstantsArray();
-		StringBuilder buffer = new StringBuilder(timeFunctions[0].toString());
-		for (int i = 1; i < timeFunctions.length; ++i) {
-			buffer.append(',').append(timeFunctions[i].toString());
+	public static Meta.StatementType getStatementTypeByQuery(final String query) {
+		final String queryKind = new StringTokenizer(query).nextToken().toUpperCase(Locale.US);
+		try {
+			final Meta.StatementType statementType = Meta.StatementType.valueOf(queryKind);
+			if (SUPPORTED_STATEMENT_TYPES.contains(statementType)) {
+				return statementType;
+			}
+		} catch (IllegalArgumentException exc) {
+			// pass
 		}
-		buffer.append("LAST_TIME,DATE_FORMAT,");
-		buffer.append(getPeriodReservedWords());
-		return buffer.toString();
+		throw new IllegalArgumentException("Unsupported statement type: " + queryKind);
 	}
-
-	public static String getNumericFunctions() {
-		return StringUtils.join(NumericFunctions.values(), ',');
-	}
-
-	public static String getStringFunctions() {
-		return LexerTokens.REGEX.name();
-	}
-
-	public static String getSqlKeywords() {
-		return LexerTokens.ROW_NUMBER.name();
-	}
-
-	public static Meta.StatementType getStatementTypeBySqlKind(SqlKind sqlKind) {
-	    try {
-	        return Meta.StatementType.valueOf(sqlKind.name());
-        } catch (IllegalArgumentException exc) {
-	        throw new IllegalArgumentException("Illegal statement type: " + sqlKind.name());
-        }
-    }
 
 }

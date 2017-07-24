@@ -1,14 +1,18 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
 import com.axibase.tsd.driver.jdbc.util.CaseInsensitiveLinkedHashMap;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Map;
+
 abstract class AbstractCommand {
+
+    private static final long MAX_TIME = 4291747200000l; //2106-01-01 00:00:00.000
 
     private final String commandName;
     protected String entity;
     private String dateTime;
+    private Long time;
     protected final Map<String, String> tags = new CaseInsensitiveLinkedHashMap<>();
 
     AbstractCommand(String commandName) {
@@ -23,6 +27,10 @@ abstract class AbstractCommand {
         this.dateTime = dateTime;
     }
 
+    public void setTime(Long time) {
+        this.time = time;
+    }
+
     public void addTag(String name, String value) {
         if (name == null || value == null) {
             return;
@@ -30,33 +38,47 @@ abstract class AbstractCommand {
         tags.put(name, value);
     }
 
+    public void addTags(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            return;
+        }
+        tags.putAll(map);
+    }
+
     protected void validate() {
         if (StringUtils.isBlank(entity)) {
             throw new IllegalArgumentException("Entity not defined");
         }
-        if (StringUtils.isBlank(dateTime)) {
-            throw new IllegalArgumentException("DateTime not defined");
+        if (time == null && StringUtils.isBlank(dateTime)) {
+            throw new IllegalArgumentException("Time and DateTime not defined");
+        }
+        if (time != null && (time < 0 || time > MAX_TIME)) {
+            throw new IllegalArgumentException("Invalid time: " + time);
         }
     }
 
     public String compose() {
         validate();
-        StringBuilder sb = new StringBuilder(commandName);
-        sb.append(" e:").append(handleName(entity));
-        sb.append(" d:").append(dateTime);
-        appendKeysAndValues(sb, " t:", tags);
-        appendValues(sb);
-        return sb.append('\n').toString();
+        StringBuilder buffer = new StringBuilder(commandName);
+        buffer.append(" e:").append(handleName(entity));
+        if (time == null) {
+            buffer.append(" d:").append(dateTime);
+        } else {
+            buffer.append(" ms:").append(time);
+        }
+        appendKeysAndValues(buffer, " t:", tags);
+        appendValues(buffer);
+        return buffer.append('\n').toString();
     }
 
-    protected abstract void appendValues(StringBuilder sb);
+    protected abstract void appendValues(StringBuilder buffer);
 
-    protected static void appendKeysAndValues(StringBuilder sb, String prefix, Map<String, String> map) {
+    protected static void appendKeysAndValues(StringBuilder buffer, String prefix, Map<String, String> map) {
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (entry.getValue() == null) {
                 continue;
             }
-            sb.append(prefix)
+            buffer.append(prefix)
                     .append(handleName(entry.getKey()))
                     .append('=')
                     .append(handleStringValue(entry.getValue()));
@@ -77,4 +99,12 @@ abstract class AbstractCommand {
         return '"' + value.replace("\"", "\"\"") + '"';
     }
 
+    @Override
+    public String toString() {
+        return "commandName=" + commandName +
+                ", entity=" + entity +
+                ", dateTime=" + dateTime +
+                ", time=" + time +
+                ", tags=" + tags;
+    }
 }

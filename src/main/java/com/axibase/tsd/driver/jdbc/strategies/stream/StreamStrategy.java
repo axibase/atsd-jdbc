@@ -15,11 +15,12 @@
 package com.axibase.tsd.driver.jdbc.strategies.stream;
 
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.strategies.AbstractStrategy;
 
 public class StreamStrategy extends AbstractStrategy {
-	public StreamStrategy(StatementContext context) {
-		super(context, Strategy.STREAM);
+	public StreamStrategy(StatementContext context, OnMissingMetricAction action) {
+		super(context, Strategy.STREAM, action);
 	}
 }

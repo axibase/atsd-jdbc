@@ -16,6 +16,7 @@ package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
+import com.axibase.tsd.driver.jdbc.ext.AtsdJsonException;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
@@ -25,13 +26,11 @@ import org.apache.calcite.avatica.Meta.CursorFactory;
 import org.apache.calcite.avatica.Meta.MetaResultSet;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementType;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParser;
+import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonToken;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +46,7 @@ public class ContentMetadata {
 	private final List<MetaResultSet> list;
 	private final List<ColumnMetaData> metadataList;
 
-	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId)
+	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames)
 			throws AtsdException, IOException {
 		metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog)
 				: Collections.<ColumnMetaData>emptyList();
@@ -69,33 +68,40 @@ public class ContentMetadata {
 		return metadataList;
 	}
 
-	static List<ColumnMetaData> buildMetadataList(String json, String catalog)
-			throws JsonParseException, MalformedURLException, IOException, AtsdException {
-		final Map<String, Object> jsonObject = getJsonScheme(json);
+	public static List<ColumnMetaData> buildMetadataList(InputStream jsonInputStream, String catalog, boolean assignColumnNames)
+			throws IOException, AtsdException {
+		return buildMetadataList(new InputStreamReader(jsonInputStream), catalog, assignColumnNames);
+	}
+
+	public static List<ColumnMetaData> buildMetadataList(String json, String catalog, boolean assignColumnNames)
+			throws IOException, AtsdException {
+		return buildMetadataList(new StringReader(json), catalog, assignColumnNames);
+	}
+
+	private static List<ColumnMetaData> buildMetadataList(Reader jsonReader, String catalog, boolean assignColumnNames)
+			throws IOException, AtsdException {
+		final Map<String, Object> jsonObject = getJsonScheme(jsonReader);
 		if (jsonObject == null) {
 			throw new AtsdException("Wrong metadata content");
 		}
 		final Map<String, Object> publisher = (Map<String, Object>) jsonObject.get(PUBLISHER_SECTION);
 		if (publisher == null) {
-			throw new AtsdException("Wrong metadata publisher");
+			throw new AtsdJsonException("Wrong metadata publisher", jsonObject);
 		}
-		final String schema = (String) publisher.get(SCHEMA_NAME_PROPERTY);
-		if (schema == null) {
-			throw new AtsdException("Wrong metadata schema");
-		}
+		final String schema = null;
 		final Map<String, Object> tableSchema = (Map<String, Object>) jsonObject.get(TABLE_SCHEMA_SECTION);
 		if (tableSchema == null) {
-			throw new AtsdException("Wrong table schema");
+			throw new AtsdJsonException("Wrong table schema", jsonObject);
 		}
 		final List<Object> columns = (List<Object>) tableSchema.get(COLUMNS_SCHEME);
 		if (columns == null) {
-			throw new AtsdException("Wrong columns schema");
+			throw new AtsdJsonException("Wrong columns schema", jsonObject);
 		}
 		final int size = columns.size();
 		ColumnMetaData[] sortedByOrdinal = new ColumnMetaData[size];
 		int index = 0;
 		for (final Object obj : columns) {
-			final ColumnMetaData cmd = getColumnMetaData(schema, catalog, index, obj);
+			final ColumnMetaData cmd = getColumnMetaData(schema, catalog, index, obj, assignColumnNames);
 			sortedByOrdinal[cmd.ordinal] = cmd;
 			++index;
 		}
@@ -105,7 +111,7 @@ public class ContentMetadata {
 		return Collections.unmodifiableList(Arrays.asList(sortedByOrdinal));
 	}
 
-	private static ColumnMetaData getColumnMetaData(String schema, String catalog, int ind, final Object obj) {
+	private static ColumnMetaData getColumnMetaData(String schema, String catalog, int ind, final Object obj, boolean assignColumnNames) {
 		final Map<String, Object> property = (Map<String, Object>) obj;
 		final Integer index = (Integer) property.get(INDEX_PROPERTY);
 		final int columnIndex = index != null ? index - 1 : ind;
@@ -117,20 +123,20 @@ public class ContentMetadata {
 		final AtsdType atsdType = EnumUtil.getAtsdTypeByOriginalName(datatype);
 		final boolean nullable = atsdType == AtsdType.JAVA_OBJECT_TYPE || (atsdType == AtsdType.STRING_DATA_TYPE
 				&& (StringUtils.endsWithIgnoreCase(propertyUrl, "Tag") || TEXT_TITLES.equals(title)));
-		return new ColumnMetaDataBuilder()
+		return new ColumnMetaDataBuilder(assignColumnNames)
 				.withColumnIndex(columnIndex)
 				.withSchema(schema)
 				.withCatalog(catalog)
 				.withTable(table)
 				.withName(name)
-				.withTitle(title)
+				.withLabel(title)
 				.withAtsdType(atsdType)
 				.withNullable(nullable ? 1 : 0)
 				.build();
 	}
 
-	private static Map<String, Object> getJsonScheme(String json) throws IOException {
-		try (final JsonParser parser = JsonMappingUtil.getParser(json)) {
+	private static Map<String, Object> getJsonScheme(Reader jsonReader) throws IOException {
+		try (final JsonParser parser = JsonMappingUtil.getParser(jsonReader)) {
 			final JsonToken token = parser.nextToken();
 			Class<?> type;
 			if (token == JsonToken.START_OBJECT) {
@@ -149,8 +155,9 @@ public class ContentMetadata {
 	}
 
 	public static class ColumnMetaDataBuilder {
+		private final boolean assignColumnNames;
 		private String name;
-		private String title;
+		private String label;
 		private String table;
 		private AtsdType atsdType;
 
@@ -159,13 +166,17 @@ public class ContentMetadata {
 		private String schema;
 		private String catalog;
 
+		public ColumnMetaDataBuilder(boolean assignColumnNames) {
+			this.assignColumnNames = assignColumnNames;
+		}
+
 		public ColumnMetaDataBuilder withName(String name) {
 			this.name = name;
 			return this;
 		}
 
-		public ColumnMetaDataBuilder withTitle(String title) {
-			this.title = title;
+		public ColumnMetaDataBuilder withLabel(String label) {
+			this.label = label;
 			return this;
 		}
 
@@ -202,8 +213,13 @@ public class ContentMetadata {
 		public ColumnMetaData build() {
 			final ColumnMetaData.AvaticaType atype = getAvaticaType(atsdType);
 			return new ColumnMetaData(columnIndex, false, false, false,
-					false, nullable, false, atsdType.size, name, title, schema, 1, 1, table, catalog, atype,
-					true, false, false, atype.rep.clazz.getCanonicalName());
+					false, nullable, false, atsdType.size, label, assignColumnNames ? name : label,
+					getValueNotNull(schema), atsdType.maxPrecision, atsdType.scale, table, getValueNotNull(catalog), atype,
+					true, false,false, atype.rep.clazz.getCanonicalName());
+		}
+
+		private String getValueNotNull(String value) {
+			return value == null ? "" : value;
 		}
 	}
 

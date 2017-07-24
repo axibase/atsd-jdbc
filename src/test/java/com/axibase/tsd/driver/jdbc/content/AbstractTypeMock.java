@@ -1,16 +1,17 @@
 package com.axibase.tsd.driver.jdbc.content;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.Scanner;
-
+import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.Scanner;
 
 import static com.axibase.tsd.driver.jdbc.TestConstants.SELECT_ALL_CLAUSE;
 import static org.junit.Assert.assertTrue;
@@ -26,7 +27,8 @@ public abstract class AbstractTypeMock extends AbstractFetchTest {
 		properties.setProperty("user", LOGIN_NAME);
 		properties.setProperty("password", LOGIN_PASSWORD);
 		AtsdConnectionInfo info = new AtsdConnectionInfo(properties);
-		final ContentDescription cd = new ContentDescription(info, SELECT_ALL_CLAUSE + getTable(), new StatementContext());
+		final String endpoint = Location.SQL_ENDPOINT.getUrl(info);
+		final ContentDescription cd = new ContentDescription(endpoint, info, SELECT_ALL_CLAUSE + getTable(), new StatementContext());
 		cd.setJsonScheme(getSchema());
 		this.protocolImpl = PowerMockito.spy(new SdkProtocolImpl(cd));
 		isDefaultStrategy = READ_STRATEGY == null || READ_STRATEGY.equalsIgnoreCase("stream");

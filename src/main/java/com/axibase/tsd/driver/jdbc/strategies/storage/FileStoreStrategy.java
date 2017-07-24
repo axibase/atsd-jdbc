@@ -15,6 +15,7 @@
 package com.axibase.tsd.driver.jdbc.strategies.storage;
 
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.strategies.AbstractStrategy;
@@ -31,8 +32,8 @@ public class FileStoreStrategy extends AbstractStrategy {
 
 	private Path tmp;
 
-	public FileStoreStrategy(StatementContext context) {
-		super(context, Strategy.FILE);
+	public FileStoreStrategy(StatementContext context, OnMissingMetricAction action) {
+		super(context, Strategy.FILE, action);
 	}
 
 	@Override

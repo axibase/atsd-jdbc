@@ -14,8 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import java.sql.SQLException;
-
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import org.apache.calcite.avatica.AvaticaConnection;
@@ -24,6 +22,8 @@ import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.commons.lang3.StringUtils;
+
+import java.sql.SQLException;
 
 public class AtsdStatement extends AvaticaStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdStatement.class);
@@ -80,6 +80,21 @@ public class AtsdStatement extends AvaticaStatement {
 		logger.trace("[AtsdStatement#close] {}", this.handle.id);
 	}
 
+    @Override
+    public Meta.StatementType getStatementType() {
+        return getSignature() == null ? null : getSignature().statementType;
+    }
+
+    @Override
+    public int getUpdateCount() throws SQLException {
+        return getStatementType() != Meta.StatementType.SELECT ? super.getUpdateCount() : -1;
+    }
+
+    @Override
+    public long getLargeUpdateCount() throws SQLException {
+        return getStatementType() != Meta.StatementType.SELECT ? super.getLargeUpdateCount() : -1L;
+    }
+
 	String getSql() {
 		return getSignature() == null ? null : getSignature().sql;
 	}
@@ -88,11 +103,6 @@ public class AtsdStatement extends AvaticaStatement {
 	public void addBatch(String sql) throws SQLException {
 		sql = StringUtils.stripStart(sql, null);
 		super.addBatch(sql);
-	}
-
-	@Override
-	public Meta.StatementType getStatementType() {
-		return getSignature() == null ? null : getSignature().statementType;
 	}
 
 }

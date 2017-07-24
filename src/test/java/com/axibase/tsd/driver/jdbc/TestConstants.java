@@ -21,12 +21,11 @@ public final class TestConstants {
 	public static final String SELECT_LIMIT_1000 = " LIMIT 1000";
 	public static final String SELECT_LIMIT_100000 = " LIMIT 100000";
 	public static final String WHERE_CLAUSE = " WHERE entity = ?";
-	public static final String JDBC_ATSD_URL_PREFIX = "jdbc:axibase:atsd:";
 	public static final String PARAM_SEPARATOR = ";";
 	public static final String STRATEGY_FILE_PARAMETER = "strategy=file";
 	public static final String STRATEGY_STREAM_PARAMETER = "strategy=stream";
-	public static final String TRUST_PARAMETER = "trustServerCertificate=true";
-	public static final String UNTRUST_PARAMETER = "trustServerCertificate=false";
+	public static final String TRUST_PARAMETER = "trust=true";
+	public static final String UNTRUST_PARAMETER = "trust=false";
 	public static final String TRUST_PARAMETER_IN_QUERY = PARAM_SEPARATOR + TRUST_PARAMETER + PARAM_SEPARATOR;
 	public static final String UNTRUST_PARAMETER_IN_QUERY = PARAM_SEPARATOR + UNTRUST_PARAMETER + PARAM_SEPARATOR;
 }

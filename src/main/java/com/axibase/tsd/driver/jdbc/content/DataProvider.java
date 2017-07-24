@@ -14,12 +14,7 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.calcite.avatica.Meta;
-
+import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -30,9 +25,12 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
+import org.apache.calcite.avatica.Meta;
 
-import static com.axibase.tsd.driver.jdbc.DriverConstants.ATSD_VERSION_SUPPORTS_CANCEL_QUERIES;
-import static com.axibase.tsd.driver.jdbc.DriverConstants.COMMAND_ENDPOINT;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataProvider implements IDataProvider {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(DataProvider.class);
@@ -43,21 +41,21 @@ public class DataProvider implements IDataProvider {
 	private AtomicBoolean isHoldingConnection = new AtomicBoolean();
 
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
+		final String endpoint;
 		switch (statementType) {
 			case SELECT: {
-				this.contentDescription = new ContentDescription(connectionInfo, query, context);
-				this.contentDescription.initSelectContent();
+                endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
 				break;
 			}
 			case INSERT:
 			case UPDATE: {
-				final String commandUrl = connectionInfo.toEndpoint(COMMAND_ENDPOINT);
-				this.contentDescription = new ContentDescription(commandUrl, connectionInfo, query, context);
+                endpoint = Location.COMMAND_ENDPOINT.getUrl(connectionInfo);
 				break;
 			}
 			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
 		}
-		logger.trace("Host: {}", contentDescription.getHost());
+		this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
+		logger.trace("Endpoint: {}", contentDescription.getEndpoint());
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
 	}
@@ -73,10 +71,10 @@ public class DataProvider implements IDataProvider {
 	}
 
 	@Override
-	public void fetchData(long maxLimit, int timeout) throws AtsdException, GeneralSecurityException, IOException {
+	public void fetchData(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.setMaxRowsCount(maxLimit);
 		this.isHoldingConnection.set(true);
-		final InputStream is = contentProtocol.readContent(timeout);
+		final InputStream is = contentProtocol.readContent(timeoutMillis);
 		this.isHoldingConnection.set(false);
 		this.strategy = defineStrategy();
 		if (this.strategy != null) {
@@ -85,10 +83,9 @@ public class DataProvider implements IDataProvider {
 	}
 
 	@Override
-	public long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException {
-		this.isHoldingConnection.set(true);
-		final long writeCount = contentProtocol.writeContent(timeout);
+	public long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		this.isHoldingConnection.set(false);
+		final long writeCount = contentProtocol.writeContent(timeoutMillis);
 		return writeCount;
 	}
 
@@ -97,28 +94,13 @@ public class DataProvider implements IDataProvider {
 		if (this.contentProtocol == null) {
 			throw new IllegalStateException("Cannot cancel query: contentProtocol is not created yet");
 		}
-		if (context.isAbleToCancelAtsdQueries()) {
-			logger.trace("[cancelQuery] sending cancel queryId={}", context.getQueryId());
-			try {
-				this.contentProtocol.cancelQuery();
-			} catch (Exception e) {
-				throw new AtsdRuntimeException(e.getMessage(), e);
-			}
-		} else {
-			logger.warn("[cancelQuery] cancel query unsupported: minimal ATSD version {} is required",
-						ATSD_VERSION_SUPPORTS_CANCEL_QUERIES);
-			((SdkProtocolImpl)this.contentProtocol).setQueryId(context.getQueryId());
-			closeWithRuntimeException();
+		logger.trace("[cancelQuery] sending cancel queryId={}", context.getQueryId());
+		try {
+			this.contentProtocol.cancelQuery();
+		} catch (Exception e) {
+			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 		this.isHoldingConnection.set(false);
-	}
-
-	private void closeWithRuntimeException() {
-		try {
-			this.contentProtocol.close();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	@Override
@@ -129,11 +111,13 @@ public class DataProvider implements IDataProvider {
 		if (this.strategy != null) {
 			this.strategy.close();
 		}
+
 		logger.trace("[DataProvider#close]");
 	}
 
 	private IStoreStrategy defineStrategy() {
-		return StrategyFactory.create(StrategyFactory.findClassByName(this.contentDescription.getStrategyName()), this.context);
+		final AtsdConnectionInfo info = this.contentDescription.getInfo();
+		return StrategyFactory.create(StrategyFactory.findClassByName(info.strategy()), this.context, info.missingMetric());
 	}
 
 }

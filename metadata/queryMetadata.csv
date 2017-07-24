@@ -1,0 +1,169 @@
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),ent,ent,ent,ENT,ENTITY,ent
+md.getColumnLabel(columnIndex),ent,ent,ent,ENT,ENT,ent
+md.getColumnDisplaySize(columnIndex),131072,50,50,50,50,50
+md.getColumnType(columnIndex),12,12,12,12,12,12
+md.getColumnTypeName(columnIndex),varchar,VARCHAR,varchar,VARCHAR2,VARCHAR,varchar
+md.getScale(columnIndex),0,0,0,0,0,0
+md.getPrecision(columnIndex),131072,50,50,50,50,50
+md.getColumnClassName(columnIndex),java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_short,t1,metric,,METRIC,
+rs.getObject(columnIndex),test_e,test_e,test_e,test_e,test_e,test_e
+rs.getObject(columnIndex).getClass(),class java.lang.String,class java.lang.String,class java.lang.String,class java.lang.String,class java.lang.String,class java.lang.String
+rs.findColumn(md.getColumnLabel(columnIndex)),1,1,1,1,1,1
+rs.getObject(md.getColumnLabel(columnIndex)),test_e,test_e,test_e,test_e,test_e,test_e
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),mtr,mtr,mtr,MTR,METRIC,mtr
+md.getColumnLabel(columnIndex),mtr,mtr,mtr,MTR,MTR,mtr
+md.getColumnDisplaySize(columnIndex),131072,50,50,50,50,50
+md.getColumnType(columnIndex),12,12,12,12,12,12
+md.getColumnTypeName(columnIndex),varchar,VARCHAR,varchar,VARCHAR2,VARCHAR,varchar
+md.getScale(columnIndex),0,0,0,0,0,0
+md.getPrecision(columnIndex),131072,50,50,50,50,50
+md.getColumnClassName(columnIndex),java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_short,t1,metric,,METRIC,
+rs.getObject(columnIndex),metric_short,metric,metric,metric,metric,metric
+rs.getObject(columnIndex).getClass(),class java.lang.String,class java.lang.String,class java.lang.String,class java.lang.String,class java.lang.String,class java.lang.String
+rs.findColumn(md.getColumnLabel(columnIndex)),2,2,2,2,2,2
+rs.getObject(md.getColumnLabel(columnIndex)),metric_short,metric,metric,metric,metric,metric
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),val_short,val_short,val_short,VAL_SHORT,VALUE_SHORT,val_short
+md.getColumnLabel(columnIndex),val_short,val_short,val_short,VAL_SHORT,VAL_SHORT,val_short
+md.getColumnDisplaySize(columnIndex),6,6,6,6,6,6
+md.getColumnType(columnIndex),5,5,5,2,5,5
+md.getColumnTypeName(columnIndex),smallint,SMALLINT,int2,NUMBER,SMALLINT,smallint
+md.getScale(columnIndex),0,0,0,0,0,0
+md.getPrecision(columnIndex),5,6,5,5,5,5
+md.getColumnClassName(columnIndex),java.lang.Short,java.lang.Integer,java.lang.Integer,java.math.BigDecimal,java.lang.Integer,java.lang.Short
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_short,t1,metric,,METRIC,
+rs.getObject(columnIndex),10,10,10,10,10,10
+rs.getObject(columnIndex).getClass(),class java.lang.Short,class java.lang.Integer,class java.lang.Integer,class java.math.BigDecimal,class java.lang.Integer,class java.lang.Short
+rs.findColumn(md.getColumnLabel(columnIndex)),3,3,3,3,3,3
+rs.getObject(md.getColumnLabel(columnIndex)),10,10,10,10,10,10
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),val_integer,val_integer,val_integer,VAL_INTEGER,VALUE_INTEGER,val_integer
+md.getColumnLabel(columnIndex),val_integer,val_integer,val_integer,VAL_INTEGER,VAL_INTEGER,val_integer
+md.getColumnDisplaySize(columnIndex),11,11,11,11,11,11
+md.getColumnType(columnIndex),4,4,4,2,4,4
+md.getColumnTypeName(columnIndex),integer,INT,int4,NUMBER,INTEGER,int
+md.getScale(columnIndex),0,0,0,0,0,0
+md.getPrecision(columnIndex),10,11,10,10,10,10
+md.getColumnClassName(columnIndex),java.lang.Integer,java.lang.Integer,java.lang.Integer,java.math.BigDecimal,java.lang.Integer,java.lang.Integer
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_integer,t1,metric,,METRIC,
+rs.getObject(columnIndex),10,10,10,10,10,10
+rs.getObject(columnIndex).getClass(),class java.lang.Integer,class java.lang.Integer,class java.lang.Integer,class java.math.BigDecimal,class java.lang.Integer,class java.lang.Integer
+rs.findColumn(md.getColumnLabel(columnIndex)),4,4,4,4,4,4
+rs.getObject(md.getColumnLabel(columnIndex)),10,10,10,10,10,10
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),val_float,val_float,val_float,VAL_FLOAT,VALUE_FLOAT,val_float
+md.getColumnLabel(columnIndex),val_float,val_float,val_float,VAL_FLOAT,VAL_FLOAT,val_float
+md.getColumnDisplaySize(columnIndex),15,12,15,4,13,13
+md.getColumnType(columnIndex),7,7,7,100,7,7
+md.getColumnTypeName(columnIndex),float,FLOAT,float4,BINARY_FLOAT,REAL,real
+md.getScale(columnIndex),0,31,8,0,0,0
+md.getPrecision(columnIndex),7,12,8,0,7,7
+md.getColumnClassName(columnIndex),java.lang.Float,java.lang.Float,java.lang.Float,java.lang.Float,java.lang.Float,java.lang.Float
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_float,t1,metric,,METRIC,
+rs.getObject(columnIndex),10.0,10.0,10.0,10.0,10.0,10.0
+rs.getObject(columnIndex).getClass(),class java.lang.Float,class java.lang.Float,class java.lang.Float,class java.lang.Float,class java.lang.Float,class java.lang.Float
+rs.findColumn(md.getColumnLabel(columnIndex)),5,5,5,5,5,5
+rs.getObject(md.getColumnLabel(columnIndex)),10.0,10.0,10.0,10.0,10.0,10.0
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),val_long,val_long,val_long,VAL_LONG,VALUE_LONG,val_long
+md.getColumnLabel(columnIndex),val_long,val_long,val_long,VAL_LONG,VAL_LONG,val_long
+md.getColumnDisplaySize(columnIndex),20,20,20,20,20,20
+md.getColumnType(columnIndex),-5,-5,-5,2,-5,-5
+md.getColumnTypeName(columnIndex),bigint,BIGINT,int8,NUMBER,BIGINT,bigint
+md.getScale(columnIndex),0,0,0,0,0,0
+md.getPrecision(columnIndex),19,20,19,19,19,19
+md.getColumnClassName(columnIndex),java.lang.Long,java.lang.Long,java.lang.Long,java.math.BigDecimal,java.lang.Long,java.lang.Long
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_long,t1,metric,,METRIC,
+rs.getObject(columnIndex),10,10,10,10,10,10
+rs.getObject(columnIndex).getClass(),class java.lang.Long,class java.lang.Long,class java.lang.Long,class java.math.BigDecimal,class java.lang.Long,class java.lang.Long
+rs.findColumn(md.getColumnLabel(columnIndex)),6,6,6,6,6,6
+rs.getObject(md.getColumnLabel(columnIndex)),10,10,10,10,10,10
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),val_double,val_double,val_double,VAL_DOUBLE,VALUE_DOUBLE,val_double
+md.getColumnLabel(columnIndex),val_double,val_double,val_double,VAL_DOUBLE,VAL_DOUBLE,val_double
+md.getColumnDisplaySize(columnIndex),25,22,25,8,22,22
+md.getColumnType(columnIndex),8,8,8,101,8,8
+md.getColumnTypeName(columnIndex),double,DOUBLE,float8,BINARY_DOUBLE,DOUBLE,float
+md.getScale(columnIndex),0,31,17,0,0,0
+md.getPrecision(columnIndex),15,22,17,0,15,15
+md.getColumnClassName(columnIndex),java.lang.Double,java.lang.Double,java.lang.Double,java.lang.Double,java.lang.Double,java.lang.Double
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_double,t1,metric,,METRIC,
+rs.getObject(columnIndex),10.0,10.0,10.0,10.0,10.0,10.0
+rs.getObject(columnIndex).getClass(),class java.lang.Double,class java.lang.Double,class java.lang.Double,class java.lang.Double,class java.lang.Double,class java.lang.Double
+rs.findColumn(md.getColumnLabel(columnIndex)),7,7,7,7,7,7
+rs.getObject(md.getColumnLabel(columnIndex)),10.0,10.0,10.0,10.0,10.0,10.0
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),val_decimal,val_decimal,val_decimal,VAL_DECIMAL,VALUE_DECIMAL,val_decimal
+md.getColumnLabel(columnIndex),val_decimal,val_decimal,val_decimal,VAL_DECIMAL,VAL_DECIMAL,val_decimal
+md.getColumnDisplaySize(columnIndex),131072,11,131089,21,7,40
+md.getColumnType(columnIndex),3,3,2,2,3,3
+md.getColumnTypeName(columnIndex),decimal,DECIMAL,numeric,NUMBER,DECIMAL,decimal
+md.getScale(columnIndex),0,0,0,4,0,0
+md.getPrecision(columnIndex),0,10,0,19,5,38
+md.getColumnClassName(columnIndex),java.lang.Number,java.math.BigDecimal,java.math.BigDecimal,java.math.BigDecimal,java.math.BigDecimal,java.math.BigDecimal
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_decimal,t1,metric,,METRIC,
+rs.getObject(columnIndex),10,10,10,10,10,10
+rs.getObject(columnIndex).getClass(),class java.math.BigDecimal,class java.math.BigDecimal,class java.math.BigDecimal,class java.math.BigDecimal,class java.math.BigDecimal,class java.math.BigDecimal
+rs.findColumn(md.getColumnLabel(columnIndex)),8,8,8,8,8,8
+rs.getObject(md.getColumnLabel(columnIndex)),10,10,10,10,10,10
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),dt,dt,dt,DT,DATETIME,dt
+md.getColumnLabel(columnIndex),dt,dt,dt,DT,DT,dt
+md.getColumnDisplaySize(columnIndex),29,19,29,11,26,23
+md.getColumnType(columnIndex),93,93,93,93,93,93
+md.getColumnTypeName(columnIndex),timestamp,TIMESTAMP,timestamp,TIMESTAMP,TIMESTAMP,datetime
+md.getScale(columnIndex),9,0,6,6,6,3
+md.getPrecision(columnIndex),29,19,29,0,26,23
+md.getColumnClassName(columnIndex),java.sql.Timestamp,java.sql.Timestamp,java.sql.Timestamp,oracle.sql.TIMESTAMP,java.sql.Timestamp,java.sql.Timestamp
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_short,t1,metric,,METRIC,
+rs.getObject(columnIndex),2017-01-01 03:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0
+rs.getObject(columnIndex).getClass(),class java.sql.Timestamp,class java.sql.Timestamp,class java.sql.Timestamp,class oracle.sql.TIMESTAMP,class java.sql.Timestamp,class java.sql.Timestamp
+rs.findColumn(md.getColumnLabel(columnIndex)),9,9,9,9,9,9
+rs.getObject(md.getColumnLabel(columnIndex)),2017-01-01 03:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0,2017-01-01 00:00:00.0
+,,,,,,
+Method,ATSD,MySQL,PostgreSQL,Oracle,DB2,MSSQL
+md.getColumnName(columnIndex),tm,tm,tm,TM,TIME,tm
+md.getColumnLabel(columnIndex),tm,tm,tm,TM,TM,tm
+md.getColumnDisplaySize(columnIndex),20,20,20,20,20,20
+md.getColumnType(columnIndex),-5,-5,-5,2,-5,-5
+md.getColumnTypeName(columnIndex),bigint,BIGINT,int8,NUMBER,BIGINT,bigint
+md.getScale(columnIndex),0,0,0,0,0,0
+md.getPrecision(columnIndex),19,20,19,19,19,19
+md.getColumnClassName(columnIndex),java.lang.Long,java.lang.Long,java.lang.Long,java.math.BigDecimal,java.lang.Long,java.lang.Long
+md.getCatalogName(columnIndex),,sys,,,SAMPLE,
+md.getSchemaName(columnIndex),,,,,AXIBASE ,
+md.getTableName(columnIndex),metric_short,t1,metric,,METRIC,
+rs.getObject(columnIndex),1483228800000,1483228800000,1483228800000,1483228800000,1483228800000,1483228800000
+rs.getObject(columnIndex).getClass(),class java.lang.Long,class java.lang.Long,class java.lang.Long,class java.math.BigDecimal,class java.lang.Long,class java.lang.Long
+rs.findColumn(md.getColumnLabel(columnIndex)),10,10,10,10,10,10
+rs.getObject(md.getColumnLabel(columnIndex)),1483228800000,1483228800000,1483228800000,1483228800000,1483228800000,1483228800000

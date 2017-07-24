@@ -14,6 +14,7 @@
 */
 package com.axibase.tsd.driver.jdbc.strategies;
 
+import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
@@ -25,9 +26,9 @@ public class StrategyFactory {
 
 	private StrategyFactory() {}
 
-	public static <T extends IStoreStrategy> T create(Class<T> type, StatementContext context) {
+	public static <T extends IStoreStrategy> T create(Class<T> type, StatementContext context, OnMissingMetricAction action) {
 		try {
-			return type.getDeclaredConstructor(StatementContext.class).newInstance(context);
+			return type.getDeclaredConstructor(StatementContext.class, OnMissingMetricAction.class).newInstance(context, action);
 		} catch (final IllegalArgumentException | ReflectiveOperationException | SecurityException e) {
 			if (logger.isErrorEnabled())
 				logger.error("Cannot get a store instance from the factory: " + e.getMessage());

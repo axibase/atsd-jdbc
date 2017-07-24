@@ -5,7 +5,9 @@ import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.strategies.memory.MemoryStrategy;
 import com.axibase.tsd.driver.jdbc.strategies.storage.FileStoreStrategy;
 import com.axibase.tsd.driver.jdbc.strategies.stream.StreamStrategy;
+import lombok.Getter;
 
+@Getter
 public enum Strategy {
 	FILE(FileStoreStrategy.class, "File"),
 	STREAM(StreamStrategy.class, "Stream"),
@@ -18,13 +20,5 @@ public enum Strategy {
 	Strategy(Class<? extends IStoreStrategy> strategyClass, String source) {
 		this.strategyClass = strategyClass;
 		this.source = source;
-	}
-
-	public Class<? extends IStoreStrategy> getStrategyClass() {
-		return strategyClass;
-	}
-
-	public String getSource() {
-		return source;
 	}
 }

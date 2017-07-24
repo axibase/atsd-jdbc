@@ -14,12 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.strategies;
 
-import java.io.*;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-
-import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.UnivocityParserRowContext;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -30,6 +24,11 @@ import com.univocity.parsers.common.processor.RowProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.calcite.avatica.ColumnMetaData;
+
+import java.io.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
 
@@ -106,7 +105,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		settings.setReadInputOnSeparateThread(false);
 		settings.setCommentCollectionEnabled(false);
 		settings.setEmptyValue("");
-		settings.setNullValue(version >= DriverConstants.ATSD_VERSION_DIFFERS_NULL_AND_EMPTY ? null : "");
+		settings.setNullValue(null);
 		settings.setNumberOfRowsToSkip(1);
 		settings.setSkipEmptyLines(false);
 		return settings;
@@ -120,7 +119,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		int i = 0;
 		for (ColumnMetaData metaData : columnMetadata) {
 			this.header[i] = metaData.columnName;
-			this.columnTypes[i] = EnumUtil.getAtsdTypeBySqlType(metaData.type.id);
+			this.columnTypes[i] = EnumUtil.getAtsdTypeBySqlType(metaData.type.id, AtsdType.STRING_DATA_TYPE);
 			this.nullable[i] = metaData.nullable == 1;
 			++i;
 		}
