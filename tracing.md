@@ -54,7 +54,7 @@ log4j.rootLogger=TRACE, file
 # Direct log messages to a log file
 log4j.appender.file=org.apache.log4j.RollingFileAppender
 
-log4j.appender.file.File=C:\JDBC.log
+log4j.appender.file.File=C:\\JDBC.log
 log4j.appender.file.MaxFileSize=10MB
 log4j.appender.file.MaxBackupIndex=10
 log4j.appender.file.layout=org.apache.log4j.PatternLayout
@@ -66,6 +66,4 @@ Run the ODBC Data Sources and choose the configured ATSD Gateway. Change the cla
 
 ![](images/gateway-config.png)
 
-Copy the classpath. Create a CLASSPATH environment variable and paste the value.
-
-![](images/windows-classpath.png)
+If the log file gets populated when you test ODBC connection using ODBC Data Sources tool but logging doesn't work in the the application using this connection, check that you have enough privileges to write into this file.
