@@ -2,6 +2,7 @@ package com.axibase.tsd.driver.jdbc.converter;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;

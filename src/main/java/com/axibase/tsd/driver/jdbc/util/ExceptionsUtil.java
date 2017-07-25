@@ -2,6 +2,8 @@ package com.axibase.tsd.driver.jdbc.util;
 
 import com.axibase.tsd.driver.jdbc.ext.AtsdMetricNotFoundException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
+import java.sql.SQLDataException;
+import java.sql.SQLFeatureNotSupportedException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.SQLException;
@@ -11,7 +13,11 @@ public class ExceptionsUtil {
 
 	public static SQLException unboxException(SQLException exception) {
 		final Throwable cause = exception.getCause();
-		if (!(cause instanceof RuntimeException)) {
+		if (cause instanceof SQLDataException) {
+			return (SQLDataException) cause;
+		} else if (cause instanceof SQLFeatureNotSupportedException) {
+			return (SQLFeatureNotSupportedException) cause;
+		} else if (!(cause instanceof RuntimeException)) {
 			return exception;
 		}
 		Throwable finalCause = exception;

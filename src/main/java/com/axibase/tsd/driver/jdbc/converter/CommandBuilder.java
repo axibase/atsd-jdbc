@@ -1,16 +1,17 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
 import com.axibase.tsd.driver.jdbc.util.CaseInsensitiveLinkedHashMap;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
+import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+@Setter
 class CommandBuilder {
 
     private static final long MAX_TIME = 4291747200000l; //2106-01-01 00:00:00.000
@@ -18,32 +19,39 @@ class CommandBuilder {
     private static final String METRIC = "metric";
     private static final String SERIES = "series";
 
+    private static final Set<String> DATA_TYPES = Collections.unmodifiableSet(Sets.newHashSet("short", "integer", "long", "float", "double", "decimal"));
+    private static final Set<String> INVALID_ACTION_TYPES = Collections.unmodifiableSet(Sets.newHashSet( "none", "discard", "transform", "raise_error"));
+
     CommandBuilder() {
     }
 
-    @Setter
+    //series
     private String entity;
-
-    @Setter
+    private String dateTime;
     private String metricName;
-
-    @Setter
     private Long time;
 
-    @Setter
-    private String dateTime;
-
-    @Setter
+    //entity
+    private Boolean entityEnabled;
+    private String entityInterpolate;
     private String entityLabel;
-
-    @Setter
     private String entityTimeZone;
 
-    @Setter
-    private String entityInterpolate;
+    //metric
+    public String metricDataType;
+    public String metricDescription;
+    public Boolean metricEnabled;
+    public String metricFilter;
+    public String metricInterpolate;
+    public String metricInvalidValueAction;
+    public String metricLabel;
+    public Double metricMaxValue;
+    public Double metricMinValue;
+    public String metricTimeZone;
+    public Boolean metricVersioning;
+    public String metricUnits;
 
     private final Map<String, String> entityTags = new CaseInsensitiveLinkedHashMap<>();
-    private final Set<String> entityGroups = new LinkedHashSet<>();
     private final Map<String, String> metricTags = new CaseInsensitiveLinkedHashMap<>();
     private final Map<String, String> seriesTags = new CaseInsensitiveLinkedHashMap<>();
     private final Map<String, Double> seriesNumericValues = new CaseInsensitiveLinkedHashMap<>();
@@ -79,10 +87,6 @@ class CommandBuilder {
 
     public void addSeriesValue(String name, String value) {
         addValue(seriesTextValues, name, value);
-    }
-
-    public void addEntityGroups(Collection<String> groups) {
-        entityGroups.addAll(groups);
     }
 
     private <N,V> void addValue(Map<N, V> map, N name, V value) {
@@ -125,18 +129,53 @@ class CommandBuilder {
     }
 
     private String buildMetricCommand() {
-        if (metricTags.isEmpty()) {
-            return null;
-        }
-
         if (StringUtils.isBlank(metricName)) {
             throw new IllegalArgumentException("Metric not defined");
         }
 
+        validateMetricData();
         StringBuilder buffer = new StringBuilder(METRIC);
         buffer.append(" m:").append(handleName(metricName));
+        final int length = buffer.length();
+
+        if (metricEnabled != null) {
+            buffer.append(" b:").append(metricEnabled);
+        }
+        if (StringUtils.isNotBlank(metricLabel)) {
+            buffer.append(" l:").append(handleStringValue(metricLabel));
+        }
+        if (StringUtils.isNotBlank(metricDescription)) {
+            buffer.append(" d:").append(handleStringValue(metricDescription));
+        }
+        if (StringUtils.isNotEmpty(metricDataType)) {
+            buffer.append(" p:").append(metricDataType);
+        }
+        if (StringUtils.isNotEmpty(metricInterpolate)) {
+            buffer.append(" i:").append(metricInterpolate);
+        }
+        if (StringUtils.isNotEmpty(metricUnits)) {
+            buffer.append(" u:").append(handleStringValue(metricUnits));
+        }
+        if (StringUtils.isNotBlank(metricFilter)) {
+            buffer.append(" f:").append(handleStringValue(metricFilter));
+        }
+        if (StringUtils.isNotBlank(metricTimeZone)) {
+            buffer.append(" z:").append(handleStringValue(metricTimeZone));
+        }
+        if (metricVersioning != null) {
+            buffer.append(" v:").append(metricVersioning);
+        }
+        if (StringUtils.isNotBlank(metricInvalidValueAction)) {
+            buffer.append(" a:").append(handleStringValue(metricInvalidValueAction));
+        }
+        if (metricMinValue != null) {
+            buffer.append(" min:").append(formatMetricValue(metricMinValue));
+        }
+        if (metricMaxValue != null) {
+            buffer.append(" max:").append(formatMetricValue(metricMaxValue));
+        }
         appendKeysAndValues(buffer, " t:", metricTags);
-        return buffer.toString();
+        return  length == buffer.length() ? null : buffer.toString();
     }
 
     private String buildEntityCommand() {
@@ -144,20 +183,20 @@ class CommandBuilder {
         StringBuilder buffer = new StringBuilder(ENTITY);
         buffer.append(" e:").append(handleName(entity));
         final int length = buffer.length();
+        if (entityEnabled != null) {
+            buffer.append(" b:").append(entityEnabled);
+        }
         if (StringUtils.isNotEmpty(entityLabel)) {
-            buffer.append(" l:").append(handleName(entityLabel));
+            buffer.append(" l:").append(handleStringValue(entityLabel));
         }
         if (StringUtils.isNotEmpty(entityInterpolate)) {
             buffer.append(" i:").append(entityInterpolate);
         }
         if (StringUtils.isNotEmpty(entityTimeZone)) {
-            buffer.append(" z:").append(entityTimeZone);
+            buffer.append(" z:").append(handleStringValue(entityTimeZone));
         }
         appendKeysAndValues(buffer, " t:", entityTags);
-        if (buffer.length() == length) {
-            return null;
-        }
-        return buffer.toString();
+        return length == buffer.length() ? null : buffer.toString();
     }
 
     private static String handleName(String key) {
@@ -183,7 +222,7 @@ class CommandBuilder {
     }
 
     private static String handleStringValue(String value) {
-        return '"' + value.replace("\"", "\"\"") + '"';
+        return StringUtils.containsAny(value, ' ', '"', '\n', '\t', '\r', '=') ? '"' + value.replace("\"", "\"\"") + '"' : value;
     }
 
     private static String formatMetricValue(double value) {
@@ -209,11 +248,24 @@ class CommandBuilder {
     }
 
     private void validateEntityCommand() {
-        if (StringUtils.isNotEmpty(entityInterpolate)
-                && !"linear".equals(entityInterpolate)
-                && !"previous".equals(entityInterpolate)
-                && !"none".equals(entityInterpolate)) {
-            throw new IllegalArgumentException("Invalid entity interpolation: " + entityInterpolate);
+        validateInterpolation(entityInterpolate, ENTITY);
+    }
+
+    private void validateMetricData() {
+        validateInterpolation(metricInterpolate, METRIC);
+        if (StringUtils.isNotEmpty(metricDataType) && !DATA_TYPES.contains(metricDataType)) {
+            throw new IllegalArgumentException("Illegal metric data type: " + metricDataType);
+        }
+        if (StringUtils.isNotEmpty(metricInvalidValueAction) && !INVALID_ACTION_TYPES.contains(metricInvalidValueAction)) {
+            throw new IllegalArgumentException("Illegal metric action: " + metricInvalidValueAction);
+        }
+    }
+
+    private static void validateInterpolation(String interpolation, String commandType) {
+        if (StringUtils.isNotEmpty(interpolation)
+                && !"linear".equals(interpolation)
+                && !"previous".equals(interpolation)) {
+            throw new IllegalArgumentException("Illegal " + commandType + " interpolation: " + interpolation);
         }
     }
 

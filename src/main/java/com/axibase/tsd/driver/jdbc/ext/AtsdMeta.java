@@ -143,7 +143,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
-	@SneakyThrows(SQLDataException.class)
+	@SneakyThrows({SQLDataException.class, SQLFeatureNotSupportedException.class})
 	public ExecuteResult execute(StatementHandle statementHandle, List<TypedValue> parameterValues, int maxRowsInFirstFrame) throws NoSuchStatementException {
 		if (log.isTraceEnabled()) {
 			log.trace("[execute] maxRowsInFirstFrame: {} parameters: {} handle: {}", maxRowsInFirstFrame, parameterValues.size(),
@@ -178,7 +178,7 @@ public class AtsdMeta extends MetaImpl {
 				result = new ExecuteResult(resultSets);
 			}
 			return result;
-		} catch (SQLDataException e) {
+		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
 			log.error("[execute] error", e.getMessage());
 			throw e;
 		} catch (final RuntimeException e) {
@@ -281,7 +281,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
-	@SneakyThrows(SQLDataException.class)
+	@SneakyThrows({SQLDataException.class, SQLFeatureNotSupportedException.class})
 	public ExecuteResult prepareAndExecute(StatementHandle statementHandle, String query, long maxRowCount,
 										   int maxRowsInFrame, PrepareCallback callback) throws NoSuchStatementException {
 		final long limit = maxRowCount < 0 ? 0 : maxRowCount;
@@ -307,6 +307,9 @@ public class AtsdMeta extends MetaImpl {
 			final ExecuteResult result = new ExecuteResult(contentMetadata.getList());
 			callback.execute();
 			return result;
+		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
+			log.error("[prepareAndExecute] error", e.getMessage());
+			throw e;
 		} catch (final AtsdRuntimeException e) {
 			log.error("[prepareAndExecute] error", e);
 			throw new SQLDataException(e.getMessage(), e);
@@ -320,6 +323,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
+	@SneakyThrows({SQLDataException.class, SQLFeatureNotSupportedException.class})
 	public ExecuteBatchResult prepareAndExecuteBatch(StatementHandle statementHandle, List<String> queries) throws NoSuchStatementException {
         log.trace("[prepareAndExecuteBatch] handle: {} queries: {}", statementHandle.toString(), queries);
 		try {
@@ -339,6 +343,9 @@ public class AtsdMeta extends MetaImpl {
 			}
 			final ExecuteBatchResult result = new ExecuteBatchResult(updateCounts);
 			return result;
+		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
+			log.error("[prepareAndExecuteBatch] error", e.getMessage());
+			throw e;
 		} catch (final RuntimeException e) {
             log.error("[prepareAndExecuteBatch] error", e);
 			throw e;
@@ -349,6 +356,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
+	@SneakyThrows({SQLDataException.class, SQLFeatureNotSupportedException.class})
 	public ExecuteBatchResult executeBatch(StatementHandle statementHandle, List<List<TypedValue>> parameterValueBatch) throws NoSuchStatementException {
 		log.trace("[executeBatch] parameters: {} handle: {}", parameterValueBatch.size(), statementHandle.toString());
 		final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
@@ -361,13 +369,15 @@ public class AtsdMeta extends MetaImpl {
 		try {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
             final int timeoutMillis = statement.getQueryTimeout();
-			List<String> content = AtsdSqlConverterFactory
-					.getConverter(statementType, atsdConnectionInfo.timestampTz())
+			List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz())
 					.convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 			long updateCount = provider.sendData(timeoutMillis);
 			ExecuteBatchResult result = new ExecuteBatchResult(generateExecuteBatchResult(parameterValueBatch.size(), updateCount == 0 ? 0 : 1));
 			return result;
+		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
+			log.error("[executeBatch] error", e.getMessage());
+			throw e;
 		} catch (final RuntimeException e) {
 			log.error("[executeBatch] error", e);
 			throw e;

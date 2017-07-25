@@ -161,10 +161,13 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                 case ENTITY:
                     commandBuilder.setEntity(value.toString());
                     break;
+                case ENTITY_ENABLED :
+                    commandBuilder.setEntityEnabled(validate(value, Boolean.class));
+                    break;
                 case ENTITY_GROUPS:
                     throw new SQLFeatureNotSupportedException(ENTITY_GROUPS);
                 case ENTITY_INTERPOLATE:
-                    commandBuilder.setEntityInterpolate(validate(value, String.class));
+                    commandBuilder.setEntityInterpolate(validate(value, String.class).toLowerCase());
                     break;
                 case ENTITY_LABEL:
                     commandBuilder.setEntityLabel(validate(value, String.class));
@@ -191,39 +194,54 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                     commandBuilder.addSeriesTags(parseTags(value.toString()));
                     break;
                 case METRIC_DATA_TYPE:
+                    commandBuilder.setMetricDataType(validate(value, String.class).toLowerCase());
                     break;
                 case METRIC_DESCRIPTION:
+                    commandBuilder.setMetricDescription(validate(value, String.class));
                     break;
                 case METRIC_ENABLED:
+                    commandBuilder.setMetricEnabled(validate(value, Boolean.class));
                     break;
                 case METRIC_FILTER:
+                    commandBuilder.setMetricFilter(validate(value, String.class));
                     break;
                 case METRIC_INTERPOLATE:
+                    commandBuilder.setMetricInterpolate(validate(value, String.class));
                     break;
                 case METRIC_INVALID_VALUE_ACTION:
+                    commandBuilder.setMetricInvalidValueAction(validate(value, String.class));
                     break;
                 case METRIC_LABEL:
+                    commandBuilder.setMetricLabel(validate(value, String.class));
                     break;
                 case METRIC_LAST_INSERT_TIME:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_LAST_INSERT_TIME);
                 case METRIC_MAX_VALUE:
+                    commandBuilder.setMetricMaxValue(validate(value, Number.class).doubleValue());
                     break;
                 case METRIC_MIN_VALUE:
+                    commandBuilder.setMetricMinValue(validate(value, Number.class).doubleValue());
                     break;
                 case METRIC_NAME:
+                    commandBuilder.setMetricName(validate(value, String.class));
                     break;
                 case METRIC_PERSISTENT:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_PERSISTENT);
                 case METRIC_RETENTION_INTERVAL_DAYS:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_RETENTION_INTERVAL_DAYS);
                 case METRIC_TAGS:
                     commandBuilder.addMetricTags(parseTags(value.toString()));
                     break;
                 case METRIC_TIME_PRECISION:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_TIME_PRECISION);
                 case METRIC_TIME_ZONE:
+                    commandBuilder.setMetricTimeZone(validate(value, String.class));
                     break;
                 case METRIC_VERSIONING:
+                    commandBuilder.setMetricVersioning(validate(value, Boolean.class));
+                    break;
+                case METRIC_UNITS:
+                    commandBuilder.setMetricUnits(validate(value, String.class));
                     break;
                 default: {
                     if (columnName.startsWith(PREFIX_SERIES_TAGS)) {
@@ -268,10 +286,13 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                 case ENTITY:
                     commandBuilder.setEntity(validate(value, String.class));
                     break;
+                case ENTITY_ENABLED :
+                    commandBuilder.setEntityEnabled(validate(value, Boolean.class));
+                    break;
                 case ENTITY_GROUPS:
                     throw new SQLFeatureNotSupportedException(ENTITY_GROUPS);
                 case ENTITY_INTERPOLATE:
-                    commandBuilder.setEntityInterpolate(validate(value, String.class));
+                    commandBuilder.setEntityInterpolate(validate(value, String.class).toLowerCase());
                     break;
                 case ENTITY_LABEL:
                     commandBuilder.setEntityLabel(validate(value, String.class));
@@ -326,39 +347,54 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                     commandBuilder.addSeriesTags(parseTags(value.toString()));
                     break;
                 case METRIC_DATA_TYPE:
+                    commandBuilder.setMetricDataType(validate(value, String.class).toLowerCase());
                     break;
                 case METRIC_DESCRIPTION:
+                    commandBuilder.setMetricDescription(validate(value, String.class));
                     break;
                 case METRIC_ENABLED:
+                    commandBuilder.setMetricEnabled(validate(value, Boolean.class));
                     break;
                 case METRIC_FILTER:
+                    commandBuilder.setMetricFilter(validate(value, String.class));
                     break;
                 case METRIC_INTERPOLATE:
+                    commandBuilder.setMetricInterpolate(validate(value, String.class));
                     break;
                 case METRIC_INVALID_VALUE_ACTION:
+                    commandBuilder.setMetricInvalidValueAction(validate(value, String.class));
                     break;
                 case METRIC_LABEL:
+                    commandBuilder.setMetricLabel(validate(value, String.class));
                     break;
                 case METRIC_LAST_INSERT_TIME:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_LAST_INSERT_TIME);
                 case METRIC_MAX_VALUE:
+                    commandBuilder.setMetricMaxValue(validate(value, Number.class).doubleValue());
                     break;
                 case METRIC_MIN_VALUE:
+                    commandBuilder.setMetricMinValue(validate(value, Number.class).doubleValue());
                     break;
                 case METRIC_NAME:
+                    commandBuilder.setMetricName(validate(value, String.class));
                     break;
                 case METRIC_PERSISTENT:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_PERSISTENT);
                 case METRIC_RETENTION_INTERVAL_DAYS:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_RETENTION_INTERVAL_DAYS);
                 case METRIC_TAGS:
                     commandBuilder.addMetricTags(parseTags(value.toString()));
                     break;
                 case METRIC_TIME_PRECISION:
-                    break;
+                    throw new SQLFeatureNotSupportedException(METRIC_TIME_PRECISION);
                 case METRIC_TIME_ZONE:
+                    commandBuilder.setMetricTimeZone(validate(value, String.class));
                     break;
                 case METRIC_VERSIONING:
+                    commandBuilder.setMetricVersioning(validate(value, Boolean.class));
+                    break;
+                case METRIC_UNITS:
+                    commandBuilder.setMetricUnits(validate(value, String.class));
                     break;
                 default: {
                     if (columnName.startsWith(PREFIX_SERIES_TAGS)) {
@@ -371,6 +407,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
                         String tagName = columnName.substring(PREFIX_METRIC_TAGS.length());
                         commandBuilder.addMetricTag(tagName, String.valueOf(value));
                     } else if (value instanceof Number) {
+                        commandBuilder.setMetricName(columnName);
                         commandBuilder.addSeriesValue(columnName, validate(value, Number.class).doubleValue());
                     } else if (value instanceof String) {
                         commandBuilder.addSeriesValue(columnName, (String) value);
