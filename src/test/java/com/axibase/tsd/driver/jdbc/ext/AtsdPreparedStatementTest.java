@@ -89,7 +89,8 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 			stmt.setString(4, null);
 			Assert.assertEquals(1, stmt.executeUpdate());
 		}
-		Map<String, Object> last = getLasts(1);
+		final String sql = "SELECT time, value, text, tags FROM " + METRIC_NAME + " WHERE entity='" + ENTITY_NAME + "' ORDER BY time DESC LIMIT 1";
+		Map<String, Object> last = getLast(sql);
 		Assert.assertFalse("No results", last.isEmpty());
 		Assert.assertEquals(time, last.get("time"));
 		Assert.assertEquals(value, (Double) last.get("value"), 0.001);
@@ -141,7 +142,8 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 		final long time = System.currentTimeMillis();
 		final double value = 123.456;
 		insert(time, value, tags);
-		Map<String, Object> last = getLasts(1);
+		final String sql = "SELECT time, value, text, tags FROM " + METRIC_NAME + " WHERE entity='" + ENTITY_NAME + "' ORDER BY time DESC LIMIT 1";
+		Map<String, Object> last = getLast(sql);
 		Assert.assertFalse("No results", last.isEmpty());
 		Assert.assertEquals(time, last.get("time"));
 		Assert.assertEquals(value, (Double) last.get("value"), 0.001);
@@ -159,20 +161,28 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 		}
 	}
 
-	private Map<String, Object> getLasts(int limit) throws SQLException, InterruptedException {
+	private Map<String, Object> getLast(String sql) throws SQLException, InterruptedException {
 		Thread.sleep(1000);
-		final String sql = "SELECT time, value, text, tags FROM " + METRIC_NAME + " WHERE entity='" + ENTITY_NAME + "' ORDER BY time DESC LIMIT " + limit;
 		try(PreparedStatement stmt = connection.prepareStatement(sql)) {
 			try(ResultSet rs = stmt.executeQuery()) {
+				ResultSetMetaData rsmd = rs.getMetaData();
 				Map<String, Object> map = new HashMap<>();
 				if(rs.next()) {
-					map.put("time", rs.getLong("time"));
-					map.put("value", rs.getDouble("value"));
-					map.put("text", rs.getString("text"));
-					map.put("tags", rs.getString("tags"));
+					for (int i=1;i<=rsmd.getColumnCount();i++) {
+						map.put(rsmd.getColumnName(i), getValue(rs, i, rsmd.getColumnType(i)));
+					}
 				}
 				return map;
 			}
+		}
+	}
+
+	private static Object getValue(ResultSet rs, int columnIndex, int columnType) throws SQLException {
+		switch (columnType) {
+			case Types.BIGINT : return rs.getLong(columnIndex);
+			case Types.REAL : return rs.getDouble(columnIndex);
+			case Types.TIMESTAMP : return rs.getTimestamp(columnIndex);
+			default : return rs.getString(columnIndex);
 		}
 	}
 
@@ -194,46 +204,107 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 	}
 
 	@Test
-	public void testInsertDateTimeAsNumber() throws SQLException {
+	public void testInsertDateTimeAsNumber() throws SQLException, InterruptedException {
 		final long time = System.currentTimeMillis();
 		expectedException.expect(SQLException.class);
 		expectedException.expectMessage("Invalid value: " + time + ". Current type: BigDecimal, expected type: Timestamp");
-		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
+		String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
+		final String entity = "entity_1";
+		final double value = 123;
 		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 			stmt.setDouble(1, time);
-			stmt.setString(2, "entity_1");
-			stmt.setDouble(3, 123);
+			stmt.setString(2, entity);
+			stmt.setDouble(3, value);
 			stmt.setString(4, null);
 			Assert.assertEquals(1, stmt.executeUpdate());
 		}
+		sql = "SELECT datetime, value, tags FROM " + METRIC_NAME + " WHERE entity='" + entity + "' ORDER BY time DESC LIMIT 1";
+		Map<String, Object> last = getLast(sql);
+		Assert.assertFalse("No results", last.isEmpty());
+		Assert.assertEquals(time, last.get("time"));
+		Assert.assertEquals(value, (Double) last.get("value"), 0.001);
+		Assert.assertNull(last.get("tags"));
 	}
 
 	@Test
-	public void testInsertDateTimeAsString() throws SQLException {
-		final String dateTime = ISO8601Utils.format(new java.util.Date(), true);
-		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
+	public void testInsertDateTimeAsString() throws SQLException, InterruptedException {
+		final java.util.Date date = new java.util.Date();
+		final String dateTime = ISO8601Utils.format(date, true);
+		String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags) VALUES (?,?,?,?)";
+		final String entity = "entity_1";
+		final double value = 123;
 		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
 			stmt.setString(1, dateTime);
-			stmt.setString(2, "entity_1");
-			stmt.setDouble(3, 123);
+			stmt.setString(2, entity);
+			stmt.setDouble(3, value);
 			stmt.setString(4, null);
 			Assert.assertEquals(1, stmt.executeUpdate());
 		}
+		sql = "SELECT datetime, value, tags FROM " + METRIC_NAME + " WHERE entity='" + entity + "' ORDER BY time DESC LIMIT 1";
+		Map<String, Object> last = getLast(sql);
+		Assert.assertFalse("No results", last.isEmpty());
+		Assert.assertEquals(date.getTime(), ((Timestamp) last.get("datetime")).getTime());
+		Assert.assertEquals(value, (Double) last.get("value"), 0.001);
+		Assert.assertNull(last.get("tags"));
 	}
 
 	@Test
-	public void testInsertWithEntityColumns() throws SQLException {
-		final String dateTime = ISO8601Utils.format(new java.util.Date(), true);
-		final String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags, entity.label, entity.tags) VALUES (?,?,?,?,?,?)";
+	public void testInsertWithEntityColumns() throws SQLException, InterruptedException {
+		java.util.Date date = new java.util.Date();
+		String sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags, entity.label, entity.tags) VALUES (?,?,?,?,?,?)";
+		final String entity = "entity_1";
+		final String entityLabel = "label_1";
+		final String entityTags = "test1=value1";
+		final double value = 123;
 		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-			stmt.setString(1, dateTime);
-			stmt.setString(2, "entity_1");
-			stmt.setDouble(3, 123);
+			stmt.setString(1, ISO8601Utils.format(date, true));
+			stmt.setString(2, entity);
+			stmt.setDouble(3, value);
 			stmt.setString(4, null);
-			stmt.setString(5, "label_1");
-			stmt.setString(6, "test1=value1");
+			stmt.setString(5, entityLabel);
+			stmt.setString(6, entityTags);
 			Assert.assertEquals(2, stmt.executeUpdate());
 		}
+		sql = "SELECT time, value, text, tags, entity.label, entity.tags FROM " + METRIC_NAME
+				+ " WHERE entity='" + entity + "' ORDER BY time DESC LIMIT 1";
+		Map<String, Object> last = getLast(sql);
+		Assert.assertFalse("No results", last.isEmpty());
+		Assert.assertEquals(date.getTime(), last.get("time"));
+		Assert.assertEquals(value, (Double) last.get("value"), 0.001);
+		Assert.assertNull(last.get("text"));
+		Assert.assertNull(last.get("tags"));
+		Assert.assertEquals(entityLabel, last.get("entity.label"));
+		Assert.assertEquals(entityTags, last.get("entity.tags"));
+
+		sql = "INSERT INTO " + METRIC_NAME + " (datetime, entity, value, tags, entity.label, entity.interpolate, entity.timeZone, entity.tags.test1)" +
+				" VALUES (?,?,?,?,?,?,?,?)";
+		final String entityTimeZone = "UTC";
+		final String entityInterpolate = "linear";
+		final String entityTagValue = "value1";
+		date = new java.util.Date();
+		try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+			stmt.setString(1, ISO8601Utils.format(date, true));
+			stmt.setString(2, entity);
+			stmt.setDouble(3, value);
+			stmt.setString(4, null);
+			stmt.setString(5, entityLabel);
+			stmt.setString(6, entityInterpolate);
+			stmt.setString(7, entityTimeZone);
+			stmt.setString(8, entityTagValue);
+			Assert.assertEquals(2, stmt.executeUpdate());
+		}
+		sql = "SELECT time, value, text, tags, entity.label, entity.interpolate, entity.timeZone, entity.tags FROM " + METRIC_NAME
+				+ " WHERE entity='" + entity + "' ORDER BY time DESC LIMIT 1";
+		last = getLast(sql);
+		Assert.assertFalse("No results", last.isEmpty());
+		Assert.assertEquals(date.getTime(), last.get("time"));
+		Assert.assertEquals(value, (Double) last.get("value"), 0.001);
+		Assert.assertNull(last.get("text"));
+		Assert.assertNull(last.get("tags"));
+		Assert.assertEquals(entityLabel, last.get("entity.label"));
+		Assert.assertEquals(entityInterpolate.toUpperCase(), last.get("entity.interpolate"));
+		Assert.assertEquals(entityTimeZone, last.get("entity.timeZone"));
+		Assert.assertEquals("test1=" + entityTagValue, last.get("entity.tags"));
 	}
 
 }

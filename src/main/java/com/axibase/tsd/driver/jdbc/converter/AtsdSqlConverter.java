@@ -390,9 +390,9 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     protected static String getName(SqlIdentifier identifier) {
         if (identifier.isSimple()) {
-            return identifier.getSimple().toLowerCase();
+            return identifier.getSimple();
         } else {
-            return StringUtils.join(identifier.names, '.').toLowerCase();
+            return StringUtils.join(identifier.names, '.');
         }
     }
 
@@ -495,10 +495,10 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         if (EnumUtil.isReservedSqlToken(name.toUpperCase())) {
             buffer.append('\"').append(name.toLowerCase()).append('\"');
         } else {
-            name = name.toLowerCase();
-            if (name.startsWith(PREFIX_ENTITY)
-                    || name.startsWith(PREFIX_METRIC)
-                    || name.startsWith(PREFIX_SERIES_TAGS)) {
+            final String lcName = name.toLowerCase();
+            if (lcName.startsWith(PREFIX_ENTITY)
+                    || lcName.startsWith(PREFIX_METRIC)
+                    || lcName.startsWith(PREFIX_SERIES_TAGS)) {
                 buffer.append('\"').append(name).append('\"');
             } else{
                 buffer.append(name);

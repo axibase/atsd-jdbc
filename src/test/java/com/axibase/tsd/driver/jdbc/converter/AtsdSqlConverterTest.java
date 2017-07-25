@@ -255,9 +255,9 @@ public class AtsdSqlConverterTest {
                 ", entity.tags) VALUES ('sensor-01', 123456789, null, 'Vienna', 55.5, 'temperature', 120, 'label1', 'linear', 'UTC', 'test=t2')";
         commands = converter.convertToCommands(sql);
         Assert.assertEquals(2, commands.size());
-        expectedSeries = "series e:sensor-01 ms:123456789 t:location=\"Vienna\" m:temperature=55.5 m:speed=120.0 x:entity.timezone=\"UTC\"";
+        expectedSeries = "series e:sensor-01 ms:123456789 t:location=\"Vienna\" m:temperature=55.5 m:speed=120.0";
         Assert.assertEquals(expectedSeries, commands.get(0));
-        expectedEntity = "entity " + "e:sensor-01 l:label1 i:linear t:test=\"t2\"";
+        expectedEntity = "entity " + "e:sensor-01 l:label1 i:linear z:UTC t:test=\"t2\"";
         Assert.assertEquals(expectedEntity, commands.get(1));
     }
 
