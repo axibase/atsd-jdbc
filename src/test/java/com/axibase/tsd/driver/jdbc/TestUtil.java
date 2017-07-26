@@ -2,7 +2,8 @@ package com.axibase.tsd.driver.jdbc;
 
 import com.axibase.tsd.driver.jdbc.content.ContentMetadata;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import com.axibase.tsd.driver.jdbc.util.EnumUtil;
+import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
+import lombok.experimental.UtilityClass;
 import org.apache.calcite.avatica.ColumnMetaData;
 
 import java.io.BufferedReader;
@@ -13,16 +14,14 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.zip.ZipInputStream;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
 
+@UtilityClass
 public class TestUtil {
-	private TestUtil() {
-	}
+	private static final Map<String, AtsdType> columnPrefixAtsdTypeMapping = createColumnPrefixAtsdTypeMapping();
 
 	public static String resourceToString(String relativePath, Class<?> clazz) {
 		try {
@@ -70,10 +69,28 @@ public class TestUtil {
 						.withLabel(columnName)
 						.withColumnIndex(i)
 						.withNullable(columnName.startsWith("tag") ? 1 : 0)
-						.withAtsdType(EnumUtil.getAtsdTypeByColumnName(columnName))
+						.withAtsdType(getAtsdTypeByColumnName(columnName))
 						.build();
 			}
 			return Arrays.asList(meta);
 		}
+	}
+
+	private static AtsdType getAtsdTypeByColumnName(String columnName) {
+		int dotIndex = columnName.indexOf('.');
+		final String prefix = dotIndex == -1 ? columnName : columnName.substring(0, dotIndex);
+		AtsdType type = columnPrefixAtsdTypeMapping.get(prefix);
+		if (type == null) {
+			type = AtsdType.DEFAULT_TYPE;
+		}
+		return type;
+	}
+
+	private static Map<String, AtsdType> createColumnPrefixAtsdTypeMapping() {
+		Map<String, AtsdType> mapping = new HashMap<>();
+		for (DefaultColumn type : DefaultColumn.values()) {
+			mapping.put(type.getColumnNamePrefix(), type.getType(AtsdType.DEFAULT_VALUE_TYPE));
+		}
+		return Collections.unmodifiableMap(mapping);
 	}
 }

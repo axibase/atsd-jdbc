@@ -9,6 +9,7 @@ import java.sql.Types;
 
 @UtilityClass
 public class AtsdMetaResultSets {
+	public static final int NUMBER_PRECISION_RADIX = 10;
 
 	public static class AtsdMetaColumn implements MetaImpl.Named {
 		public final String tableCat;
@@ -20,7 +21,7 @@ public class AtsdMetaResultSets {
 		public final int columnSize;
 		public final Integer bufferLength;
 		public final Integer decimalDigits;
-		public final int numPrecRadix;
+		public final int numPrecRadix = NUMBER_PRECISION_RADIX;
 		public final int nullable;
 		public final String remarks = "";
 		public final String columnDef = null;
@@ -43,7 +44,6 @@ public class AtsdMetaResultSets {
 				String tableName,
 				String columnName,
 				AtsdType atsdType,
-				int numPrecRadix,
 				int nullable,
 				int ordinalPosition,
 				String isNullable) {
@@ -57,7 +57,6 @@ public class AtsdMetaResultSets {
 			this.columnSize = atsdType.size;
 			this.bufferLength = columnSize;
 			this.decimalDigits = getDecimalDigits(sqlDataType);
-			this.numPrecRadix = numPrecRadix;
 			this.nullable = nullable;
 			this.charOctetLength = Types.VARCHAR == sqlDataType ? columnSize : null;
 			this.ordinalPosition = ordinalPosition;
@@ -132,10 +131,10 @@ public class AtsdMetaResultSets {
 		public final Short maximumScale;
 		public final Integer sqlDataType;
 		public final Integer sqlDatetimeSub = null;
-		public final Integer numPrecRadix;
+		public final Integer numPrecRadix = NUMBER_PRECISION_RADIX;
 
 		public AtsdMetaTypeInfo(boolean odbcCompatible, AtsdType atsdType, int nullable, int searchable, boolean unsignedAttribute, boolean fixedPrecScale,
-								boolean autoIncrement, int minimumScale, int maximumScale, Integer numPrecRadix) {
+								boolean autoIncrement, int minimumScale, int maximumScale) {
 			this.typeName = atsdType.sqlType;
 			this.dataType = atsdType.getTypeCode(odbcCompatible);
 			this.sqlDataType = atsdType.sqlTypeCode;
@@ -151,7 +150,6 @@ public class AtsdMetaResultSets {
 			this.localTypeName = typeName;
 			this.minimumScale = (short) minimumScale;
 			this.maximumScale = (short) maximumScale;
-			this.numPrecRadix = numPrecRadix;
 		}
 
 		public String getName() {

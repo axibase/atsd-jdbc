@@ -1,7 +1,6 @@
 package com.axibase.tsd.driver.jdbc.util;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
 import com.axibase.tsd.driver.jdbc.enums.ReservedWordsSQL2003;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
@@ -20,7 +19,6 @@ public class EnumUtil {
 	private static final Set<String> reservedWordsSql2003 = createSetFromEnum(ReservedWordsSQL2003.values());
 	private static final Map<String, AtsdType> atsdNameTypeMapping = createAtsdNameTypeMapping();
 	private static final Map<Integer, AtsdType> sqlAtsdTypesMaping = createSqlAtsdTypesMapping();
-	private static final Map<String, AtsdType> columnPrefixAtsdTypeMapping = createColumnPrefixAtsdTypeMapping();
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
 
@@ -30,6 +28,7 @@ public class EnumUtil {
 		Map<String, AtsdType> mapping = new HashMap<>();
 		for (AtsdType type : AtsdType.values()) {
 			mapping.put(type.originalType, type);
+			mapping.put(type.originalType.toUpperCase(Locale.US), type);
 		}
 		return Collections.unmodifiableMap(mapping);
 	}
@@ -38,14 +37,6 @@ public class EnumUtil {
 		Map<Integer, AtsdType> mapping = new HashMap<>();
 		for (AtsdType type : AtsdType.values()) {
 			mapping.put(type.sqlTypeCode, type);
-		}
-		return Collections.unmodifiableMap(mapping);
-	}
-
-	private static Map<String, AtsdType> createColumnPrefixAtsdTypeMapping() {
-		Map<String, AtsdType> mapping = new HashMap<>();
-		for (DefaultColumn type : DefaultColumn.values()) {
-			mapping.put(type.getColumnNamePrefix(), type.getType());
 		}
 		return Collections.unmodifiableMap(mapping);
 	}
@@ -69,7 +60,7 @@ public class EnumUtil {
 	public static AtsdType getAtsdTypeByOriginalName(String name) {
 		AtsdType result = atsdNameTypeMapping.get(name);
 		if (result == null) {
-			result = AtsdType.STRING_DATA_TYPE; // use string type by default
+			result = AtsdType.DEFAULT_TYPE;
 		}
 		return result;
 	}
@@ -80,16 +71,6 @@ public class EnumUtil {
 			result = defaultType;
 		}
 		return result;
-	}
-
-	public static AtsdType getAtsdTypeByColumnName(String columnName) {
-		int dotIndex = columnName.indexOf('.');
-		final String prefix = dotIndex == -1 ? columnName : columnName.substring(0, dotIndex);
-		AtsdType type = columnPrefixAtsdTypeMapping.get(prefix);
-		if (type == null) {
-			type = AtsdType.STRING_DATA_TYPE;
-		}
-		return type;
 	}
 
 	private static ITimeDateConstant[] buildTimeConstantsArray() {

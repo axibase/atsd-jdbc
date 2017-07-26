@@ -144,6 +144,8 @@ public enum AtsdType {
 
 	protected static final LoggingFacade log = LoggingFacade.getLogger(AtsdType.class);
 	private static final int TIMESTAMP_ODBC_TYPE = 11;
+	public static final AtsdType DEFAULT_TYPE = AtsdType.STRING_DATA_TYPE;
+	public static final AtsdType DEFAULT_VALUE_TYPE = AtsdType.FLOAT_DATA_TYPE;
 
 	public final String originalType;
 	public final String sqlType;
