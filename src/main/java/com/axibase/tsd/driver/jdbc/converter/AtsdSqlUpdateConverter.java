@@ -18,12 +18,12 @@ import org.apache.commons.lang3.StringUtils;
 
 class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
 
-    private static final String UPDATE = "UPDATE ";
-    private static final String SET = "SET ";
-    private static final String WHERE = "WHERE ";
-    private static final String IS = " IS ";
-    private static final String LIKE = " LIKE ";
-    private static final String ESCAPE = " ESCAPE ";
+    private static final String UPDATE = "update ";
+    private static final String SET = "set ";
+    private static final String WHERE = "where ";
+    private static final String IS = " is ";
+    private static final String LIKE = " like ";
+    private static final String ESCAPE = " escape ";
 
     private final Map<String, String> escapeMap = new HashMap<>();
 
@@ -32,7 +32,7 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
     }
 
     @Override
-    protected String prepareSql(String sql) {
+    public String prepareSql(String sql) {
         logger.debug("[prepareSql] in: {}", sql);
         final int begin = StringUtils.indexOfIgnoreCase(sql, SET) + SET.length();
         final int end = StringUtils.indexOfIgnoreCase(sql, WHERE);

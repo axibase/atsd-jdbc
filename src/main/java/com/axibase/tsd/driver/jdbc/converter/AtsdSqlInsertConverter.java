@@ -12,19 +12,21 @@ import org.apache.commons.lang3.StringUtils;
 
 class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
 
+    private static final String VALUES = " values ";
+
     AtsdSqlInsertConverter(boolean timestampTz) {
         super(timestampTz);
     }
 
     @Override
-    protected String prepareSql(String sql) {
+    public String prepareSql(String sql) {
         logger.debug("[prepareSql] in: {}", sql);
         final int begin = sql.indexOf('(') + 1;
         final int end = sql.indexOf(')');
-        final String beforeValues = StringUtils.replace(sql.substring(0, end), "'", "\"");
+        final String columnNames = StringUtils.replace(sql.substring(begin, end), "'", "\"");
         StringBuilder buffer = new StringBuilder();
-        buffer.append(beforeValues.substring(0, begin));
-        String[] names = StringUtils.split(beforeValues.substring(begin, end), ',');
+        buffer.append(StringUtils.replace(sql.substring(0, begin), "'", "\"").toLowerCase());
+        String[] names = StringUtils.split(columnNames, ',');
         String name;
         for (int i=0;i<names.length;i++) {
             name = names[i].trim();
@@ -33,7 +35,8 @@ class AtsdSqlInsertConverter extends AtsdSqlConverter<SqlInsert> {
             }
             appendColumnName(buffer, name);
         }
-        buffer.append(sql.substring(end));
+        String tail = sql.substring(end).trim();
+        buffer.append(')').append(VALUES).append(tail.substring(tail.indexOf('(')));
         String result = buffer.toString();
         logger.debug("[prepareSql] out: {}", result);
         return result;

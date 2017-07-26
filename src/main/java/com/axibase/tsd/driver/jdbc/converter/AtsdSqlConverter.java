@@ -91,7 +91,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         return result;
     }
 
-    protected abstract String prepareSql(String sql) throws SQLException;
+    public abstract String prepareSql(String sql) throws SQLException;
     protected abstract String getTargetTableName();
     protected abstract List<String> getColumnNames();
     protected abstract List<Object> getColumnValues(List<Object> parameterValues);
