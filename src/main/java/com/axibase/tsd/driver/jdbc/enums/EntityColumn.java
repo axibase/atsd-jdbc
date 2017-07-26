@@ -27,8 +27,14 @@ public enum EntityColumn implements MetadataColumnDefinition {
         this.type = type;
     }
 
+    @Override
     public String getNullableAsString() {
         return NULLABLE_AS_STRING[nullable];
+    }
+
+    @Override
+    public AtsdType getType(AtsdType metricType) {
+        return type;
     }
 
 }

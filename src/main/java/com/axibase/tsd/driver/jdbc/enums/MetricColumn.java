@@ -38,22 +38,14 @@ public enum MetricColumn implements MetadataColumnDefinition {
         this.type = type;
     }
 
+    @Override
     public String getNullableAsString() {
         return NULLABLE_AS_STRING[nullable];
     }
 
-    public enum DataType {
-        SHORT(2),
-        INTEGER(4),
-        LONG(8),
-        FLOAT(4),
-        DOUBLE(8),
-        DECIMAL(-1);
-
-        private final int value;
-
-        private DataType(int value) {
-            this.value = value;
-        }
+    @Override
+    public AtsdType getType(AtsdType metricType) {
+        return type;
     }
+
 }
