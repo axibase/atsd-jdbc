@@ -1,12 +1,14 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import lombok.experimental.UtilityClass;
+import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.MetaImpl;
 
 import java.sql.Types;
 
+@UtilityClass
 public class AtsdMetaResultSets {
-	private AtsdMetaResultSets(){}
 
 	public static class AtsdMetaColumn implements MetaImpl.Named {
 		public final String tableCat;
@@ -24,7 +26,7 @@ public class AtsdMetaResultSets {
 		public final String columnDef = null;
 		public final int sqlDataType;
 		public final Integer sqlDatetimeSub = null;
-		public final int charOctetLength;
+		public final Integer charOctetLength;
 		public final int ordinalPosition;
 		public final String isNullable;
 		public final String scopeCatalog = null;
@@ -132,23 +134,23 @@ public class AtsdMetaResultSets {
 		public final Integer sqlDatetimeSub = null;
 		public final Integer numPrecRadix;
 
-		public AtsdMetaTypeInfo(boolean odbcCompatible, AtsdType atsdType, short nullable, short searchable, boolean unsignedAttribute, boolean fixedPrecScale,
-								boolean autoIncrement, Short minimumScale, Short maximumScale, Integer numPrecRadix) {
+		public AtsdMetaTypeInfo(boolean odbcCompatible, AtsdType atsdType, int nullable, int searchable, boolean unsignedAttribute, boolean fixedPrecScale,
+								boolean autoIncrement, int minimumScale, int maximumScale, Integer numPrecRadix) {
 			this.typeName = atsdType.sqlType;
 			this.dataType = atsdType.getTypeCode(odbcCompatible);
 			this.sqlDataType = atsdType.sqlTypeCode;
 			this.precision = atsdType.maxPrecision;
 			this.literalPrefix = atsdType.getLiteral(true);
 			this.literalSuffix = atsdType.getLiteral(false);
-			this.nullable = nullable;
+			this.nullable = (short) nullable;
 			this.caseSensitive = cast(atsdType == AtsdType.STRING_DATA_TYPE);
-			this.searchable = searchable;
+			this.searchable = (short) searchable;
 			this.unsignedAttribute = cast(unsignedAttribute);
 			this.fixedPrecScale = cast(fixedPrecScale);
 			this.autoIncrement = cast(autoIncrement);
 			this.localTypeName = typeName;
-			this.minimumScale = minimumScale;
-			this.maximumScale = maximumScale;
+			this.minimumScale = (short) minimumScale;
+			this.maximumScale = (short) maximumScale;
 			this.numPrecRadix = numPrecRadix;
 		}
 
@@ -159,5 +161,20 @@ public class AtsdMetaResultSets {
 
 	private static int cast(boolean value) {
 		return value ? 1 : 0;
+	}
+
+	public static final class AtsdColumnMetaData extends ColumnMetaData {
+		public final ColumnMetaData.AvaticaType exposedType;
+
+		public AtsdColumnMetaData(int ordinal, boolean autoIncrement, boolean caseSensitive,
+								  boolean searchable, boolean currency, int nullable,
+								  boolean signed, int displaySize, String label, String columnName, String schemaName,
+								  int precision, int scale, String tableName, String catalogName, AvaticaType type,
+								  boolean readOnly, boolean writable, boolean definitelyWritable, String columnClassName,
+								  AvaticaType exposed) {
+			super(ordinal, autoIncrement, caseSensitive, searchable, currency, nullable, signed, displaySize, label, columnName,
+					schemaName, precision, scale, tableName, catalogName, type, readOnly, writable, definitelyWritable, columnClassName);
+			this.exposedType = exposed;
+		}
 	}
 }

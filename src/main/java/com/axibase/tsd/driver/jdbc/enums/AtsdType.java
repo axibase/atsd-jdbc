@@ -2,6 +2,7 @@ package com.axibase.tsd.driver.jdbc.enums;
 
 import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.ColumnMetaData.Rep;
 import org.apache.commons.lang3.StringUtils;
 
@@ -20,6 +21,11 @@ public enum AtsdType {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Long.valueOf(cell);
+		}
+
+		@Override
+		public AtsdType getCompatibleType(boolean odbcCompatible) {
+			return odbcCompatible ? DOUBLE_DATA_TYPE : this;
 		}
 	},
 	BOOLEAN_DATA_TYPE("boolean", "boolean", Types.BOOLEAN, Rep.BOOLEAN, 1, 1, 0) {
@@ -92,7 +98,8 @@ public enum AtsdType {
 			return cell;
 		}
 	},
-	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP, 29, 29, 9) {
+	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP,
+			"2016-01-01T00:00:00.000".length(), "2016-01-01T00:00:00.000".length(), 3) {
 		@Override
 		public String getLiteral(boolean isPrefix) {
 			return "'";
@@ -180,14 +187,19 @@ public enum AtsdType {
 	}
 
 	private int getOdbcTypeCode(int sqlTypeCode) {
-		switch (sqlTypeCode) {
-			case Types.TIMESTAMP : return TIMESTAMP_ODBC_TYPE;
-			case Types.BIGINT : return Types.NUMERIC;
-			default: return sqlTypeCode;
-		}
+		return sqlTypeCode == Types.TIMESTAMP ? TIMESTAMP_ODBC_TYPE : sqlTypeCode;
+	}
+
+	public AtsdType getCompatibleType(boolean odbcCompatible) {
+		return this;
 	}
 
 	public int getTypeCode(boolean odbcCompatible) {
 		return odbcCompatible ? odbcTypeCode : sqlTypeCode;
 	}
+
+	public ColumnMetaData.AvaticaType getAvaticaType(boolean odbcCompatible) {
+		return new ColumnMetaData.AvaticaType(getTypeCode(odbcCompatible), sqlType, rep);
+	}
+
 }

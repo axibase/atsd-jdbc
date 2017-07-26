@@ -17,6 +17,7 @@ package com.axibase.tsd.driver.jdbc.content;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdJsonException;
+import com.axibase.tsd.driver.jdbc.ext.AtsdMetaResultSets;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
@@ -48,9 +49,9 @@ public class ContentMetadata {
 	private final List<MetaResultSet> list;
 	private final List<ColumnMetaData> metadataList;
 
-	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames)
+	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames, boolean odbcCompatible)
 			throws AtsdException, IOException {
-		metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog, assignColumnNames)
+		metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog, assignColumnNames, odbcCompatible)
 				: Collections.<ColumnMetaData>emptyList();
 		sign = new Signature(metadataList, sql, Collections.<AvaticaParameter>emptyList(), null, CursorFactory.LIST,
 				StatementType.SELECT);
@@ -58,17 +59,17 @@ public class ContentMetadata {
 				Collections.singletonList(MetaResultSet.create(connectionId, statementId, false, sign, null)));
 	}
 
-	public static List<ColumnMetaData> buildMetadataList(InputStream jsonInputStream, String catalog, boolean assignColumnNames)
+	public static List<ColumnMetaData> buildMetadataList(InputStream jsonInputStream, String catalog, boolean assignColumnNames, boolean odbcCompatible)
 			throws IOException, AtsdException {
-		return buildMetadataList(new InputStreamReader(jsonInputStream), catalog, assignColumnNames);
+		return buildMetadataList(new InputStreamReader(jsonInputStream), catalog, assignColumnNames, odbcCompatible);
 	}
 
-	public static List<ColumnMetaData> buildMetadataList(String json, String catalog, boolean assignColumnNames)
+	public static List<ColumnMetaData> buildMetadataList(String json, String catalog, boolean assignColumnNames, boolean odbcCompatible)
 			throws IOException, AtsdException {
-		return buildMetadataList(new StringReader(json), catalog, assignColumnNames);
+		return buildMetadataList(new StringReader(json), catalog, assignColumnNames, odbcCompatible);
 	}
 
-	private static List<ColumnMetaData> buildMetadataList(Reader jsonReader, String catalog, boolean assignColumnNames)
+	private static List<ColumnMetaData> buildMetadataList(Reader jsonReader, String catalog, boolean assignColumnNames, boolean odbcCompatible)
 			throws IOException, AtsdException {
 		final Map<String, Object> jsonObject = getJsonScheme(jsonReader);
 		if (jsonObject == null) {
@@ -91,7 +92,7 @@ public class ContentMetadata {
 		ColumnMetaData[] sortedByOrdinal = new ColumnMetaData[size];
 		int index = 0;
 		for (final Object obj : columns) {
-			final ColumnMetaData cmd = getColumnMetaData(schema, catalog, index, obj, assignColumnNames);
+			final ColumnMetaData cmd = getColumnMetaData(schema, catalog, index, obj, assignColumnNames, odbcCompatible);
 			sortedByOrdinal[cmd.ordinal] = cmd;
 			++index;
 		}
@@ -101,7 +102,8 @@ public class ContentMetadata {
 		return Collections.unmodifiableList(Arrays.asList(sortedByOrdinal));
 	}
 
-	private static ColumnMetaData getColumnMetaData(String schema, String catalog, int ind, final Object obj, boolean assignColumnNames) {
+	private static ColumnMetaData getColumnMetaData(String schema, String catalog, int ind, final Object obj,
+													boolean assignColumnNames, boolean odbcCompatible) {
 		final Map<String, Object> property = (Map<String, Object>) obj;
 		final Integer index = (Integer) property.get(INDEX_PROPERTY);
 		final int columnIndex = index != null ? index - 1 : ind;
@@ -113,7 +115,7 @@ public class ContentMetadata {
 		final AtsdType atsdType = EnumUtil.getAtsdTypeByOriginalName(datatype);
 		final boolean nullable = atsdType == AtsdType.JAVA_OBJECT_TYPE || (atsdType == AtsdType.STRING_DATA_TYPE
 				&& (StringUtils.endsWithIgnoreCase(propertyUrl, "Tag") || TEXT_TITLES.equals(title)));
-		return new ColumnMetaDataBuilder(assignColumnNames)
+		return new ColumnMetaDataBuilder(assignColumnNames, odbcCompatible)
 				.withColumnIndex(columnIndex)
 				.withSchema(schema)
 				.withCatalog(catalog)
@@ -140,12 +142,9 @@ public class ContentMetadata {
 		}
 	}
 
-	public static ColumnMetaData.AvaticaType getAvaticaType(AtsdType type) {
-		return new ColumnMetaData.AvaticaType(type.sqlTypeCode, type.sqlType, type.rep);
-	}
-
 	public static class ColumnMetaDataBuilder {
 		private final boolean assignColumnNames;
+		private final boolean odbcCompatible;
 		private String name;
 		private String label;
 		private String table;
@@ -156,8 +155,9 @@ public class ContentMetadata {
 		private String schema;
 		private String catalog;
 
-		public ColumnMetaDataBuilder(boolean assignColumnNames) {
+		public ColumnMetaDataBuilder(boolean assignColumnNames, boolean odbcCompatible) {
 			this.assignColumnNames = assignColumnNames;
+			this.odbcCompatible = odbcCompatible;
 		}
 
 		public ColumnMetaDataBuilder withName(String name) {
@@ -201,11 +201,17 @@ public class ContentMetadata {
 		}
 
 		public ColumnMetaData build() {
-			final ColumnMetaData.AvaticaType atype = getAvaticaType(atsdType);
-			return new ColumnMetaData(columnIndex, false, false, false,
-					false, nullable, false, atsdType.size, label, assignColumnNames ? name : label,
-					getValueNotNull(schema), atsdType.maxPrecision, atsdType.scale, table, getValueNotNull(catalog), atype,
-					true, false,false, atype.rep.clazz.getCanonicalName());
+			final AtsdType type = atsdType.getCompatibleType(odbcCompatible);
+			final ColumnMetaData.AvaticaType internalType = type.getAvaticaType(false);
+			final ColumnMetaData.AvaticaType exposedType = type.getAvaticaType(odbcCompatible);
+			return new AtsdMetaResultSets.AtsdColumnMetaData(columnIndex, false, false, false,
+					false, nullable, false, type.size, label, assignColumnNames ? name : label,
+					getValueNotNull(schema), type.maxPrecision, type.scale, table, getValueNotNull(catalog), internalType,
+					true, false,false, internalType.rep.clazz.getCanonicalName(), exposedType);
+		}
+
+		private AtsdType substituteForOdbcCompatibility(AtsdType type) {
+			return odbcCompatible && type == AtsdType.BIGINT_DATA_TYPE ? AtsdType.DOUBLE_DATA_TYPE : type;
 		}
 
 		private String getValueNotNull(String value) {

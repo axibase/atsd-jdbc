@@ -114,7 +114,7 @@ public class AtsdMeta extends MetaImpl {
 					metaEndpoint, atsdConnectionInfo, signature.sql, new StatementContext(handle));
 			try (final IContentProtocol protocol = new SdkProtocolImpl(contentDescription)) {
 				final List<ColumnMetaData> columnMetaData = ContentMetadata.buildMetadataList(protocol.readContent(0),
-						atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames());
+						atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames(), atsdConnectionInfo.odbc2Compatibility());
 				signature.columns.addAll(columnMetaData);
 			} catch (AtsdJsonException e) {
 				final Object jsonError = e.getJson().get("error");
@@ -657,10 +657,11 @@ public class AtsdMeta extends MetaImpl {
 			final Set<String> tableNames = WildcardsUtil.hasWildcards(pattern) ?
 					getAndFilterMetricsFromAtsd(metricMasks, atsdConnectionInfo, pattern):
 					Collections.singleton(pattern);
+			final boolean odbcCompatible = atsdConnectionInfo.odbc2Compatibility();
 			for (String tableName : tableNames) {
 				int position = 1;
 				for (DefaultColumn column : columns) {
-					columnData.add(createColumnMetaData(column, tableName, position));
+					columnData.add(createColumnMetaData(column, tableName, position, odbcCompatible));
 					++position;
 				}
 				if (DEFAULT_TABLE_NAME.equals(tableName) || !maybeTagColumnPattern(colNamePattern)) {
@@ -669,12 +670,12 @@ public class AtsdMeta extends MetaImpl {
 				Set<String> tags = getTags(tableName);
 				if (tags.isEmpty() && StringUtils.startsWith(colNamePattern, TagColumn.PREFIX) && !WildcardsUtil.hasAtsdWildcards(colNamePattern)) {
 					final TagColumn column = new TagColumn(StringUtils.substringAfter(colNamePattern, TagColumn.PREFIX));
-					columnData.add(createColumnMetaData(column, tableName, position));
+					columnData.add(createColumnMetaData(column, tableName, position, odbcCompatible));
 				} else {
 					for (String tag : tags) {
 						final TagColumn column = new TagColumn(tag);
 						if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), colNamePattern)) {
-							columnData.add(createColumnMetaData(column, tableName, position));
+							columnData.add(createColumnMetaData(column, tableName, position, odbcCompatible));
 							++position;
 						}
 					}
@@ -744,10 +745,10 @@ public class AtsdMeta extends MetaImpl {
 		return Location.METRICS_ENDPOINT.getUrl(connectionInfo) + "/" + encodedMetric + "/series";
 	}
 
-	private Object createColumnMetaData(MetadataColumnDefinition column, String table, int ordinal) {
-		final AtsdType columnType = column.getType();
+	private Object createColumnMetaData(MetadataColumnDefinition column, String table, int ordinal, boolean odbcCompatible) {
+		final AtsdType columnType = column.getType().getCompatibleType(odbcCompatible);
 		return new AtsdMetaResultSets.AtsdMetaColumn(
-				atsdConnectionInfo.odbcCompatibility(),
+				atsdConnectionInfo.odbc2Compatibility(),
 				atsdConnectionInfo.catalog(),
 				atsdConnectionInfo.schema(),
 				table,
@@ -802,14 +803,14 @@ public class AtsdMeta extends MetaImpl {
 		IDataProvider provider = providerCache.get(statementId);
 		final String jsonScheme = provider != null ? provider.getContentDescription().getJsonScheme() : "";
 		ContentMetadata contentMetadata = new ContentMetadata(jsonScheme, sql, atsdConnectionInfo.catalog(),
-				connectionId, statementId, atsdConnectionInfo.assignColumnNames());
+				connectionId, statementId, atsdConnectionInfo.assignColumnNames(), atsdConnectionInfo.odbc2Compatibility());
 		metaCache.put(statementId, contentMetadata);
 		return contentMetadata;
 	}
 
 	private AtsdMetaResultSets.AtsdMetaTypeInfo getTypeInfo(AtsdType atsdType) {
-		return new AtsdMetaResultSets.AtsdMetaTypeInfo(atsdConnectionInfo.odbcCompatibility(), atsdType, (short) DatabaseMetaData.typeNullable,
-				(short) DatabaseMetaData.typeSearchable, false, false, false, (short) 0, (short) 0, 10);
+		return new AtsdMetaResultSets.AtsdMetaTypeInfo(atsdConnectionInfo.odbc2Compatibility(), atsdType, DatabaseMetaData.typeNullable,
+				DatabaseMetaData.typeSearchable, false, false, false, 0,  0, 10);
 	}
 
 	// Since Calcite 1.6.0

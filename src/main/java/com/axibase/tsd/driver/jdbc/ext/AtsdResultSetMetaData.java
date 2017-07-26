@@ -98,7 +98,11 @@ public class AtsdResultSetMetaData implements ResultSetMetaData {
 	}
 
 	public int getColumnType(int column) throws SQLException {
-		return this.getColumnMetaData(column).type.id;
+		final ColumnMetaData columnMetaData = this.getColumnMetaData(column);
+		if (columnMetaData instanceof AtsdMetaResultSets.AtsdColumnMetaData) {
+			return ((AtsdMetaResultSets.AtsdColumnMetaData) columnMetaData).exposedType.id;
+		}
+		return columnMetaData.type.id;
 	}
 
 	public String getColumnTypeName(int column) throws SQLException {

@@ -1,5 +1,10 @@
 package com.axibase.tsd.driver.jdbc;
 
+import com.axibase.tsd.driver.jdbc.content.ContentMetadata;
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import com.axibase.tsd.driver.jdbc.util.EnumUtil;
+import org.apache.calcite.avatica.ColumnMetaData;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,13 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.zip.ZipInputStream;
 
-import com.axibase.tsd.driver.jdbc.content.ContentMetadata;
-import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import com.axibase.tsd.driver.jdbc.util.EnumUtil;
-import org.apache.calcite.avatica.ColumnMetaData;
-
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
-import static com.axibase.tsd.driver.jdbc.content.ContentMetadata.getAvaticaType;
 
 public class TestUtil {
 	private TestUtil() {
@@ -58,14 +57,15 @@ public class TestUtil {
 	}
 
 	public static List<ColumnMetaData> prepareMetadata(String header) {
+		final boolean odbcCompatible = false;
 		if (header.startsWith("#")) {
-			return Collections.singletonList(ColumnMetaData.dummy(getAvaticaType(AtsdType.STRING_DATA_TYPE), false));
+			return Collections.singletonList(ColumnMetaData.dummy(AtsdType.STRING_DATA_TYPE.getAvaticaType(odbcCompatible), false));
 		} else {
 			String[] columnNames = header.split(",");
 			ColumnMetaData[] meta = new ColumnMetaData[columnNames.length];
 			for (int i = 0; i < columnNames.length; i++) {
 				final String columnName = columnNames[i];
-				meta[i] = new ContentMetadata.ColumnMetaDataBuilder(false)
+				meta[i] = new ContentMetadata.ColumnMetaDataBuilder(false, odbcCompatible)
 						.withName(columnName)
 						.withLabel(columnName)
 						.withColumnIndex(i)
