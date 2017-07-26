@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.Getter;
 import org.apache.calcite.avatica.com.fasterxml.jackson.databind.util.ISO8601Utils;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
@@ -52,6 +53,9 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     protected T rootNode;
     private final boolean timestampTz;
+
+    @Getter
+    private long[] commandCounts;
 
     protected AtsdSqlConverter(boolean timestampTz) {
         this.timestampTz = timestampTz;
@@ -115,8 +119,10 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         logger.trace("[createCommands] columnNames: {}", columnNames);
         final List<Object> values = getColumnValues(parameterValues);
         logger.trace("[createCommands] values: {}", values);
-        return DEFAULT_TABLE_NAME.equals(tableName) ? composeCommands(logger, columnNames, values, timestampTz) : composeCommands(logger, tableName,
-                columnNames, values, timestampTz);
+        List<String> result = DEFAULT_TABLE_NAME.equals(tableName) ? composeCommands(logger, columnNames, values, timestampTz)
+                : composeCommands(logger, tableName, columnNames, values, timestampTz);
+        commandCounts = new long[] {result.size()};
+        return result;
     }
 
     private List<String> createCommandBatch(List<List<Object>> parameterValueBatch) throws SQLException {
@@ -126,17 +132,24 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         logger.debug("[createCommandBatch] tableName: {} columnCount: {}", tableName, columnNames.size());
         logger.trace("[createCommandBatch] columnNames: {}", columnNames);
         final List<List<Object>> valueBatch = getColumnValuesBatch(parameterValueBatch);
-        List<String> commands = new ArrayList<>();
+        List<String> result = new ArrayList<>();
+        List<String> commands;
+        commandCounts = new long[valueBatch.size()];
+        int idx = 0;
         if (DEFAULT_TABLE_NAME.equals(tableName)) {
             for (List<Object> values : valueBatch) {
-                commands.addAll(composeCommands(logger, columnNames, values, timestampTz));
+                commands = composeCommands(logger, columnNames, values, timestampTz);
+                commandCounts[idx++] = commands.size();
+                result.addAll(commands);
             }
         } else {
             for (List<Object> values : valueBatch) {
-                commands.addAll(composeCommands(logger, tableName, columnNames, values, timestampTz));
+                commands = composeCommands(logger, tableName, columnNames, values, timestampTz);
+                commandCounts[idx++] = commands.size();
+                result.addAll(commands);
             }
         }
-        return commands;
+        return result;
     }
 
     private static List<String> composeCommands(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values,

@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.AccessLevel;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,18 +37,18 @@ class CommandBuilder {
     private String entityTimeZone;
 
     //metric
-    public String metricDataType;
-    public String metricDescription;
-    public Boolean metricEnabled;
-    public String metricFilter;
-    public String metricInterpolate;
-    public String metricInvalidValueAction;
-    public String metricLabel;
-    public Double metricMaxValue;
-    public Double metricMinValue;
-    public String metricTimeZone;
-    public Boolean metricVersioning;
-    public String metricUnits;
+    private String metricDataType;
+    private String metricDescription;
+    private Boolean metricEnabled;
+    private String metricFilter;
+    private String metricInterpolate;
+    private String metricInvalidValueAction;
+    private String metricLabel;
+    private Double metricMaxValue;
+    private Double metricMinValue;
+    private String metricTimeZone;
+    private Boolean metricVersioning;
+    private String metricUnits;
 
     private final Map<String, String> entityTags = new CaseInsensitiveLinkedHashMap<>();
     private final Map<String, String> metricTags = new CaseInsensitiveLinkedHashMap<>();

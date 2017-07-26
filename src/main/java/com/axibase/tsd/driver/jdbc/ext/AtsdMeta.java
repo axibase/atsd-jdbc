@@ -18,6 +18,7 @@ import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.*;
 import com.axibase.tsd.driver.jdbc.content.json.Metric;
 import com.axibase.tsd.driver.jdbc.content.json.Series;
+import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverter;
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
@@ -369,11 +370,12 @@ public class AtsdMeta extends MetaImpl {
 		try {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
             final int timeoutMillis = statement.getQueryTimeout();
-			List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz())
-					.convertBatchToCommands(query, preparedValueBatch);
+            final AtsdSqlConverter converter = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz());
+			List<String> content = converter.convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 			long updateCount = provider.sendData(timeoutMillis);
-			ExecuteBatchResult result = new ExecuteBatchResult(generateExecuteBatchResult(parameterValueBatch.size(), updateCount == 0 ? 0 : 1));
+			long[] updateCounts = updateCount == 0 ? generateExecuteBatchResult(parameterValueBatch.size(), 0) : converter.getCommandCounts();
+			ExecuteBatchResult result = new ExecuteBatchResult(updateCounts);
 			return result;
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
 			log.error("[executeBatch] error", e.getMessage());
