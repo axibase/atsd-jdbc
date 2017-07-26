@@ -14,7 +14,9 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
+import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import lombok.SneakyThrows;
@@ -174,7 +176,8 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setObject(int parameterIndex, Object value, int targetSqlType) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.STRING, value));
+		final ColumnMetaData.Rep rep = EnumUtil.getAtsdTypeBySqlType(targetSqlType, AtsdType.JAVA_OBJECT_TYPE).avaticaType;
+		parameters.put(parameterIndex, TypedValue.ofSerial(rep, value));
 	}
 
 	@Override

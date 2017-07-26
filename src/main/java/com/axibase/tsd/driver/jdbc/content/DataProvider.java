@@ -15,12 +15,6 @@
 package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.enums.Location;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.calcite.avatica.Meta;
-
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -31,6 +25,12 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
+import org.apache.calcite.avatica.Meta;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataProvider implements IDataProvider {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(DataProvider.class);
@@ -71,10 +71,10 @@ public class DataProvider implements IDataProvider {
 	}
 
 	@Override
-	public void fetchData(long maxLimit, int timeout) throws AtsdException, GeneralSecurityException, IOException {
+	public void fetchData(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.setMaxRowsCount(maxLimit);
 		this.isHoldingConnection.set(true);
-		final InputStream is = contentProtocol.readContent(timeout);
+		final InputStream is = contentProtocol.readContent(timeoutMillis);
 		this.isHoldingConnection.set(false);
 		this.strategy = defineStrategy();
 		if (this.strategy != null) {
@@ -83,9 +83,9 @@ public class DataProvider implements IDataProvider {
 	}
 
 	@Override
-	public long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException {
+	public long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		this.isHoldingConnection.set(false);
-		final long writeCount = contentProtocol.writeContent(timeout);
+		final long writeCount = contentProtocol.writeContent(timeoutMillis);
 		return writeCount;
 	}
 

@@ -73,6 +73,12 @@ public class AtsdConnectionInfo {
 		return result == null ? (String) property.defaultValue() : result;
 	}
 
+	private String rawTables() {
+		final AtsdDriverConnectionProperties property = tables;
+		final String result = info.getProperty(property.camelName());
+		return result == null ? (String) property.defaultValue() : result;
+	}
+
 	public List<String> tables() {
 		return tablePatterns;
 	}
@@ -121,9 +127,8 @@ public class AtsdConnectionInfo {
 		return result == null ? "" : result;
 	}
 
-
 	private List<String> splitTablePatterns() {
-		final String value = info.getProperty(tables.camelName());
+		final String value = rawTables();
 		if (value == null) {
 			return Collections.emptyList();
 		} else {

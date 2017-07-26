@@ -1,8 +1,9 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
 import com.axibase.tsd.driver.jdbc.util.CaseInsensitiveLinkedHashMap;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
 
 abstract class AbstractCommand {
 
@@ -11,7 +12,7 @@ abstract class AbstractCommand {
     private final String commandName;
     protected String entity;
     private String dateTime;
-    private long time;
+    private Long time;
     protected final Map<String, String> tags = new CaseInsensitiveLinkedHashMap<>();
 
     AbstractCommand(String commandName) {
@@ -48,10 +49,10 @@ abstract class AbstractCommand {
         if (StringUtils.isBlank(entity)) {
             throw new IllegalArgumentException("Entity not defined");
         }
-        if (time == 0 && StringUtils.isBlank(dateTime)) {
+        if (time == null && StringUtils.isBlank(dateTime)) {
             throw new IllegalArgumentException("Time and DateTime not defined");
         }
-        if (time != 0 && (time < 0 || time > MAX_TIME)) {
+        if (time != null && (time < 0 || time > MAX_TIME)) {
             throw new IllegalArgumentException("Invalid time: " + time);
         }
     }
@@ -60,7 +61,7 @@ abstract class AbstractCommand {
         validate();
         StringBuilder buffer = new StringBuilder(commandName);
         buffer.append(" e:").append(handleName(entity));
-        if (time == 0) {
+        if (time == null) {
             buffer.append(" d:").append(dateTime);
         } else {
             buffer.append(" ms:").append(time);

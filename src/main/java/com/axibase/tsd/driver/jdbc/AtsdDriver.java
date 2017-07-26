@@ -118,13 +118,14 @@ public class AtsdDriver extends UnregisteredDriver {
 		if (afterSeparator  < urlSuffix.length()) {
 			info = ConnectStringParser.parse(urlSuffix.substring(afterSeparator), info);
 		}
-		if (new AtsdConnectionInfo(info).timestampTz()) {
+		final AtsdConnectionInfo atsdConnectionInfo = new AtsdConnectionInfo(info);
+		if (atsdConnectionInfo.timestampTz()) {
 			info.setProperty("timeZone", "UTC");
 		}
 		final AtsdFactory atsdFactory = new AtsdFactory();
 		final AvaticaConnection connection = atsdFactory.newConnection(this, atsdFactory, url, info);
 		AtsdDatabaseMetaData atsdDatabaseMetaData = (AtsdDatabaseMetaData) connection.getMetaData();
-		atsdDatabaseMetaData.initVersions(new AtsdConnectionInfo(info));
+		atsdDatabaseMetaData.initVersions(atsdConnectionInfo);
 		if (atsdDatabaseMetaData.getDatabaseMajorVersion() < DriverConstants.MIN_SUPPORTED_ATSD_REVISION) {
 			throw new SQLException("ATSD revision is not supported. Current revision: " + atsdDatabaseMetaData.getDatabaseMajorVersion()
 					+ ". Minimum supported revision: " + DriverConstants.MIN_SUPPORTED_ATSD_REVISION);

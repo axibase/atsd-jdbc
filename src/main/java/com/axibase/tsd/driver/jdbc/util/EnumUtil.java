@@ -6,7 +6,7 @@ import com.axibase.tsd.driver.jdbc.enums.ReservedWordsSQL2003;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
-import com.google.common.collect.Sets;
+import lombok.experimental.UtilityClass;
 import org.apache.calcite.avatica.Meta;
 import org.apache.commons.lang3.EnumUtils;
 
@@ -14,7 +14,7 @@ import java.util.*;
 
 import static org.apache.calcite.avatica.Meta.StatementType.*;
 
-
+@UtilityClass
 public class EnumUtil {
 
 	private static final Set<String> reservedWordsSql2003 = createSetFromEnum(ReservedWordsSQL2003.values());
@@ -24,9 +24,7 @@ public class EnumUtil {
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
 
-	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(Sets.newHashSet(SELECT, INSERT, UPDATE));
-
-	private EnumUtil() {}
+	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SELECT, INSERT, UPDATE)));
 
 	private static Map<String, AtsdType> createAtsdNameTypeMapping() {
 		Map<String, AtsdType> mapping = new HashMap<>();
@@ -76,10 +74,10 @@ public class EnumUtil {
 		return result;
 	}
 
-	public static AtsdType getAtsdTypeBySqlType(int typeCode) {
+	public static AtsdType getAtsdTypeBySqlType(int typeCode, AtsdType defaultType) {
 		AtsdType result = sqlAtsdTypesMaping.get(typeCode);
 		if (result == null) {
-			result = AtsdType.STRING_DATA_TYPE; // use string type by default
+			result = defaultType;
 		}
 		return result;
 	}

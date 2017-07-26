@@ -42,13 +42,10 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLDataException;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -89,7 +86,7 @@ public class AtsdMeta extends MetaImpl {
 		};
 	}
 
-	public StatementContext getContextFromMap(StatementHandle statementHandle) {
+	StatementContext getContextFromMap(StatementHandle statementHandle) {
 		return contextMap.get(statementHandle.id);
 	}
 
@@ -156,20 +153,23 @@ public class AtsdMeta extends MetaImpl {
 		}
 		final String query = substitutePlaceholders(queryParts, parameterValues);
         final AvaticaStatement statement = connection.statementMap.get(statementHandle.id);
+        if (statement == null) {
+        	throw new NoSuchStatementException(statementHandle);
+		}
         final StatementType statementType = statement.getStatementType();
         try {
 			IDataProvider provider = createDataProvider(statementHandle, query, statementType);
-			final int timeout = getQueryTimeout(statement);
+			final int timeoutMillis = statement.getQueryTimeout() * 1000;
 			final ExecuteResult result;
 			if (SELECT == statementType) {
-				final int maxRows = getMaxRows(statement);
-				provider.fetchData(maxRows, timeout);
+				final int maxRows = statement.getMaxRows();
+				provider.fetchData(maxRows, timeoutMillis);
 				final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 				result = new ExecuteResult(contentMetadata.getList());
 			} else {
 				String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommand(query);
 				provider.getContentDescription().setPostContent(content);
-				long updateCount = provider.sendData(timeout);
+				long updateCount = provider.sendData(timeoutMillis);
 
 				MetaResultSet metaResultSet = MetaResultSet.count(statementHandle.connectionId, statementHandle.id, updateCount);
 				List<MetaResultSet> resultSets = Collections.singletonList(metaResultSet);
@@ -254,33 +254,22 @@ public class AtsdMeta extends MetaImpl {
 			case JAVA_UTIL_DATE:
 				buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
 				break;
+			case OBJECT:
+				appendObjectValue(value, buffer);
+				break;
 			default:
 				buffer.append(value);
 		}
 	}
 
-	private int getMaxRows(Statement statement) {
-		int maxRows = 0;
-		if (statement != null) {
-			try {
-				maxRows = statement.getMaxRows();
-			} catch (SQLException e) {
-				maxRows = 0;
-			}
+	private static void appendObjectValue(Object value, StringBuilder buffer) {
+		if (value instanceof String) {
+			buffer.append('\'').append(value).append('\'');
+		} else if (value instanceof Date) {
+			buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format((Date) value)).append('\'');
+		} else {
+			buffer.append(value);
 		}
-		return maxRows;
-	}
-
-	private int getQueryTimeout(Statement statement) {
-		int timeout = 0;
-		if (statement != null) {
-			try {
-				timeout = statement.getQueryTimeout();
-			} catch (SQLException e) {
-				timeout = 0;
-			}
-		}
-		return timeout;
 	}
 
 	@Override
@@ -369,10 +358,12 @@ public class AtsdMeta extends MetaImpl {
 		final List<List<Object>> preparedValueBatch = prepareValueBatch(parameterValueBatch);
 		try {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
-            final int timeout = getQueryTimeout(statement);
-			String content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertBatchToCommands(query, preparedValueBatch);
+            final int timeoutMillis = statement.getQueryTimeout();
+			String content = AtsdSqlConverterFactory
+					.getConverter(statementType, atsdConnectionInfo.timestampTz())
+					.convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(content);
-			long updateCount = provider.sendData(timeout);
+			long updateCount = provider.sendData(timeoutMillis);
 			ExecuteBatchResult result = new ExecuteBatchResult(generateExecuteBatchResult(parameterValueBatch.size(), updateCount == 0 ? 0 : 1));
 			return result;
 		} catch (final RuntimeException e) {
@@ -874,4 +865,8 @@ public class AtsdMeta extends MetaImpl {
 		return result;
 	}
 
+	@Override
+	public StatementHandle createStatement(ConnectionHandle connectionHandle) {
+		return new StatementHandle(connectionHandle.id, idGenerator.getAndIncrement(), null);
+	}
 }

@@ -23,8 +23,8 @@ public class AtsdMetaResultSets {
 		public final String remarks = "";
 		public final String columnDef = null;
 		public final int sqlDataType;
-		public final int sqlDatetimeSub = 0;
-		public final Integer charOctetLength;
+		public final Integer sqlDatetimeSub = null;
+		public final int charOctetLength;
 		public final int ordinalPosition;
 		public final String isNullable;
 		public final String scopeCatalog = null;

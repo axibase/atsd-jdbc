@@ -20,6 +20,7 @@ import com.axibase.tsd.driver.jdbc.content.json.QueryDescription;
 import com.axibase.tsd.driver.jdbc.content.json.SendCommandResult;
 import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
+import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
@@ -93,12 +94,12 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
-	public InputStream readContent(int timeout) throws AtsdException, GeneralSecurityException, IOException {
+	public InputStream readContent(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
 		contentDescription.initDataFetchingContent();
 		InputStream inputStream = null;
 		try {
-			inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
+			inputStream = executeRequest(POST_METHOD, timeoutMillis, contentDescription.getEndpoint());
 			if (MetadataFormat.EMBED == contentDescription.getMetadataFormat()) {
 				inputStream = MetadataRetriever.retrieveJsonSchemeAndSubstituteStream(inputStream, contentDescription);
 			}
@@ -145,12 +146,12 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
-	public long writeContent(int timeout) throws AtsdException, GeneralSecurityException, IOException {
+	public long writeContent(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.addRequestHeader(HttpHeaders.ACCEPT, PLAIN_AND_JSON_MIME_TYPE);
 		contentDescription.addRequestHeader(HttpHeaders.CONTENT_TYPE, ContentType.TEXT_PLAIN.getMimeType());
 		long writeCount = 0;
 		try {
-			InputStream inputStream = executeRequest(POST_METHOD, timeout, contentDescription.getEndpoint());
+			InputStream inputStream = executeRequest(POST_METHOD, timeoutMillis, contentDescription.getEndpoint());
 			final SendCommandResult sendCommandResult = JsonMappingUtil.mapToSendCommandResult(inputStream);
 			logger.trace("[response] content: {}", sendCommandResult);
 			if (StringUtils.isNotEmpty(sendCommandResult.getError())) {
@@ -182,7 +183,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		}
 	}
 
-	private InputStream executeRequest(String method, int queryTimeout, String url) throws AtsdException, IOException, GeneralSecurityException {
+	private InputStream executeRequest(String method, int queryTimeoutMillis, String url) throws AtsdException, IOException, GeneralSecurityException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[request] {} {}", method, url);
 		}
@@ -190,7 +191,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (contentDescription.getInfo().secure()) {
 			doTrustToCertificates((HttpsURLConnection) this.conn);
 		}
-		setBaseProperties(method, queryTimeout);
+		setBaseProperties(method, queryTimeoutMillis);
 		if (MetadataFormat.HEADER == contentDescription.getMetadataFormat()
 				&& StringUtils.isEmpty(contentDescription.getJsonScheme())) {
 			MetadataRetriever.retrieveJsonSchemeFromHeader(conn.getHeaderFields(), contentDescription);
@@ -225,7 +226,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		return gzipped ? new GZIPInputStream(body) : body;
 	}
 
-	private void setBaseProperties(String method, int queryTimeout) throws IOException {
+	private void setBaseProperties(String method, int queryTimeoutMillis) throws IOException {
 		final String login = contentDescription.getInfo().user();
 		final String password = contentDescription.getInfo().password();
 		if (!StringUtils.isEmpty(login) && !StringUtils.isEmpty(password)) {
@@ -237,8 +238,8 @@ public class SdkProtocolImpl implements IContentProtocol {
 		conn.setConnectTimeout(contentDescription.getInfo().connectTimeoutMillis());
 		conn.setDoInput(true);
 		conn.setInstanceFollowRedirects(true);
-		int timeoutInMillis = queryTimeout == 0 ? contentDescription.getInfo().readTimeoutMillis() : queryTimeout;
-		conn.setReadTimeout(timeoutInMillis);
+		final int readTimeoutInMillis = getQueryTimeoutMillis(queryTimeoutMillis, contentDescription.getInfo());
+		conn.setReadTimeout(readTimeoutInMillis);
 		conn.setRequestMethod(method);
 		conn.setRequestProperty(HttpHeaders.CONNECTION, CONN_KEEP_ALIVE);
 		conn.setRequestProperty(HttpHeaders.USER_AGENT, USER_AGENT);
@@ -248,19 +249,22 @@ public class SdkProtocolImpl implements IContentProtocol {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
 			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postContent.length());
-			conn.setChunkedStreamingMode(100);
+			conn.setChunkedStreamingMode(CHUNK_LENGTH);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {
-				logger.debug("[content] " + postContent);
+				logger.debug("[content] {}",  postContent);
 			}
-			try (OutputStream os = conn.getOutputStream();
-				 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, DEFAULT_CHARSET.name()))) {
+			try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), DEFAULT_CHARSET.name()))) {
 				writer.write(postContent);
 				writer.flush();
 			}
 		} else {
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, DEFAULT_ENCODING);
 		}
+	}
+
+	private static int getQueryTimeoutMillis(int timeoutMillis, AtsdConnectionInfo info) {
+		return timeoutMillis == 0 ? info.readTimeoutMillis() : timeoutMillis;
 	}
 
 	private static HttpURLConnection getHttpURLConnection(String uri) throws IOException {
@@ -280,7 +284,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		}
 		final boolean trusted = contentDescription.getInfo().trustCertificate();
 		if (logger.isDebugEnabled()) {
-			logger.debug("[doTrustToCertificates] " + trusted);
+			logger.debug("[doTrustToCertificates] {}", trusted);
 		}
 		try {
 			sslContext.init(null, trusted ? DUMMY_TRUST_MANAGER : null, new SecureRandom());

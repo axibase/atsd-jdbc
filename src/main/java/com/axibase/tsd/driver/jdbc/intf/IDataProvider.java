@@ -14,11 +14,11 @@
 */
 package com.axibase.tsd.driver.jdbc.intf;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 public interface IDataProvider extends AutoCloseable {
 
@@ -26,9 +26,9 @@ public interface IDataProvider extends AutoCloseable {
 
 	IStoreStrategy getStrategy();
 
-	void fetchData(long maxLimit, int timeout) throws AtsdException, GeneralSecurityException, IOException;
+	void fetchData(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
-	long sendData(int timeout) throws AtsdException, GeneralSecurityException, IOException;
+	long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
 	void cancelQuery();
 }
