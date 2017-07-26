@@ -28,7 +28,7 @@ public class TagColumn implements MetadataColumnDefinition {
 	}
 
 	@Override
-	public AtsdType getType() {
+	public AtsdType getType(AtsdType metricType) {
 		return AtsdType.STRING_DATA_TYPE;
 	}
 

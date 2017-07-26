@@ -15,20 +15,26 @@
 package com.axibase.tsd.driver.jdbc.enums;
 
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
-import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
 public enum DefaultColumn implements MetadataColumnDefinition {
-	TIME(AtsdColumn.TIME, AtsdType.BIGINT_DATA_TYPE, 0, false),
-	DATETIME(AtsdColumn.DATETIME, AtsdType.TIMESTAMP_DATA_TYPE, 0, false),
-	VALUE(AtsdColumn.VALUE, AtsdType.FLOAT_DATA_TYPE, 0, false),
-	TEXT(AtsdColumn.TEXT, AtsdType.STRING_DATA_TYPE, 1, false),
-	METRIC(AtsdColumn.METRIC, AtsdType.STRING_DATA_TYPE, 0, false),
-	ENTITY(AtsdColumn.ENTITY, AtsdType.STRING_DATA_TYPE, 0, false),
-	TAGS(AtsdColumn.TAGS, AtsdType.STRING_DATA_TYPE, 1, false);
+	TIME("time", AtsdType.BIGINT_DATA_TYPE, 0, false),
+	DATETIME("datetime", AtsdType.TIMESTAMP_DATA_TYPE, 0, false),
+	VALUE("value", null, 0, false) {
+		@Override
+		public AtsdType getType(AtsdType metricType) {
+			return metricType;
+		}
+	},
+	TEXT("text", AtsdType.STRING_DATA_TYPE, 1, false),
+	METRIC("metric", AtsdType.STRING_DATA_TYPE, 0, false),
+	ENTITY("entity", AtsdType.STRING_DATA_TYPE, 0, false),
+	TAGS("tags", AtsdType.STRING_DATA_TYPE, 1, false);
 
 	private final String columnNamePrefix;
+	@Getter(AccessLevel.NONE)
 	private final AtsdType type;
 	private final int nullable;
 	private final boolean metaColumn;
@@ -40,8 +46,14 @@ public enum DefaultColumn implements MetadataColumnDefinition {
 		this.metaColumn = metaColumn;
 	}
 
-	public String getNullableAsString() {
+    @Override
+    public String getNullableAsString() {
 		return NULLABLE_AS_STRING[nullable];
+	}
+
+    @Override
+    public AtsdType getType(AtsdType metricType) {
+		return type;
 	}
 
 }

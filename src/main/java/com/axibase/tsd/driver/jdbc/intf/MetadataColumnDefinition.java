@@ -19,7 +19,7 @@ import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 public interface MetadataColumnDefinition {
 	String[] NULLABLE_AS_STRING = {"NO", "YES", ""};
 
-	AtsdType getType();
+	AtsdType getType(AtsdType metricType);
 
 	String getColumnNamePrefix();
 

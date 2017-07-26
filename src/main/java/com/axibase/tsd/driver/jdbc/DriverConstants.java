@@ -47,8 +47,8 @@ public final class DriverConstants {
 	public static final boolean DEFAULT_USE_TIMESTAMP_WITH_TIME_ZONE_VALUE = true;
 	public static final String ON_MISSING_METRIC_PARAM = "missingMetric";
 	public static final OnMissingMetricAction DEFAULT_ON_MISSING_METRIC_VALUE = OnMissingMetricAction.WARNING;
-	public static final String ODBC_COMPATIBILITY_PARAM = "odbcCompatibility";
-	public static final boolean DEFAULT_ODBC_COMPATIBILITY_VALUE = false;
+	public static final String COMPATIBILITY_PARAM = "compatibility";
+	public static final String DEFAULT_COMPATIBILITY_VALUE = null;
 
 	public static final String QUERY_ID_PARAM_NAME = "queryId";
 	public static final String Q_PARAM_NAME = "q";

@@ -119,7 +119,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		int i = 0;
 		for (ColumnMetaData metaData : columnMetadata) {
 			this.header[i] = metaData.columnName;
-			this.columnTypes[i] = EnumUtil.getAtsdTypeBySqlType(metaData.type.id, AtsdType.STRING_DATA_TYPE);
+			this.columnTypes[i] = EnumUtil.getAtsdTypeBySqlType(metaData.type.id, AtsdType.DEFAULT_TYPE);
 			this.nullable[i] = metaData.nullable == 1;
 			++i;
 		}

@@ -1,13 +1,12 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
+import com.axibase.tsd.driver.jdbc.enums.CompatibilityMode;
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrTokenizer;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.CONNECTION_STRING_PARAM_SEPARATOR;
 import static com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties.*;
@@ -18,11 +17,13 @@ public class AtsdConnectionInfo {
 	private final Properties info;
 	private final HostAndCatalog hostAndCatalog;
 	private final List<String> tablePatterns;
+	private final EnumSet<CompatibilityMode> compatibilities;
 
 	public AtsdConnectionInfo(Properties info) {
 		this.info = info;
 		this.hostAndCatalog = new HostAndCatalog(StringUtils.substringBefore(url(), CONNECTION_STRING_PARAM_SEPARATOR));
 		this.tablePatterns = splitTablePatterns();
+		this.compatibilities = getRequiredCompatibilityModes();
 	}
 
 	public String host() {
@@ -113,8 +114,25 @@ public class AtsdConnectionInfo {
 		return result == null ? (OnMissingMetricAction) property.defaultValue() : result;
 	}
 
-	public boolean odbcCompatibility() {
-		return getBooleanValue(odbcCompatibility);
+	private EnumSet<CompatibilityMode> getRequiredCompatibilityModes() {
+		final EnumSet<CompatibilityMode> result = EnumSet.noneOf(CompatibilityMode.class);
+		final AtsdDriverConnectionProperties property = compatibility;
+		String compatibility = info.getProperty(property.camelName());
+		if (compatibility != null) {
+			for (String token : compatibility.split(",")) {
+				for (CompatibilityMode mode : CompatibilityMode.values()) {
+					if (mode.name().equalsIgnoreCase(token)) {
+						result.add(mode);
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	public boolean odbc2Compatibility() {
+		return compatibilities.contains(CompatibilityMode.ODBC2);
 	}
 
 	private boolean getBooleanValue(AtsdDriverConnectionProperties property) {
