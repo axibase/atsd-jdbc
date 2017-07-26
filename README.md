@@ -64,6 +64,7 @@ For example, database version 14150 supports all driver versions between 1.2.10 
 | assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, the method returns column labels. |
 | timestamptz | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the timezone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local timezone. |
 | missingMetric | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control the behavior when the referenced metric doesn't exist. If 'error', the driver will raise an `AtsdMetricNotFoundException`. If `warning`, an SQL Warning will be returned without errors. If `none`, no error or warning will be created. |
+| compatibility | `odbc2` | 1.3.2+ | not set | Simulate behavior of ODBC2.0 drivers: substitute `bigint` datatype with `double`, return `11` as `timestamp` type code |
 
 Properties can be included as part of the JDBC URL using a semicolon as a separator, for example: `jdbc:atsd://10.102.0.6:8443;tables=infla*;expandTags=true`.
 
