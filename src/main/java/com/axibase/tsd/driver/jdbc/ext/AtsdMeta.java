@@ -255,7 +255,7 @@ public class AtsdMeta extends MetaImpl {
 				break;
 			case JAVA_SQL_TIMESTAMP:
 			case JAVA_UTIL_DATE:
-				buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format((Date) value)).append('\'');
+				buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
 				break;
 			case OBJECT:
 				appendObjectValue(value, buffer);
