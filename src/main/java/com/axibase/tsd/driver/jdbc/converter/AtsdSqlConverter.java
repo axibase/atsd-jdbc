@@ -289,9 +289,9 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     }
 
     private static String validateDateTime(Object value, boolean timestampTz) throws SQLDataException {
-        if (Number.class.isInstance(value)) {
+        if (value instanceof Number) {
             return AtsdMeta.TIMESTAMP_FORMATTER.format(((Number) value).longValue());
-        } else if (!String.class.isInstance(value)) {
+        } else if (!(value instanceof String)) {
             throw new SQLDataException("Invalid value: " + value + ". Current type: " + value.getClass().getSimpleName()
                     + ", expected type: " + Timestamp.class.getSimpleName());
         }
