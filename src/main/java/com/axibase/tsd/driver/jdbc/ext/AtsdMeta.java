@@ -36,6 +36,7 @@ import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +47,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,8 +58,8 @@ import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 public class AtsdMeta extends MetaImpl {
 	private static final LoggingFacade log = LoggingFacade.getLogger(AtsdMeta.class);
 
-	public static final ThreadLocal<SimpleDateFormat> TIMESTAMP_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-	public static final ThreadLocal<SimpleDateFormat> TIMESTAMP_SHORT_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	public static final FastDateFormat TIMESTAMP_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	public static final FastDateFormat TIMESTAMP_SHORT_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
 	private final AtomicInteger idGenerator = new AtomicInteger(1);
 	private final Map<Integer, ContentMetadata> metaCache = new ConcurrentHashMap<>();
@@ -77,15 +77,8 @@ public class AtsdMeta extends MetaImpl {
 		this.atsdConnectionInfo = ((AtsdConnection) conn).getConnectionInfo();
 	}
 
-	private static ThreadLocal<SimpleDateFormat> prepareFormatter(final String pattern) {
-		return new ThreadLocal<SimpleDateFormat>() {
-			@Override
-			protected SimpleDateFormat initialValue() {
-				SimpleDateFormat sdt = new SimpleDateFormat(pattern, Locale.US);
-				sdt.setTimeZone(TimeZone.getTimeZone("UTC"));
-				return sdt;
-			}
-		};
+	private static FastDateFormat prepareFormatter(final String pattern) {
+		return FastDateFormat.getInstance(pattern, TimeZone.getTimeZone("UTC"), Locale.US);
 	}
 
 	StatementContext getContextFromMap(StatementHandle statementHandle) {
@@ -254,7 +247,7 @@ public class AtsdMeta extends MetaImpl {
 				break;
 			case JAVA_SQL_TIMESTAMP:
 			case JAVA_UTIL_DATE:
-				buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format(value)).append('\'');
+				buffer.append('\'').append(TIMESTAMP_FORMATTER.format(value)).append('\'');
 				break;
 			case OBJECT:
 				appendObjectValue(value, buffer);
@@ -268,7 +261,7 @@ public class AtsdMeta extends MetaImpl {
 		if (value instanceof String) {
 			buffer.append('\'').append(value).append('\'');
 		} else if (value instanceof Date) {
-			buffer.append('\'').append(TIMESTAMP_FORMATTER.get().format((Date) value)).append('\'');
+			buffer.append('\'').append(TIMESTAMP_FORMATTER.format((Date) value)).append('\'');
 		} else {
 			buffer.append(value);
 		}
@@ -863,7 +856,7 @@ public class AtsdMeta extends MetaImpl {
 			if (value instanceof Number || value instanceof String) {
 				result.add(value);
 			} else if (value instanceof Date) {
-				result.add(TIMESTAMP_FORMATTER.get().format((Date) value));
+				result.add(TIMESTAMP_FORMATTER.format((Date) value));
 			} else {
 				result.add(value == null ? null : String.valueOf(value));
 			}
