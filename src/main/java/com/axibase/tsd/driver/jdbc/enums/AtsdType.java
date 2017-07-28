@@ -124,14 +124,14 @@ public enum AtsdType {
 		}
 
 		private Object readTimestampValue(String cell) throws ParseException {
-			Date date = TIMESTAMP_FORMATTER.get().parse(cell);
+			Date date = TIMESTAMP_FORMATTER.parse(cell);
 			return new Timestamp(date.getTime());
 		}
 
 		private Object readShortTimestampValue(String cell) {
 			Object value = null;
 			try {
-				final Date date = TIMESTAMP_SHORT_FORMATTER.get().parse(cell);
+				final Date date = TIMESTAMP_SHORT_FORMATTER.parse(cell);
 				value = new Timestamp(date.getTime());
 			} catch (ParseException parseException) {
 				if (log.isDebugEnabled()) {

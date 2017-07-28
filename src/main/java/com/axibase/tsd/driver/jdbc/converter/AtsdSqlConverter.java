@@ -1,5 +1,6 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
+import com.axibase.tsd.driver.jdbc.ext.AtsdMeta;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
@@ -487,7 +488,9 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     }
 
     private static String validateDateTime(Object value, boolean timestampTz) throws SQLDataException {
-        if (!String.class.isInstance(value)) {
+        if (value instanceof Number) {
+            return AtsdMeta.TIMESTAMP_FORMATTER.format(((Number) value).longValue());
+        } else if (!(value instanceof String)) {
             throw new SQLDataException("Invalid value: " + value + ". Current type: " + value.getClass().getSimpleName()
                     + ", expected type: " + Timestamp.class.getSimpleName());
         }

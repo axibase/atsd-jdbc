@@ -249,10 +249,8 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 
 	@Test
 	public void testInsertDatetimeAsNumber() throws SQLException, InterruptedException {
-		final long time = System.currentTimeMillis();
-		expectedException.expect(SQLException.class);
-		expectedException.expectMessage("Invalid value: " + time + ". Current type: BigDecimal, expected type: Timestamp");
-		final String entityName = buildVariablePrefix() + "entity";
+        final long time = System.currentTimeMillis();
+        final String entityName = buildVariablePrefix() + "entity";
 		final String metricName = buildVariablePrefix() + "metric";
 		try (PreparedStatement stmt = connection.prepareStatement(format(INSERT, metricName, DATETIME))) {
 			stmt.setDouble(1, time);
