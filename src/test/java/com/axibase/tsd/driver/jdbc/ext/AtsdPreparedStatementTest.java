@@ -259,10 +259,10 @@ public class AtsdPreparedStatementTest extends AtsdProperties {
 			stmt.setString(4, null);
 			Assert.assertEquals(1, stmt.executeUpdate());
 		}
-		String sql = "SELECT datetime, value, tags FROM " + metricName + " WHERE entity='" + entityName + "' ORDER BY time DESC LIMIT 1";
+		String sql = "SELECT datetime, value, tags FROM '" + metricName + "' WHERE entity='" + entityName + "' ORDER BY time DESC LIMIT 1";
 		Map<String, Object> last = getLast(sql);
 		Assert.assertFalse("No results", last.isEmpty());
-		Assert.assertEquals(time, last.get(TIME));
+		Assert.assertEquals(time, ((Timestamp) last.get(DATETIME)).getTime());
 		Assert.assertEquals(DEFAULT_VALUE, (Double) last.get(VALUE), 0.001);
 		Assert.assertNull(last.get(TAGS));
 	}
