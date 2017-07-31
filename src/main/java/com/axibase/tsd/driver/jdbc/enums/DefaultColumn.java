@@ -15,23 +15,24 @@
 package com.axibase.tsd.driver.jdbc.enums;
 
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
+import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 
 @Getter
 public enum DefaultColumn implements MetadataColumnDefinition {
-	TIME("time", AtsdType.BIGINT_DATA_TYPE, 0, false),
-	DATETIME("datetime", AtsdType.TIMESTAMP_DATA_TYPE, 0, false),
-	VALUE("value", null, 0, false) {
+	TIME(AtsdColumn.TIME, AtsdType.BIGINT_DATA_TYPE, 0, false),
+	DATETIME(AtsdColumn.DATETIME, AtsdType.TIMESTAMP_DATA_TYPE, 0, false),
+	VALUE(AtsdColumn.VALUE, null, 0, false) {
 		@Override
 		public AtsdType getType(AtsdType metricType) {
 			return metricType;
 		}
 	},
-	TEXT("text", AtsdType.STRING_DATA_TYPE, 1, false),
-	METRIC("metric", AtsdType.STRING_DATA_TYPE, 0, false),
-	ENTITY("entity", AtsdType.STRING_DATA_TYPE, 0, false),
-	TAGS("tags", AtsdType.STRING_DATA_TYPE, 1, false);
+	TEXT(AtsdColumn.TEXT, AtsdType.STRING_DATA_TYPE, 1, false),
+	METRIC(AtsdColumn.METRIC, AtsdType.STRING_DATA_TYPE, 0, false),
+	ENTITY(AtsdColumn.ENTITY, AtsdType.STRING_DATA_TYPE, 0, false),
+	TAGS(AtsdColumn.TAGS, AtsdType.STRING_DATA_TYPE, 1, false);
 
 	private final String columnNamePrefix;
 	@Getter(AccessLevel.NONE)

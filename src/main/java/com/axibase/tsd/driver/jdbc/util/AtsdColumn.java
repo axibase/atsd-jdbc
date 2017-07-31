@@ -5,13 +5,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class AtsdColumn {
 
-    public static final String TIME = "time";
     public static final String DATETIME = "datetime";
-    public static final String VALUE = "value";
-    public static final String TEXT = "text";
-    public static final String METRIC = "metric";
     public static final String ENTITY = "entity";
+    public static final String METRIC = "metric";
     public static final String TAGS = "tags";
+    public static final String TEXT = "text";
+    public static final String TIME = "time";
+    public static final String VALUE = "value";
 
     public static final String ENTITY_ENABLED = "entity.enabled";
     public static final String ENTITY_GROUPS = "entity.groups";
