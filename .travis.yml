@@ -3,5 +3,6 @@ sudo: false
 script:
   - mvn verify -B -Dgpg.skip -DskipTests=true
 jdk:
-  - oraclejdk7
-  - openjdk7
+  - oraclejdk8
+  - openjdk8
+dist: trusty
