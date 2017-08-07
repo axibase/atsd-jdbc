@@ -39,31 +39,31 @@
 	<properties>
 		<java.source.version>1.7</java.source.version>
 		<java.target.version>1.7</java.target.version>
-		<avatica.version>1.9.0</avatica.version>
-		<calcite.version>1.11.0</calcite.version>
+		<avatica.version>1.10.0</avatica.version>
+		<calcite.version>1.13.0</calcite.version>
 		<hamcrest.version>1.3</hamcrest.version>
 		<junit.version>4.12</junit.version>
 		<log4j.version>1.2.17</log4j.version>
 		<slf4j.version>1.7.25</slf4j.version>
 		<logback.version>1.2.3</logback.version>
 		<mockito.version>1.10.19</mockito.version>
-		<powermock.version>1.6.6</powermock.version>
+		<powermock.version>1.7.0</powermock.version>
 		<jackson.version>2.8.5</jackson.version>
-		<univocity.parsers.version>2.2.3</univocity.parsers.version>
+		<univocity.parsers.version>2.4.1</univocity.parsers.version>
 		<lombok.version>1.16.18</lombok.version>
 		<maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
-		<maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
-		<maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+		<maven-compiler-plugin.version>3.6.2</maven-compiler-plugin.version>
+		<maven-dependency-plugin.version>3.0.1</maven-dependency-plugin.version>
 		<maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
 		<maven-release-plugin.version>2.5.3</maven-release-plugin.version>
 		<maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
 		<maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-		<maven-site-plugin.version>3.5.1</maven-site-plugin.version>
+		<maven-site-plugin.version>3.6</maven-site-plugin.version>
 		<maven-resources-plugin.version>3.0.1</maven-resources-plugin.version>
-		<build-helper-plugin.version>1.12</build-helper-plugin.version>
+		<build-helper-plugin.version>3.0.0</build-helper-plugin.version>
 		<findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
-		<sonar-maven-plugin.version>3.2</sonar-maven-plugin.version>
+		<sonar-maven-plugin.version>3.3.0.603</sonar-maven-plugin.version>
 		<locale>en_US</locale>
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 		<maven.build.timestamp.format>E dd-MM-yyyy HH:mm:ss z</maven.build.timestamp.format>
@@ -138,17 +138,7 @@
 			<plugin>
 				<groupId>pl.project13.maven</groupId>
 				<artifactId>git-commit-id-plugin</artifactId>
-				<version>2.2.1</version>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>properties-maven-plugin</artifactId>
-				<version>1.0.0</version>
-				<configuration>
-					<files>
-						<file>${basedir}/META-INF/axibase-atsd-jdbc.properties</file>
-					</files>
-				</configuration>
+				<version>2.2.2</version>
 			</plugin>
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
@@ -202,7 +192,7 @@
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
+				<version>1.6.8</version>
 				<extensions>true</extensions>
 				<configuration>
 					<serverId>sonatype</serverId>
@@ -213,7 +203,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.19.1</version>
+				<version>2.20</version>
 				<configuration>
 					<useSystemClassLoader>true</useSystemClassLoader>
 					<printSummary>true</printSummary>
@@ -246,14 +236,14 @@
 					<dependency>
 						<groupId>org.apache.maven.surefire</groupId>
 						<artifactId>surefire-junit4</artifactId>
-						<version>2.19.1</version>
+						<version>2.20</version>
 					</dependency>
 				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.19.1</version>
+				<version>2.20</version>
 				<executions>
 					<execution>
 						<goals>
@@ -271,7 +261,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-pmd-plugin</artifactId>
-				<version>3.7</version>
+				<version>3.8</version>
 				<configuration>
 					<targetJdk>${java.target.version}</targetJdk>
 					<sourceEncoding>utf-8</sourceEncoding>
@@ -446,12 +436,12 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>18.0</version>
+			<version>20.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.5</version>
+			<version>3.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
