@@ -2,6 +2,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/791a8e6d43634307a1649ca6f5ad7a2e)](https://www.codacy.com/app/anton-rib/atsd-jdbc)
 [![License](https://img.shields.io/badge/License-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.axibase/atsd-jdbc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.axibase/atsd-jdbc)
+[![Dependency Status](https://www.versioneye.com/user/projects/57b45de0f0b3bb0049ff712b/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/57b45de0f0b3bb0049ff712b)
 
 # JDBC driver
 
