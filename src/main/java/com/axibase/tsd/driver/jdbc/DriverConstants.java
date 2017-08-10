@@ -8,7 +8,7 @@ public final class DriverConstants {
 	public static final String DATABASE_PRODUCT_NAME = "Axibase";
 	public static final String DATABASE_PRODUCT_VERSION = "Axibase Time Series Database";
 	public static final String JDBC_DRIVER_NAME = "ATSD JDBC driver";
-	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.4";
+	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.3.5";
 	public static final int    DRIVER_VERSION_MAJOR_DEFAULT = 1;
 	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 3;
 
