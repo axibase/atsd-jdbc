@@ -394,10 +394,6 @@
 					<artifactId>commons-dbcp</artifactId>
 				</exclusion>
 				<exclusion>
-					<groupId>com.google.code.findbugs</groupId>
-					<artifactId>jsr305</artifactId>
-				</exclusion>
-				<exclusion>
 					<groupId>org.codehaus.janino</groupId>
 					<artifactId>janino</artifactId>
 				</exclusion>
