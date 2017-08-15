@@ -43,12 +43,12 @@ public class AtsdConnectionTest extends AtsdProperties {
 				" values (?,?,?,?,?,?,?,?)";
 		Assert.assertEquals(expected, connection.nativeSQL(query));
 
-		query = "insert into 'metric' (time, entity, value, text, tags, 'tags.test', 'metric.timeZone', 'entity.tags') values (?,?,?,?,?,?,?,?)";
+		query = "insert into \"metric\" (time, entity, value, text, tags, \"tags.test\", \"metric.timeZone\", \"entity.tags\") values (?,?,?,?,?,?,?,?)";
 		expected = "insert into \"metric\" (\"time\", entity, \"value\", text, tags, \"tags.test\", \"metric.timeZone\", \"entity.tags\")" +
 				" values (?,?,?,?,?,?,?,?)";
 		Assert.assertEquals(expected, connection.nativeSQL(query));
 
-		query = "update 'metric' set time=?, value=?, text=?, tags=?, tags.test=?, metric.timeZone=?, entity.tags=?) where entity=?";
+		query = "update \"metric\" set time=?, value=?, text=?, tags=?, tags.test=?, metric.timeZone=?, entity.tags=?) where entity=?";
 		expected = "update \"metric\" set \"time\"=?, \"value\"=?, text=?, tags=?, \"tags.test\"=?, \"metric.timeZone\"=?, \"entity.tags\"=?) where entity=?";
 		Assert.assertEquals(expected, connection.nativeSQL(query));
 	}

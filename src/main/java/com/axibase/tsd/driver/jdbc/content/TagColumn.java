@@ -34,7 +34,7 @@ public class TagColumn implements MetadataColumnDefinition {
 
 	@Override
 	public String getColumnNamePrefix() {
-		return PREFIX + "'" + tagName + "'";
+		return PREFIX + '"' + tagName + '"';
 	}
 
 	@Override

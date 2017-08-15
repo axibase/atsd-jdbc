@@ -535,9 +535,9 @@ public class AtsdMeta extends MetaImpl {
 			}
 		}
 		return buffer
-				.append(" FROM '")
+				.append(" FROM \"")
 				.append(table)
-				.append("' LIMIT 1")
+				.append("\" LIMIT 1")
 				.toString();
 	}
 

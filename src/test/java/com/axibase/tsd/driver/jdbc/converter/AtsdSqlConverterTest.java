@@ -1,21 +1,17 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
 import org.apache.calcite.avatica.Meta;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class AtsdSqlConverterTest {
 
@@ -33,7 +29,7 @@ public class AtsdSqlConverterTest {
         String expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:unit=Celcius m:test.temperature=24.5";
         Assert.assertEquals(expected, commands.get(0));
 
-        sql = "INSERT INTO temperature (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
+        sql = "INSERT INTO temperature (entity, datetime, value, text, tags.unit) VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
                 "'Celcius')";
 
         commands = converter.convertToCommands(sql, Collections.<Object>singletonList(24.5));
@@ -41,14 +37,14 @@ public class AtsdSqlConverterTest {
         expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:unit=Celcius m:temperature=24.5";
         Assert.assertEquals(expected, commands.get(0));
 
-        sql = "INSERT INTO temperature (entity, datetime, value, text, tags)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
+        sql = "INSERT INTO temperature (entity, datetime, value, text, tags) VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
                 "'unit=Celcius')";
 
         commands = converter.convertToCommands(sql, Collections.<Object>singletonList(24.5));
         Assert.assertEquals(1, commands.size());
         Assert.assertEquals(expected, commands.get(0));
 
-        sql = "INSERT INTO temperature (entity, datetime, value, text, tags)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
+        sql = "INSERT INTO temperature (entity, datetime, value, text, tags) VALUES ('sensor-01', '2017-06-21T00:00:00Z', ?, null, " +
                 "'unit1=Celcius;unit2=test')";
 
         commands = converter.convertToCommands(sql, Collections.<Object>singletonList(24.5));
@@ -75,20 +71,20 @@ public class AtsdSqlConverterTest {
         expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:unit=Celcius m:temperature=33.5 x:temperature=Hello";
         Assert.assertEquals(expected, commands.get(0));
 
-        sql = "INSERT INTO atsd_series (entity, datetime, temperature, text, tags.unit)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', 45.5, null, null)";
+        sql = "INSERT INTO atsd_series (entity, datetime, temperature, text, tags.unit) VALUES ('sensor-01', '2017-06-21T00:00:00Z', 45.5, null, null)";
         commands = converter.convertToCommands(sql);
         Assert.assertEquals(1, commands.size());
         expected = "series e:sensor-01 d:2017-06-21T00:00:00Z m:temperature=45.5";
         Assert.assertEquals(expected, commands.get(0));
 
-        sql = "INSERT INTO atsd_series (entity, datetime, text, tags.location, temperature, speed)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', " +
+        sql = "INSERT INTO atsd_series (entity, datetime, text, tags.location, temperature, speed) VALUES ('sensor-01', '2017-06-21T00:00:00Z', " +
                 "null, 'Vienna', 55.5, 120)";
         commands = converter.convertToCommands(sql);
         Assert.assertEquals(1, commands.size());
         expected = "series e:sensor-01 d:2017-06-21T00:00:00Z t:location=Vienna m:temperature=55.5 m:speed=120.0";
         Assert.assertEquals(expected, commands.get(0));
 
-        sql = "INSERT INTO atsd_series (entity, time, text, tags.location, temperature, speed)  VALUES ('sensor-01', 123456789, " +
+        sql = "INSERT INTO atsd_series (entity, time, text, tags.location, temperature, speed) VALUES ('sensor-01', 123456789, " +
                 "null, 'Vienna', 55.5, 120)";
         commands = converter.convertToCommands(sql);
         Assert.assertEquals(1, commands.size());
@@ -179,7 +175,7 @@ public class AtsdSqlConverterTest {
     @Test
     public void testConvertInsertToSeriesWithEscapedTableName() throws SQLException {
         AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT, false);
-        String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-06-21T00:00:00Z', 24.5, null, " +
+        String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit) VALUES ('sensor-01', '2017-06-21T00:00:00Z', 24.5, null, " +
                 "'Celcius')";
 
         List<String> commands = converter.convertToCommands(sql);
@@ -200,7 +196,7 @@ public class AtsdSqlConverterTest {
 
     @Test
     public void testConvertInsertToSeriesWithTimestamp() throws SQLException, ParseException {
-        final String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit)  VALUES ('sensor-01', '2017-07-12 04:05:00.34567', " +
+        final String sql = "INSERT INTO 'test.temperature' (entity, datetime, value, text, tags.unit) VALUES ('sensor-01', '2017-07-12 04:05:00.34567', " +
                 "24.5, null, 'Celcius')";
 
         AtsdSqlInsertConverter converter = (AtsdSqlInsertConverter) AtsdSqlConverterFactory.getConverter(Meta.StatementType.INSERT, true);

@@ -32,10 +32,12 @@ public class StatementTypeByQueryRecognizerTest {
 				{"INSERT\nINTO\ntest_table\n(entity, datetime, value)\nVALUES\n('test_entity', '2017-01-01T00:00:00Z', 42.0)", Meta.StatementType.INSERT},
 				{"INSERT\tINTO\ttest_table\t(entity, datetime, value)\nVALUES\n('test_entity', '2017-01-01T00:00:00Z', 42.0)", Meta.StatementType.INSERT},
 				{" INSERT INTO test_table (entity, datetime, value) VALUES ('test_entity', '2017-01-01T00:00:00Z', 42.0)", Meta.StatementType.INSERT},
+				{"INSERT INTO \"test_table\" (entity, datetime, value) VALUES ('test_entity', '2017-01-01T00:00:00Z', 42.0)", Meta.StatementType.INSERT},
 				{"UPDATE test_table SET value = -1 WHERE entity ='test_entity' AND datetime = '2017-01-01T00:00:00Z'", Meta.StatementType.UPDATE},
 				{"UPDATE\ntest_table\nSET value = -1\nWHERE entity ='test_entity' AND datetime = '2017-01-01T00:00:00Z'", Meta.StatementType.UPDATE},
 				{"UPDATE\ttest_table\tSET value = -1\tWHERE entity ='test_entity' AND datetime = '2017-01-01T00:00:00Z'", Meta.StatementType.UPDATE},
 				{" UPDATE test_table SET value = -1 WHERE entity ='test_entity' AND datetime = '2017-01-01T00:00:00Z'", Meta.StatementType.UPDATE},
+				{"UPDATE \"test_table\" SET value = -1 WHERE entity ='test_entity' AND datetime = '2017-01-01T00:00:00Z'", Meta.StatementType.UPDATE},
 		});
 	}
 
