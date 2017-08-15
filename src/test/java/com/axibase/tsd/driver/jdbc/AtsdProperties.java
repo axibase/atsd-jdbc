@@ -14,53 +14,9 @@
 */
 package com.axibase.tsd.driver.jdbc;
 
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import java.sql.DriverManager;
-
-import static com.axibase.tsd.driver.jdbc.TestConstants.*;
-
 public class AtsdProperties {
-	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdProperties.class);
-	protected static Boolean TRUST_URL;
-	protected static String HTTP_ATSD_URL;
-	protected static String JDBC_ATSD_URL;
-	protected static String LOGIN_NAME;
-	protected static String LOGIN_PASSWORD;
-	protected static String READ_STRATEGY;
-	protected static AtsdDriver driver;
-
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-		String trustProp = System.getProperty("axibase.tsd.driver.jdbc.trust");
-		TRUST_URL = trustProp != null ? Boolean.valueOf(trustProp) : null;
-		LOGIN_NAME = System.getProperty("axibase.tsd.driver.jdbc.username");
-		LOGIN_PASSWORD = System.getProperty("axibase.tsd.driver.jdbc.password");
-		HTTP_ATSD_URL = System.getProperty("axibase.tsd.driver.jdbc.url");
-		final StringBuilder sb = new StringBuilder(DriverConstants.CONNECT_URL_PREFIX).append(HTTP_ATSD_URL);
-		if (TRUST_URL != null) {
-			sb.append(TRUST_URL ? TRUST_PARAMETER_IN_QUERY : UNTRUST_PARAMETER_IN_QUERY);
-		}
-		READ_STRATEGY = System.getProperty("axibase.tsd.driver.jdbc.strategy");
-		if (READ_STRATEGY != null) {
-			if (TRUST_URL == null) {
-				sb.append(PARAM_SEPARATOR);
-			}
-			sb.append(DriverConstants.STRATEGY_PARAM_NAME).append('=').append(READ_STRATEGY);
-		}
-		JDBC_ATSD_URL = sb.toString();
-		driver = new AtsdDriver();
-		Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-		if (logger.isDebugEnabled()) {
-			logger.debug("System properties has been set");
-		}
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-		DriverManager.deregisterDriver(driver);
-	}
-
+	public static final String HTTP_ATSD_URL = "localhost:8443";
+	public static final String LOGIN_NAME = "testuser";
+	public static final String LOGIN_PASSWORD = "testpassword";
+	public static final String READ_STRATEGY = "stream";
 }

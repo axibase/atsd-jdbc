@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.net.ssl.*"})
 @PrepareForTest(AtsdDriver.class)
-public class AtsdDriverTest extends AtsdProperties {
+public class AtsdDriverTest {
 	private AtsdDriver driver;
 	private AvaticaConnection conn;
 

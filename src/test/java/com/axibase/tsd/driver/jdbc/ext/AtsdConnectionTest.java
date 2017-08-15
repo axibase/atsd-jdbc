@@ -1,7 +1,6 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.AtsdDriver;
-import com.axibase.tsd.driver.jdbc.AtsdProperties;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -10,7 +9,7 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.util.Properties;
 
-public class AtsdConnectionTest extends AtsdProperties {
+public class AtsdConnectionTest {
 
 	private AtsdConnection connection;
 

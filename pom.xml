@@ -214,28 +214,6 @@
 					<printSummary>true</printSummary>
 					<forkCount>1</forkCount>
 					<reuseForks>false</reuseForks>
-					<systemProperties>
-						<property>
-							<name>axibase.tsd.driver.jdbc.url</name>
-							<value>${axibase.tsd.driver.jdbc.url}</value>
-						</property>
-						<property>
-							<name>axibase.tsd.driver.jdbc.trust</name>
-							<value>${axibase.tsd.driver.jdbc.trust}</value>
-						</property>
-						<property>
-							<name>axibase.tsd.driver.jdbc.username</name>
-							<value>${axibase.tsd.driver.jdbc.username}</value>
-						</property>
-						<property>
-							<name>axibase.tsd.driver.jdbc.password</name>
-							<value>${axibase.tsd.driver.jdbc.password}</value>
-						</property>
-						<property>
-							<name>axibase.tsd.driver.jdbc.strategy</name>
-							<value>${axibase.tsd.driver.jdbc.strategy}</value>
-						</property>
-					</systemProperties>
 				</configuration>
 				<dependencies>
 					<dependency>

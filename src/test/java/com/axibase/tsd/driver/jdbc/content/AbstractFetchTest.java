@@ -1,6 +1,5 @@
 package com.axibase.tsd.driver.jdbc.content;
 
-import com.axibase.tsd.driver.jdbc.AtsdProperties;
 import com.axibase.tsd.driver.jdbc.TestUtil;
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
@@ -17,10 +16,11 @@ import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.List;
 
+import static com.axibase.tsd.driver.jdbc.AtsdProperties.READ_STRATEGY;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyInt;
 
-public abstract class AbstractFetchTest extends AtsdProperties {
+public abstract class AbstractFetchTest {
 	protected static final Logger logger = LoggerFactory.getLogger(AbstractTypeMock.class);
 	protected SdkProtocolImpl protocolImpl;
 

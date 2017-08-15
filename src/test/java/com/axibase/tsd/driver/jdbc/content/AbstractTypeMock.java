@@ -13,12 +13,13 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.Scanner;
 
-import static com.axibase.tsd.driver.jdbc.TestConstants.SELECT_ALL_CLAUSE;
+import static com.axibase.tsd.driver.jdbc.AtsdProperties.HTTP_ATSD_URL;
+import static com.axibase.tsd.driver.jdbc.AtsdProperties.LOGIN_NAME;
+import static com.axibase.tsd.driver.jdbc.AtsdProperties.LOGIN_PASSWORD;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractTypeMock extends AbstractFetchTest {
-	protected static final String CONTEXT_START = "{";
-	protected boolean isDefaultStrategy;
+	private static final String CONTEXT_START = "{";
 
 	@Before
 	public void setUp() throws Exception {
@@ -28,10 +29,10 @@ public abstract class AbstractTypeMock extends AbstractFetchTest {
 		properties.setProperty("password", LOGIN_PASSWORD);
 		AtsdConnectionInfo info = new AtsdConnectionInfo(properties);
 		final String endpoint = Location.SQL_ENDPOINT.getUrl(info);
-		final ContentDescription cd = new ContentDescription(endpoint, info, SELECT_ALL_CLAUSE + getTable(), new StatementContext());
-		cd.setJsonScheme(getSchema());
-		this.protocolImpl = PowerMockito.spy(new SdkProtocolImpl(cd));
-		isDefaultStrategy = READ_STRATEGY == null || READ_STRATEGY.equalsIgnoreCase("stream");
+		final ContentDescription contentDescription = new ContentDescription(
+				endpoint, info, "SELECT * FROM " + getTable(), new StatementContext());
+		contentDescription.setJsonScheme(getSchema());
+		this.protocolImpl = PowerMockito.spy(new SdkProtocolImpl(contentDescription));
 	}
 
 	@Test
@@ -48,8 +49,8 @@ public abstract class AbstractTypeMock extends AbstractFetchTest {
 	}
 
 	protected String getSchema() throws IOException {
-		try (final InputStream is = this.getClass().getResourceAsStream(getJsonSchema());
-			 final Scanner scanner = new Scanner(is)) {
+		try (final InputStream inputStream = this.getClass().getResourceAsStream(getJsonSchema());
+			 final Scanner scanner = new Scanner(inputStream)) {
 			scanner.useDelimiter("\\A");
 			String json = scanner.hasNext() ? scanner.next() : "";
 			assertTrue(json != null && json.length() != 0 && json.startsWith(CONTEXT_START));
