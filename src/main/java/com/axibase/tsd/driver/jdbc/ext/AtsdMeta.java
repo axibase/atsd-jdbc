@@ -678,6 +678,17 @@ public class AtsdMeta extends MetaImpl {
 			if (tableNamesAndValueTypes.isEmpty() && !WildcardsUtil.hasWildcards(pattern)) {
 				tableNamesAndValueTypes.put(pattern, AtsdType.DEFAULT_VALUE_TYPE);
 			}
+			if (containsAtsdSeriesTable(metricMasks) && WildcardsUtil.wildcardMatch(DEFAULT_TABLE_NAME, pattern)) {
+				tableNamesAndValueTypes.put(DEFAULT_TABLE_NAME, AtsdType.DEFAULT_VALUE_TYPE);
+			}
+			for (String metricMask : metricMasks) {
+				if (!WildcardsUtil.hasAtsdWildcards(metricMask)) {
+					if (!tableNamesAndValueTypes.containsKey(metricMask)) {
+						tableNamesAndValueTypes.put(metricMask, AtsdType.DEFAULT_VALUE_TYPE);
+					}
+				}
+			}
+
 			final boolean odbcCompatible = atsdConnectionInfo.odbc2Compatibility();
 			for (Map.Entry<String, AtsdType> entry : tableNamesAndValueTypes.entrySet()) {
 				final String tableName = entry.getKey();
