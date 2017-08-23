@@ -1,9 +1,11 @@
 package com.axibase.tsd.driver.jdbc;
 
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
+import lombok.experimental.UtilityClass;
 
 import java.nio.charset.Charset;
 
+@UtilityClass
 public final class DriverConstants {
 	public static final String DATABASE_PRODUCT_NAME = "Axibase";
 	public static final String DATABASE_PRODUCT_VERSION = "Axibase Time Series Database";
@@ -71,7 +73,6 @@ public final class DriverConstants {
 	public static final String FORM_URLENCODED_TYPE = "application/x-www-form-urlencoded";
 	public static final String USER_AGENT = "ATSD Client/1.0 axibase.com";
 
-	public static final String DEFAULT_CATALOG_NAME = "atsd";
 	public static final String DEFAULT_TABLE_NAME = "atsd_series";
 	public static final String TEXT_TITLES = "text";
 
@@ -87,6 +88,4 @@ public final class DriverConstants {
 	public static final String TITLE_PROPERTY = "titles";
 
 	public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-
-	private DriverConstants(){}
 }

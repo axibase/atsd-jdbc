@@ -3,18 +3,13 @@ package com.axibase.tsd.driver.jdbc.converter;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
 import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
+import org.apache.calcite.sql.*;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.calcite.sql.SqlBasicCall;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlUpdate;
-import org.apache.commons.lang3.StringUtils;
 
 class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
 
@@ -78,12 +73,10 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
                     if (idxOfEscape == -1) {
                         value = LIKE + pair.substring(idx + LIKE.length());
                     } else {
-                        StringBuilder valueBuffer = new StringBuilder();
-                        valueBuffer.append(LIKE)
-                                .append(pair.substring(idx + LIKE.length(), idxOfEscape).trim())
-                                .append(ESCAPE)
-                                .append(pair.substring(idxOfEscape + ESCAPE.length()));
-                        value = valueBuffer.toString();
+                        value = LIKE +
+                                pair.substring(idx + LIKE.length(), idxOfEscape).trim() +
+                                ESCAPE +
+                                pair.substring(idxOfEscape + ESCAPE.length());
                     }
                 }
             } else {
@@ -169,8 +162,9 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         } else if (isOperatorKindOf(inputNode.getOperator(), SqlKind.LIKE) && operands.size() == 3) {
             Object value = getOperandValue(inputNode.getOperandList().get(1), parameterValues);
             if (!(value instanceof String)) {
-                throw new IllegalArgumentException("Invalid value: " + value + ". Actual type: " + value.getClass().getSimpleName() + ", expected type: " +
-                        "String");
+                throw new IllegalArgumentException("Invalid value: " + value +
+                        ". Actual type: " + objectClassName(value) +
+                        ", expected type: " + "String");
             }
             String escapeValue = (String) getOperandValue(inputNode.getOperandList().get(2), parameterValues);
             result.add(StringUtils.remove((String) value, escapeValue));
@@ -189,6 +183,10 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
         return result;
     }
 
+    private static String objectClassName(Object value) {
+        return value == null ? "null" : value.getClass().getSimpleName();
+    }
+
     @Override
     protected List<List<Object>> getColumnValuesBatch(List<List<Object>> parameterValuesBatch) {
         List<List<Object>> result = new ArrayList<>(parameterValuesBatch.size());
@@ -199,6 +197,6 @@ class AtsdSqlUpdateConverter extends AtsdSqlConverter<SqlUpdate> {
     }
 
     private static boolean isOperatorKindOf(SqlOperator operator, SqlKind kind) {
-        return operator == null || kind == null ? false : operator.getKind() == kind;
+        return operator != null && kind != null && operator.getKind() == kind;
     }
 }

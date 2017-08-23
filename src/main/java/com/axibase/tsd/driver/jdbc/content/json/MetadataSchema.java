@@ -14,13 +14,19 @@
  */
 package com.axibase.tsd.driver.jdbc.content.json;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
-
+@Getter
+@Setter
+@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "@context",
@@ -34,7 +40,6 @@ import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
     "dialect"
 })
 public class MetadataSchema {
-
     @JsonProperty("@context")
     private List<String> Context = new ArrayList<>();
     @JsonProperty("dc:created")
@@ -53,47 +58,4 @@ public class MetadataSchema {
     private TableSchema tableSchema;
     @JsonProperty("dialect")
     private Dialect dialect;
-    @JsonIgnore
-    private final Map<String, Object> additionalProperties = new HashMap<>();
-
-    @JsonProperty("dc:publisher")
-    public DcPublisher getDcPublisher() {
-        return dcPublisher;
-    }
-
-    @JsonProperty("dc:publisher")
-    public void setDcPublisher(DcPublisher dcPublisher) {
-        this.dcPublisher = dcPublisher;
-    }
-
-    @JsonProperty("tableSchema")
-    public TableSchema getTableSchema() {
-        return tableSchema;
-    }
-
-    @JsonProperty("tableSchema")
-    public void setTableSchema(TableSchema tableSchema) {
-        this.tableSchema = tableSchema;
-    }
-
-    @JsonProperty("dialect")
-    public Dialect getDialect() {
-        return dialect;
-    }
-
-    @JsonProperty("dialect")
-    public void setDialect(Dialect dialect) {
-        this.dialect = dialect;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
 }

@@ -14,50 +14,13 @@
  */
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "@id"
-})
+@JsonPropertyOrder({"@id"})
 public class SchemaUrl {
-
     @JsonProperty("@id")
     private String id;
-    @JsonIgnore
-    private final Map<String, Object> additionalProperties = new HashMap<String, Object>();
-
-    @JsonProperty("@id")
-    public String getId() {
-        return id;
-    }
-
-    @JsonProperty("@id")
-    public void setId(String Id) {
-        this.id = Id;
-    }
-
-    public SchemaUrl withId(String Id) {
-        this.id = Id;
-        return this;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
-    public SchemaUrl withAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-        return this;
-    }
-
 }

@@ -14,129 +14,26 @@
 */
 package com.axibase.tsd.driver.jdbc.content.json;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
-
+@Getter
+@Setter
+@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "state",
-    "exception",
-    "message"
-})
+@JsonPropertyOrder({"state", "exception", "message"})
 public class ErrorSection implements AtsdExceptionRepresentation {
-
     @JsonProperty("state")
     private String state;
     @JsonProperty("exception")
     private List<ExceptionSection> exception = new ArrayList<>();
     @JsonProperty("message")
     private String message;
-    @JsonIgnore
-    private final Map<String, Object> additionalProperties = new HashMap<>();
-
-    @Override
-    @JsonProperty("state")
-    public String getState() {
-        return state;
-    }
-
-    @JsonProperty("state")
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public ErrorSection withState(String state) {
-        this.state = state;
-        return this;
-    }
-
-    @Override
-    @JsonProperty("exception")
-    public List<ExceptionSection> getException() {
-        return exception;
-    }
-
-    @JsonProperty("exception")
-    public void setException(List<ExceptionSection> exception) {
-        this.exception = exception;
-    }
-
-    public ErrorSection withException(List<ExceptionSection> exception) {
-        this.exception = exception;
-        return this;
-    }
-
-    @Override
-    @JsonProperty("message")
-    public String getMessage() {
-        return message;
-    }
-
-    @JsonProperty("message")
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public ErrorSection withMessage(String message) {
-        this.message = message;
-        return this;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
-    public ErrorSection withAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-        return this;
-    }
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((exception == null) ? 0 : exception.hashCode());
-		result = prime * result + ((message == null) ? 0 : message.hashCode());
-		result = prime * result + ((state == null) ? 0 : state.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		ErrorSection other = (ErrorSection) obj;
-		if (exception == null) {
-			if (other.exception != null)
-				return false;
-		} else if (!exception.equals(other.exception))
-			return false;
-		if (message == null) {
-			if (other.message != null)
-				return false;
-		} else if (!message.equals(other.message))
-			return false;
-		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "ErrorSection [state=" + state + ", exception=" + exception + ", message=" + message + "]";
-	}
-
-    
 }

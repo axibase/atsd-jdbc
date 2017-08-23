@@ -166,7 +166,7 @@ public class AtsdMeta extends MetaImpl {
 				final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 				result = new ExecuteResult(contentMetadata.getList());
 			} else {
-				List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
+				List<String> content = convertToCommands(statementType, query);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(timeoutMillis);
 
@@ -185,6 +185,11 @@ public class AtsdMeta extends MetaImpl {
 			log.error("[execute] error", e);
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<String> convertToCommands(StatementType statementType, String query) throws SQLException {
+		return AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
 	}
 
 	static List<String> splitQueryByPlaceholder(String query) {
@@ -292,7 +297,7 @@ public class AtsdMeta extends MetaImpl {
 				provider.fetchData(limit, statement.getQueryTimeout());
 				updateCount = -1;
 			} else {
-				List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
+				List<String> content = convertToCommands(statementType, query);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
@@ -333,13 +338,12 @@ public class AtsdMeta extends MetaImpl {
 					throw new IllegalArgumentException("Invalid statement type: " + statementType);
 				}
 				final IDataProvider provider = createDataProvider(statementHandle, query, statementType);
-				List<String> content = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
+				List<String> content = convertToCommands(statementType, query);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(statement.getQueryTimeout());
 				updateCounts[count++] = updateCount;
 			}
-			final ExecuteBatchResult result = new ExecuteBatchResult(updateCounts);
-			return result;
+			return new ExecuteBatchResult(updateCounts);
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
 			log.error("[prepareAndExecuteBatch] error", e.getMessage());
 			throw e;
@@ -367,12 +371,12 @@ public class AtsdMeta extends MetaImpl {
             IDataProvider provider = createDataProvider(statementHandle, query, statementType);
             final int timeoutMillis = statement.getQueryTimeout();
             final AtsdSqlConverter converter = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz());
+			@SuppressWarnings("unchecked")
 			List<String> content = converter.convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 			long updateCount = provider.sendData(timeoutMillis);
 			long[] updateCounts = updateCount == 0 ? generateExecuteBatchResult(parameterValueBatch.size(), 0) : converter.getCommandCounts();
-			ExecuteBatchResult result = new ExecuteBatchResult(updateCounts);
-			return result;
+			return new ExecuteBatchResult(updateCounts);
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
 			log.error("[executeBatch] error", e.getMessage());
 			throw e;
@@ -418,7 +422,7 @@ public class AtsdMeta extends MetaImpl {
 
 	}
 
-	public void cancelStatement(StatementHandle statementHandle) {
+	void cancelStatement(StatementHandle statementHandle) {
 		final IDataProvider provider = providerCache.get(statementHandle.id);
 		if (provider != null) {
 			provider.cancelQuery();
@@ -865,16 +869,12 @@ public class AtsdMeta extends MetaImpl {
 
 	@Override
 	public void commit(ConnectionHandle ch) {
-		if (log.isDebugEnabled()) {
-			log.debug("[commit] " + ch.id + "->" + ch.toString());
-		}
+		log.debug("[commit] {} -> {}", ch.id, ch.toString());
 	}
 
 	@Override
 	public void rollback(ConnectionHandle ch) {
-		if (log.isDebugEnabled()) {
-			log.debug("[rollback] " + ch.id + "->" + ch.toString());
-		}
+		log.debug("[rollback] {} -> {}", ch.id, ch.toString());
 	}
 
 	private static List<List<Object>> prepareValueBatch(List<List<TypedValue>> parameterValueBatch) {

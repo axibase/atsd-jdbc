@@ -87,6 +87,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     protected abstract List<Object> getColumnValues(List<Object> parameterValues);
     protected abstract List<List<Object>> getColumnValuesBatch(List<List<Object>> parameterValuesBatch);
 
+    @SuppressWarnings("unchecked")
     private T parseSql(String sql) throws SQLException {
         logger.debug("[parseSql]");
         try {
@@ -468,6 +469,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T validate(Object value, Class<T> targetClass) throws SQLDataException {
         if (targetClass.isInstance(value)) {
             return (T) value;
@@ -535,7 +537,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
     }
 
     protected static void appendColumnName(final StringBuilder buffer, String name) {
-        if (EnumUtil.isReservedSqlToken(name.toUpperCase())) {
+        if (EnumUtil.isReservedSqlToken(name)) {
             buffer.append('\"').append(name.toLowerCase()).append('\"');
         } else {
             final String lcName = name.toLowerCase();

@@ -14,14 +14,17 @@
 */
 package com.axibase.tsd.driver.jdbc.content.json;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.annotation.Generated;
 import java.util.Map;
 
-@Generated("com.robohorse.robopojogenerator")
+@Getter
+@Setter
+@ToString
 public class Series{
-
 	@JsonProperty("metric")
 	private String metric;
 
@@ -33,47 +36,4 @@ public class Series{
 
 	@JsonProperty("tags")
 	private Map<String, String> tags;
-
-	public void setMetric(String metric){
-		this.metric = metric;
-	}
-
-	public String getMetric(){
-		return metric;
-	}
-
-	public void setLastInsertDate(String lastInsertDate){
-		this.lastInsertDate = lastInsertDate;
-	}
-
-	public String getLastInsertDate(){
-		return lastInsertDate;
-	}
-
-	public void setEntity(String entity){
-		this.entity = entity;
-	}
-
-	public String getEntity(){
-		return entity;
-	}
-
-	public void setTags(Map<String, String> tags){
-		this.tags = tags;
-	}
-
-	public Map<String, String> getTags(){
-		return tags;
-	}
-
-	@Override
- 	public String toString(){
-		return 
-			"Series{" + 
-			"metric = '" + metric + '\'' + 
-			",lastInsertDate = '" + lastInsertDate + '\'' + 
-			",entity = '" + entity + '\'' + 
-			",tags = '" + tags + '\'' + 
-			"}";
-		}
 }

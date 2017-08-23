@@ -15,7 +15,6 @@
 package com.axibase.tsd.driver.jdbc.protocol;
 
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
-import com.axibase.tsd.driver.jdbc.content.json.GeneralError;
 import com.axibase.tsd.driver.jdbc.content.json.QueryDescription;
 import com.axibase.tsd.driver.jdbc.content.json.SendCommandResult;
 import com.axibase.tsd.driver.jdbc.enums.Location;
@@ -32,7 +31,10 @@ import org.apache.calcite.avatica.org.apache.http.entity.ContentType;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URL;
@@ -214,7 +216,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			body = conn.getErrorStream();
 			if (code != HttpURLConnection.HTTP_BAD_REQUEST) {
 				try {
-					final String error = GeneralError.errorFromInputStream(body);
+					final String error = JsonMappingUtil.deserializeErrorObject(body);
 					throw new AtsdRuntimeException(error);
 				} catch (IOException e) {
 					throw new AtsdRuntimeException("HTTP code " + code);

@@ -14,69 +14,21 @@
  */
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import java.util.HashMap;
-import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
-
-
+@Getter
+@Setter
+@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "@value",
-    "@type"
-})
+@JsonPropertyOrder({"@value", "@type"})
 public class DcCreated {
-
     @JsonProperty("@value")
     private String Value;
     @JsonProperty("@type")
     private String Type;
-    @JsonIgnore
-    private final Map<String, Object> additionalProperties = new HashMap<String, Object>();
-
-    @JsonProperty("@value")
-    public String getValue() {
-        return Value;
-    }
-
-    @JsonProperty("@value")
-    public void setValue(String Value) {
-        this.Value = Value;
-    }
-
-    public DcCreated withValue(String Value) {
-        this.Value = Value;
-        return this;
-    }
-
-    @JsonProperty("@type")
-    public String getType() {
-        return Type;
-    }
-
-    @JsonProperty("@type")
-    public void setType(String Type) {
-        this.Type = Type;
-    }
-
-    public DcCreated withType(String Type) {
-        this.Type = Type;
-        return this;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
-    public DcCreated withAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-        return this;
-    }
-
 }

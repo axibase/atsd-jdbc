@@ -14,53 +14,18 @@
  */
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "columns"
-})
+@JsonPropertyOrder({"columns"})
 public class TableSchema {
-
     @JsonProperty("columns")
     private List<Column> columns = new ArrayList<Column>();
-    @JsonIgnore
-    private final Map<String, Object> additionalProperties = new HashMap<String, Object>();
-
-    @JsonProperty("columns")
-    public List<Column> getColumns() {
-        return columns;
-    }
-
-    @JsonProperty("columns")
-    public void setColumns(List<Column> columns) {
-        this.columns = columns;
-    }
-
-    public TableSchema withColumns(List<Column> columns) {
-        this.columns = columns;
-        return this;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
-    public TableSchema withAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-        return this;
-    }
 
 }

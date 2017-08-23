@@ -15,11 +15,18 @@
 package com.axibase.tsd.driver.jdbc.content.json;
 
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
-
+@Getter
+@Setter
+@ToString
 public class QueryDescription {
 	@JsonProperty("queryId")
 	private String queryId;
@@ -33,37 +40,4 @@ public class QueryDescription {
 	private String sql;
 	@JsonIgnore
 	private final Map<String, Object> additionalProperties = new HashMap<>();
-
-
-	public String getQueryId() {
-		return queryId;
-	}
-
-	public void setQueryId(String queryId) {
-		this.queryId = queryId;
-	}
-
-	public String getAtsdQueryId() {
-		return atsdQueryId;
-	}
-
-	public void setAtsdQueryId(String atsdQueryId) {
-		this.atsdQueryId = atsdQueryId;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public String getUser() {
-		return user;
-	}
-
-	public void setUser(String user) {
-		this.user = user;
-	}
 }

@@ -14,96 +14,22 @@
 */
 package com.axibase.tsd.driver.jdbc.content.json;
 
-import java.util.HashMap;
-import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.*;
-
+@Getter
+@Setter
+@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-    "buildInfo",
-    "license"
-})
+@JsonPropertyOrder({"buildInfo", "license"})
 public class Version {
-
     @JsonProperty("buildInfo")
     private BuildInfo buildInfo;
     @JsonProperty("license")
     private License license;
-    @JsonIgnore
-    private final Map<String, Object> additionalProperties = new HashMap<String, Object>();
-
-    public Version() {}
-
-    public Version(BuildInfo buildInfo, License license) {
-        this.buildInfo = buildInfo;
-        this.license = license;
-    }
-
-    @JsonProperty("buildInfo")
-    public BuildInfo getBuildInfo() {
-        return buildInfo;
-    }
-
-    @JsonProperty("buildInfo")
-    public void setBuildInfo(BuildInfo buildInfo) {
-        this.buildInfo = buildInfo;
-    }
-
-    @JsonProperty("license")
-    public License getLicense() {
-        return license;
-    }
-
-    @JsonProperty("license")
-    public void setLicense(License license) {
-        this.license = license;
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((buildInfo == null) ? 0 : buildInfo.hashCode());
-		result = prime * result + ((license == null) ? 0 : license.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Version other = (Version) obj;
-		if (buildInfo == null) {
-			if (other.buildInfo != null)
-				return false;
-		} else if (!buildInfo.equals(other.buildInfo))
-			return false;
-		if (license == null) {
-			if (other.license != null)
-				return false;
-		} else if (!license.equals(other.license))
-			return false;
-		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "Version [buildInfo=" + buildInfo + ", license=" + license + "]";
-	}
 
 }
