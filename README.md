@@ -10,6 +10,8 @@ The JDBC driver provides a convenient way for Java applications to retrieve and 
 
 Refer to [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for query syntax and examples.
 
+Read the [INSERT and UPDATE queries documentation](insert.md) to learn how to modify ATSD data using the JDBC driver.
+
 ## JDBC URL
 
 The ATSD JDBC driver prefix is `jdbc:atsd:`, followed by the ATSD host and port, optional catalog and driver properties.
