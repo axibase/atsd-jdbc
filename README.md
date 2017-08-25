@@ -6,26 +6,32 @@
 
 # JDBC driver
 
-The JDBC driver provides a convenient way for Java applications to retrieve and store time-series data in the Axibase Time Series Database using SQL.
+The ATSD JDBC driver enables Java applications to read and write time-series data from the Axibase Time Series Database using SQL.
 
-Refer to [SQL API Documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview) for query syntax and examples.
+## Reading Data
 
-Read the [INSERT and UPDATE queries documentation](insert.md) to learn how to modify ATSD data using the JDBC driver.
+To retrieve records from the database, execute `SELECT` statements following the query syntax and examples provided in the [ATSD SQL documentation](https://github.com/axibase/atsd/tree/master/api/sql#overview).
+
+## Writing Data
+
+To write data into ATSD, execute `INSERT` or `UPDATE` [statements](insert.md) which are parsed by the driver and transformed into `series` commands sent into the database.
 
 ## JDBC URL
 
-The ATSD JDBC driver prefix is `jdbc:atsd:`, followed by the ATSD host and port, optional catalog and driver properties.
+The ATSD JDBC driver prefix is `jdbc:atsd:`, followed by the ATSD hostname (IP address) and port, optional catalog and driver properties.
 
-```
-jdbc:atsd://hostname:port
-jdbc:atsd://10.102.0.6:8443;tables=city*
+```ls
+jdbc:atsd://hostname:port[/catalog][;property_name=property_value]
 ```
 
-Legacy JDBC url format prior to version 1.3.2:
-
+```ls
+jdbc:atsd://10.102.0.6:8443
 ```
-# DEPRECATED
-jdbc:axibase:atsd:https://atsd_hostname:8443/api/sql;trustServerCertificate=true
+
+Properties can be appended to the JDBC URL using a semicolon as a separator:
+
+```ls
+jdbc:atsd://10.102.0.6:8443;tables=infla*;expandTags=true`
 ```
 
 ## License
@@ -33,6 +39,10 @@ jdbc:axibase:atsd:https://atsd_hostname:8443/api/sql;trustServerCertificate=true
 This project is released under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
 
 ## Compatibility
+
+The table below specifies a range of compatible driver versions for a given database revision number displayed on the **Admin > System Information** page.
+
+For example, database revision number 16200 supports driver versions between 1.2.20 (inclusive) and 1.3.0 (exclusive).
 
 | **Database Version** | **Driver Version** |
 |:---|---|
@@ -47,10 +57,6 @@ This project is released under the [Apache 2.0 License](http://www.apache.org/li
 | 16620 | 1.3.0  |
 | 16643 | 1.3.2  |
 | 16855 | 1.3.3  |
-
-The above table specifies a range of compatible driver versions for a given database version.
-
-For example, database version 14150 supports all driver versions between 1.2.10 (inclusive) and 1.2.12 (exclusive).
 
 ## JDBC Connection Properties Supported by Driver
 
@@ -69,8 +75,6 @@ For example, database version 14150 supports all driver versions between 1.2.10 
 | missingMetric | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control the behavior when the referenced metric doesn't exist. If 'error', the driver will raise an `AtsdMetricNotFoundException`. If `warning`, an SQL Warning will be returned without errors. If `none`, no error or warning will be created. |
 | compatibility | `odbc2` | 1.3.2+ | not set | Simulate behavior of ODBC2.0 drivers: substitute `bigint` datatype with `double`, return `11` as `timestamp` type code |
 
-Properties can be included as part of the JDBC URL using a semicolon as a separator, for example: `jdbc:atsd://10.102.0.6:8443;tables=infla*;expandTags=true`.
-
 ## Resultset Processing Strategy
 
 Choose the appropriate strategy based on available Java heap memory, disk space, and expected row counts produced by typical queries.
@@ -81,18 +85,41 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 |`file`| Buffers data received from the database to a temporary file on the local file system and reads rows from the file on the `ResultSet.next()` invocation. |
 |`memory`| Buffers data received from the database into the application memory and returns rows on the `ResultSet.next()` invocation directly from a memory structure. |
 
-* While the `memory` strategy may be more efficient than `file`, it requires more memory. Generally speaking, the `memory` strategy is better suited to queries returning thousands of rows, whereas the `file`/`stream` strategy can process millions of rows (provided disk space is available).
-* The `stream` strategy is faster than the alternatives, at the expense of keeping the database connection open. It is not recommended if row processing may last a significant time on a slow client. 
+* While the `memory` strategy may be more efficient than `file`, it requires more memory. The `memory` strategy is optimal queries returning thousands of rows, whereas the `file` strategy can process millions of rows, provided disk space is available.
+* The `stream` strategy is faster than the alternatives, at the expense of keeping the database connection open. It is not recommended if row processing may last a significant time on a slow client.
 
-## Integration
-
-### Requirements
+## Requirements
 
 * Java 1.7 and later
 
+## Downloads
+
+* Compiled drivers are listed on the [Releases](https://github.com/axibase/atsd-jdbc/releases/) page.
+* `atsd-jdbc-*.jar` files are built without dependencies.
+* `atsd-jdbc-*-DEPS.jar` files contain dependencies.
+* The latest jar file with dependencies is [`atsd-jdbc-1.3.4-DEPS.jar`](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.4/atsd-jdbc-1.3.4-DEPS.jar).
+
+## Integration
+
+### Classpath
+
+Download the [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.4/atsd-jdbc-1.3.4-DEPS.jar) with dependencies and add it to the classpath of your application.
+
+* Unix:
+
+```sh
+java -cp "atsd-jdbc-1.3.4-DEPS.jar:lib/*" your.package.MainClass
+```
+
+* Windows:
+
+```sh
+java -cp "atsd-jdbc-1.3.4-DEPS.jar;lib/*" your.package.MainClass
+```
+
 ### Apache Maven
 
-Add dependency to `pom.xml` in your project. 
+Add `atsd-jdbc` dependency to `pom.xml` in your project.
 
 ```xml
 <dependency>
@@ -102,28 +129,19 @@ Add dependency to `pom.xml` in your project.
 </dependency>
 ```
 
-The JDBC driver is hosted in MavenCentral/SonaType repositories and will be imported automatically. 
+The ATSD JDBC driver is published in MavenCentral/SonaType repositories and will be imported automatically.
 
-Alternatively, build the project from sources with Maven:
+Alternatively, build the project from sources:
 
 ```bash
 $ mvn clean package -DskipTests=true
 ```
 
-### Classpath
-
-Download the driver [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.4/atsd-jdbc-1.3.4-DEPS.jar) with dependencies and add it to the classpath of your application.
-
-```
-* Unix: java -cp "atsd-jdbc-1.3.4-DEPS.jar:lib/*" your.package.MainClass
-* Windows java -cp "atsd-jdbc-1.3.4-DEPS.jar;lib/*" your.package.MainClass
-```
-
 ### Database Tools
 
-Download the jar file with the dependencies from above and import into your database manager. For example [DbVisualizer](https://www.dbvis.com). 
+Download the [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.3.4/atsd-jdbc-1.3.4-DEPS.jar) with dependencies and import it into your database client tool.
 
-Follow the instructions in the manager's user guide to create a custom driver based on the ATSD jar file.
+Follow the instructions to create a custom JDBC driver based on the ATSD jar file.
 
 ### Reporting Tools
 
@@ -221,7 +239,7 @@ public class TestQuery {
 	String port = args[1];
         String username = args[2];
         String password = args[3];
-        
+
         String jdbcUrl = "jdbc:atsd://" + host + ":" port;
 
         String query = "SELECT * FROM \"mpstat.cpu_busy\" WHERE datetime > now - 1 * HOUR LIMIT 5";
@@ -258,13 +276,13 @@ public class TestQuery {
 ```java
 
     Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-    
+
     String host = args[0];
     String port = args[1];
     String username = args[2];
     String password = args[3];
     String jdbcUrl = "jdbc:atsd://" + host + ":" port;
-    
+
     String query = "SELECT entity, datetime, value, tags.mount_point, tags.file_system "
             + "FROM \"df.disk_used_percent\" WHERE entity = 'NURSWGHBS001' AND datetime > now - 1 * HOUR LIMIT 10";
 
@@ -316,7 +334,7 @@ The following example shows how to extract metadata from the database:
     String port = args[1];
     String username = args[2];
     String password = args[3];
-        
+
     String jdbcUrl = "jdbc:atsd://" + host + ":" port;
 
     try (Connection connection = DriverManager.getConnection(jdbcUrl, userName, password)) {
@@ -387,13 +405,13 @@ TableTypes:
 	TABLE
 	VIEW
 	SYSTEM
-	
+
 Catalog: null
 ```
 
 ## Spring Framework Integration
 
-We recommend the [Spring Data JDBC](https://github.com/nurkiewicz/spring-data-jdbc-repository) library to integrate ATSD JDBC driver with Spring. 
+We recommend the [Spring Data JDBC](https://github.com/nurkiewicz/spring-data-jdbc-repository) library to integrate ATSD JDBC driver with Spring.
 
 See an example [here](https://github.com/axibase/atsd-jdbc-test/tree/master/src/main/java/com/axibase/tsd/driver/jdbc/spring).
 
