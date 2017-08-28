@@ -524,7 +524,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 
 	@Override
 	public String getString(String columnLabel) throws SQLException {
-		if (context.isEncodeTags()) {
+		if (context != null && context.isEncodeTags()) {
 			final int column = findColumn(columnLabel);
 			if (column > 0 && getJsonType(column)== JsonConvertedType.TAGS) {
 				return decodeTags(super.getString(column));
