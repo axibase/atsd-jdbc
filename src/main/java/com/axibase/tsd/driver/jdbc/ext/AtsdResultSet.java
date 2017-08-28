@@ -535,7 +535,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 
 	@Override
 	public String getString(int columnIndex) throws SQLException {
-		if (context.isEncodeTags() && columnIndex > 0 && columnIndex <= columnMetaDataList.size()
+		if (context != null && context.isEncodeTags() && columnIndex > 0 && columnIndex <= columnMetaDataList.size()
 				&& getJsonType(columnIndex) == JsonConvertedType.TAGS) {
 			return decodeTags(super.getString(columnIndex));
 		}
@@ -556,6 +556,9 @@ public class AtsdResultSet extends AvaticaResultSet {
 	}
 
 	private void validateGetTags(int parameterIndex) throws SQLException {
+		if (context == null) {
+			throw new SQLException("This ResultSet doesn't support getTags method");
+		}
 		if (!context.isEncodeTags()) {
 			throw new SQLException("Statement.setTagsEncoding(true) must be called");
 		}
