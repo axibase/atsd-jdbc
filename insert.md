@@ -243,27 +243,41 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
 
     The `Timestamp.getTime()` method returns the number of milliseconds since 1970-Jan-01 00:00:00 in **local** time zone.
 
-## Parameterized Queries
-
-To be added
-
 ## Batch Inserts
 
 Batch queries improve insert performance by sending commands in batches.
 
 ```java
-final String entityName = "test-entity";
-final String metricName = "test-metric";
-final String simplePattern = "INSERT INTO \"{}\" (time, entity, value, entity.tags, metric.tags) VALUES ({},'{}',{},{},{})";
-final String atsdSeriesPattern = "INSERT INTO atsd_series (metric, time, entity, value, entity.tags, metric.tags) VALUES ('{}',{},'{}',{},{},{})";
-try (Statement stmt = connection.createStatement()) {
-    int i = 1;
-    stmt.addBatch(format(simplePattern, metricName, i * 1000, entityName, i++, null, "'test1=value1'"));
-    stmt.addBatch(format(simplePattern, metricName, i * 1000, entityName, i++, "'test1=value1'", null));
-    stmt.addBatch(format(atsdSeriesPattern, metricName, i * 1000, entityName, i++, null, null));
-    stmt.addBatch(format(atsdSeriesPattern, metricName, i * 1000, entityName, i++, "'test1=value1'", "'test1=value1'"));
-    int[] res = stmt.executeBatch();
-    Assert.assertArrayEquals(new int[] {2,2,1,3}, res);
+public class BatchStatementExample {
+	public static void main(String[] args) throws Exception {
+		Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
+
+		String userName = "atsd_user_name";
+        String password = "atsd_user_password";
+        String connectionString = "jdbc:atsd://atsd_host:8443";
+
+		final String insertQuery = "INSERT INTO \"test-metric\" (time, entity, value, entity.tags, metric.tags) VALUES (%s,%s,%s,%s,%s)";
+		final String insertAtsdSeriesQuery = "INSERT INTO atsd_series (metric, time, entity, value, entity.tags, metric.tags) VALUES ('test-metric',%s,%s,%s,%s,%s)";
+		try (final Connection connection = DriverManager.getConnection(connectionString, userName, password);
+			 Statement stmt = connection.createStatement()) {
+			final String entityName = "test-entity";
+			int i = 1;
+			stmt.addBatch(buildQuery(insertQuery, i * 1000, entityName, i++, null, "test1=value1"));
+			stmt.addBatch(buildQuery(insertQuery, i * 1000, entityName, i++, "test1=value1", null));
+			stmt.addBatch(buildQuery(insertAtsdSeriesQuery, i * 1000, entityName, i++, null, null));
+			stmt.addBatch(buildQuery(insertAtsdSeriesQuery, i * 1000, entityName, i++, "test1=value1", "test1=value1"));
+			System.out.println("Inserted: " + Arrays.toString(stmt.executeBatch()));
+		}
+	}
+
+	private static String buildQuery(String query, long time, String entity, double value,
+									 String entityTags, String metricTags) {
+		return String.format(query, time, formatStringArgument(entity), value, formatStringArgument(entityTags), formatStringArgument(metricTags));
+	}
+
+	private static String formatStringArgument(String parameter) {
+		return parameter == null ? "null" : "'" + parameter + "'";
+	}
 }
 ```
 
@@ -281,6 +295,50 @@ series e:test-entity ms:3000 m:test-metric=3.0
 series e:test-entity ms:4000 m:test-metric=4.0
 entity e:test-entity t:test1=value1
 metric m:test-metric t:test1=value1
+```
+
+## Parameterized Queries
+
+In the query above String operations were used for filling parameters. A better approach is to use PreparedStatement which will apply proper arguments formatting based on their type.
+
+A question mark (?) is used as a parameter placeholder. Question marks inside single or double quotes are not determined as placeholders.
+
+```java
+public class PreparedStatementExample {
+	public static void main(String[] args) throws Exception {
+		Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
+
+		String userName = "atsd_user_name";
+		String password = "atsd_user_password";
+		String connectionString = "jdbc:atsd://atsd_host:8443";
+
+		final String insertQuery = "INSERT INTO \"test-metric\" (time, entity, value, entity.tags, metric.tags) VALUES (?,?,?,?,?)";
+		final String insertAtsdSeriesQuery = "INSERT INTO atsd_series (metric, time, entity, value, entity.tags, metric.tags) VALUES ('test-metric',?,?,?,?,?)";
+		try (final Connection connection = DriverManager.getConnection(connectionString, userName, password);
+			 PreparedStatement simplePs = connection.prepareStatement(insertQuery);
+			 PreparedStatement atsdSeriesPs = connection.prepareStatement(insertAtsdSeriesQuery)) {
+			final String entityName = "test-entity";
+			long i = 0;
+			fillParameters(simplePs, i * 1000, entityName, i++, null, "'test1=value1'").addBatch();
+			fillParameters(simplePs, i * 1000, entityName, i++, "'test1=value1'", null).addBatch();
+			fillParameters(atsdSeriesPs, i * 1000, entityName, i++, null, null).addBatch();
+			fillParameters(atsdSeriesPs, i * 1000, entityName, i++, "'test1=value1'", "'test1=value1'").addBatch();
+			System.out.println("Inserted with 'INSERT INTO \"test-metric\"': " + Arrays.toString(simplePs.executeBatch()));
+			System.out.println("Inserted with 'INSERT INTO atsd_series': " + Arrays.toString(atsdSeriesPs.executeBatch()));
+		}
+	}
+
+	private static PreparedStatement fillParameters(PreparedStatement ps, long time, String entity, double value,
+													String entityTags, String metricTags) throws SQLException {
+		int i = 1;
+		ps.setLong(i++, time);
+		ps.setString(i++, entity);
+		ps.setDouble(i++, value);
+		ps.setString(i++, entityTags);
+		ps.setString(i, metricTags);
+		return ps;
+	}
+}
 ```
 
 ## Examples
