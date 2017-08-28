@@ -243,6 +243,44 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
 
     The `Timestamp.getTime()` method returns the number of milliseconds since 1970-Jan-01 00:00:00 in **local** time zone.
 
+```java
+    // Assuming that current time zone is Europe/Berlin
+    final String user = "atsd_user_name";
+    final String password = "atsd_user_password";
+    final String timeStamp = "2017-08-22 00:00:00";
+    final DateTimeFormatter formatter = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("UTC"));
+    final long millis = ZonedDateTime.parse(timeStamp, formatter).toInstant().toEpochMilli();
+    final String query = "INSERT INTO \"m-insert-dt\" (datetime, entity, value) VALUES (?,'test-tz',0)";
+    
+    try (final Connection connection = DriverManager.getConnection("jdbc:atsd://atsd_host:8443;timestamptz=true", user, password);
+         final PreparedStatement stmt = connection.prepareStatement(query)) {
+    
+        stmt.setString(1, timeStamp);
+        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    
+        stmt.setTimestamp(1, new Timestamp(millis));
+        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    
+        stmt.setLong(1, millis);
+        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    }
+    
+    try (final Connection connection = DriverManager.getConnection("jdbc:atsd://atsd_host:8443;timestamptz=false", user, password);
+         final PreparedStatement stmt = connection.prepareStatement(query)) {
+    
+        stmt.setString(1, timeStamp);
+        stmt.executeUpdate(); // 2017-08-21T22:00:00.000Z
+    
+        stmt.setTimestamp(1, new Timestamp(millis));
+        stmt.executeUpdate(); // 2017-08-22T02:00:00.000Z
+    
+        stmt.setLong(1, millis);
+        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    }
+```
+
 ## Batch Inserts
 
 Batch queries improve insert performance by sending commands in batches.
