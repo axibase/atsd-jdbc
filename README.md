@@ -211,6 +211,58 @@ To set an [`endTime`](https://github.com/axibase/atsd/blob/master/end-time-synta
     axibaseStatement.setTimeExpression(1, "current_day - 1 * week + 2 * day");
 ```
 
+### Tags manipulation
+
+> Supported in 1.3.5+
+
+To properly set or retrieve tags in tags column you can use AtsdPreparedStatement#setTags and AtsdResultSet#getTags methods.
+To enable tags manipulation, you must set enable the `tagsEncoding` property of `AtsdStatement` or `AtsdPreparedStatement` (`AtsdPreparedStateemnt` is **NOT** a subtype of `AtsdStatement`)
+
+```java
+    AtsdStatement atsdStatement = (AtsdStatement) statement;
+    atsdStatement.setTagsEncoding(true);
+```
+
+#### Example
+
+Insert the commands:
+
+```
+series m:m-with-tags=0 e:test-quotes
+series m:m-with-tags=0 t:tag1=value1 e:test-quotes
+series m:m-with-tags=0 t:tag1=value1 t:tag2=value2 e:test-quotes
+series m:m-with-tags=0 t:tag1=value1 t:tag2=value2 t:"key""quote"=true e:test-quotes
+series m:m-with-tags=0 t:tag1=value1 t:tag2=value2 t:"key""quote"="value""quote" e:test-quotes
+```
+
+```java
+    String userName = "atsd_user_name";
+    String password = "atsd_user_password";
+    String connectionString = "jdbc:atsd://atsd_host:8443";
+
+    final String sql = "SELECT datetime, entity, value, tags FROM \"m-with-tags\" WHERE tags = ?";
+    try (final Connection connection = DriverManager.getConnection(connectionString, userName, password);
+         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        AtsdPreparedStatement atsdPreparedStatement = ((AtsdPreparedStatement) preparedStatement);
+        atsdPreparedStatement.setTagsEncoding(true);
+        Map<String, String> tags = new HashMap<>();
+        tags.put("tag2", "value2");
+        tags.put("key\"quote", "value\"quote");
+        tags.put("tag1", "value1");
+        atsdPreparedStatement.setTags(1, tags);
+        try (AtsdResultSet rs = (AtsdResultSet) preparedStatement.executeQuery()) {
+            int i = 1;
+            while (rs.next()) {
+                System.out.println("datetime" + " = " + rs.getTimestamp(1));
+                System.out.println("entity" + " = " + rs.getString(2));
+                System.out.println("value" + " = " + rs.getDouble(3));
+                System.out.println("tags" + " = " + rs.getTags(4));
+                System.out.println("--------- End of row " + (i++) + " ----------");
+            }
+        }
+    }
+```
+
 ## SQL Warnings
 
 The database may return SQL warnings, as opposed to raising a non-recoverable error, in case of an unknown tag or tag value.
