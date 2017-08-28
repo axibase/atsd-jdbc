@@ -6,6 +6,7 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
+import org.apache.calcite.avatica.Meta;
 import org.powermock.api.mockito.PowerMockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ public abstract class AbstractFetchTest {
 	}
 
 	protected static IStoreStrategy getMockStrategyObject() {
-		final StatementContext context = new StatementContext();
+		final StatementContext context = new StatementContext(new Meta.StatementHandle("1", 1, null), false);
 		return PowerMockito.spy(StrategyFactory.create(StrategyFactory.findClassByName(READ_STRATEGY), context, OnMissingMetricAction.ERROR));
 	}
 }

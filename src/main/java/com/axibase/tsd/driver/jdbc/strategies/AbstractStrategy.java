@@ -83,14 +83,12 @@ public abstract class AbstractStrategy implements IStoreStrategy {
 	@Override
 	public String[] openToRead(List<ColumnMetaData> metadataList) throws IOException {
 		if (logger.isTraceEnabled()) {
-			logger.trace("[openToRead] " + status.getSyncLatch().getCount());
+			logger.trace("[openToRead] {}", status.getSyncLatch().getCount());
 		}
 		try {
 			status.getSyncLatch().await();
 		} catch (InterruptedException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("[openToRead] " + e.getMessage());
-			}
+			logger.debug("[openToRead] {}", e.getMessage());
 			Thread.currentThread().interrupt();
 		}
 		final String[] header = consumer.open(inputStream, metadataList);

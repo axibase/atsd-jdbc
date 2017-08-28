@@ -2,7 +2,6 @@ package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import lombok.experimental.UtilityClass;
-import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.MetaImpl;
 
 import java.sql.Types;
@@ -161,18 +160,4 @@ public class AtsdMetaResultSets {
 		return value ? 1 : 0;
 	}
 
-	public static final class AtsdColumnMetaData extends ColumnMetaData {
-		public final ColumnMetaData.AvaticaType exposedType;
-
-		public AtsdColumnMetaData(int ordinal, boolean autoIncrement, boolean caseSensitive,
-								  boolean searchable, boolean currency, int nullable,
-								  boolean signed, int displaySize, String label, String columnName, String schemaName,
-								  int precision, int scale, String tableName, String catalogName, AvaticaType type,
-								  boolean readOnly, boolean writable, boolean definitelyWritable, String columnClassName,
-								  AvaticaType exposed) {
-			super(ordinal, autoIncrement, caseSensitive, searchable, currency, nullable, signed, displaySize, label, columnName,
-					schemaName, precision, scale, tableName, catalogName, type, readOnly, writable, definitelyWritable, columnClassName);
-			this.exposedType = exposed;
-		}
-	}
 }

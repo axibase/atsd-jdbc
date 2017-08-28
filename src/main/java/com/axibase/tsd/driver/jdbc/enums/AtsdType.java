@@ -97,6 +97,15 @@ public enum AtsdType {
 		protected Object readValueHelper(String cell) {
 			return cell;
 		}
+
+		@Override
+		public Object readValue(String[] values, int index, boolean nullable, ParserRowContext context) {
+			final String cell = values[index];
+			if (StringUtils.isEmpty(cell)) {
+				return StringUtils.isNotEmpty(context.getColumnSource(index)) ? cell : null;
+			}
+			return cell;
+		}
 	},
 	TIMESTAMP_DATA_TYPE("xsd:dateTimeStamp", "timestamp", Types.TIMESTAMP, Rep.JAVA_SQL_TIMESTAMP,
 			"2016-01-01T00:00:00.000".length(), "2016-01-01T00:00:00.000".length(), 3) {
@@ -172,7 +181,7 @@ public enum AtsdType {
 	public Object readValue(String[] values, int index, boolean nullable, ParserRowContext context) {
 		final String cell = values[index];
 		if (StringUtils.isEmpty(cell)) {
-			return this == AtsdType.STRING_DATA_TYPE && StringUtils.isNotEmpty(context.getColumnSource(index)) ? cell : null;
+			return null;
 		}
 		try {
 			return readValueHelper(cell);

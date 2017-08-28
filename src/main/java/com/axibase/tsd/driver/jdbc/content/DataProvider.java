@@ -25,6 +25,7 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
+import lombok.Getter;
 import org.apache.calcite.avatica.Meta;
 
 import java.io.IOException;
@@ -34,17 +35,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DataProvider implements IDataProvider {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(DataProvider.class);
+	@Getter
 	private final ContentDescription contentDescription;
 	private final IContentProtocol contentProtocol;
 	private final StatementContext context;
+	@Getter
 	private IStoreStrategy strategy;
 	private AtomicBoolean isHoldingConnection = new AtomicBoolean();
 
-	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context, Meta.StatementType statementType) {
+	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context,
+						Meta.StatementType statementType) {
 		final String endpoint;
 		switch (statementType) {
 			case SELECT: {
-                endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
+				if (context.isEncodeTags()) {
+					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo) + "?encodeTags=true";
+				} else {
+					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
+				}
 				break;
 			}
 			case INSERT:
@@ -58,16 +66,6 @@ public class DataProvider implements IDataProvider {
 		logger.trace("Endpoint: {}", contentDescription.getEndpoint());
 		this.contentProtocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription);
 		this.context = context;
-	}
-
-	@Override
-	public ContentDescription getContentDescription() {
-		return this.contentDescription;
-	}
-
-	@Override
-	public IStoreStrategy getStrategy() {
-		return this.strategy;
 	}
 
 	@Override
@@ -85,8 +83,7 @@ public class DataProvider implements IDataProvider {
 	@Override
 	public long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		this.isHoldingConnection.set(false);
-		final long writeCount = contentProtocol.writeContent(timeoutMillis);
-		return writeCount;
+		return contentProtocol.writeContent(timeoutMillis);
 	}
 
 	@Override

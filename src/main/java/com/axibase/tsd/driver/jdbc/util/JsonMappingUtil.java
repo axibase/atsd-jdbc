@@ -24,6 +24,7 @@ import org.apache.calcite.avatica.com.fasterxml.jackson.databind.ObjectReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.TreeMap;
 
 public class JsonMappingUtil {
 	private static final ObjectMapper MAPPER = prepareObjectMapper();
@@ -61,12 +62,15 @@ public class JsonMappingUtil {
 		return READER.forType(Series[].class).readValue(inputStream);
 	}
 
-	public static JsonParser getParser(Reader reader) throws IOException {
-		return JSON_FACTORY.createParser(reader);
-	}
-
 	public static SendCommandResult mapToSendCommandResult(InputStream inputStream) throws IOException {
 		return READER.forType(SendCommandResult.class).readValue(inputStream);
 	}
 
+	public static TreeMap<String, String> mapToTags(String jsonTags) throws IOException {
+		return READER.forType(TreeMap.class).readValue(jsonTags);
+	}
+
+	public static JsonParser getParser(Reader reader) throws IOException {
+		return JSON_FACTORY.createParser(reader);
+	}
 }

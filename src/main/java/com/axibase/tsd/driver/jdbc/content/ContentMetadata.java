@@ -15,12 +15,14 @@
 package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
+import com.axibase.tsd.driver.jdbc.enums.JsonConvertedType;
+import com.axibase.tsd.driver.jdbc.ext.AtsdColumnMetaData;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdJsonException;
-import com.axibase.tsd.driver.jdbc.ext.AtsdMetaResultSets;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import com.axibase.tsd.driver.jdbc.util.JsonTypeResolver;
 import lombok.Getter;
 import org.apache.calcite.avatica.AvaticaParameter;
 import org.apache.calcite.avatica.ColumnMetaData;
@@ -51,11 +53,11 @@ public class ContentMetadata {
 
 	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames, boolean odbcCompatible)
 			throws AtsdException, IOException {
-		metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog, assignColumnNames, odbcCompatible)
+		this.metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog, assignColumnNames, odbcCompatible)
 				: Collections.<ColumnMetaData>emptyList();
-		sign = new Signature(metadataList, sql, Collections.<AvaticaParameter>emptyList(), null, CursorFactory.LIST,
+		this.sign = new Signature(metadataList, sql, Collections.<AvaticaParameter>emptyList(), null, CursorFactory.LIST,
 				StatementType.SELECT);
-		list = Collections.unmodifiableList(
+		this.list = Collections.unmodifiableList(
 				Collections.singletonList(MetaResultSet.create(connectionId, statementId, false, sign, null)));
 	}
 
@@ -201,17 +203,13 @@ public class ContentMetadata {
 		}
 
 		public ColumnMetaData build() {
-			final AtsdType type = atsdType.getCompatibleType(odbcCompatible);
-			final ColumnMetaData.AvaticaType internalType = type.getAvaticaType(false);
-			final ColumnMetaData.AvaticaType exposedType = type.getAvaticaType(odbcCompatible);
-			return new AtsdMetaResultSets.AtsdColumnMetaData(columnIndex, false, false, false,
-					false, nullable, false, type.size, label, assignColumnNames ? name : label,
-					getValueNotNull(schema), type.maxPrecision, type.scale, table, getValueNotNull(catalog), internalType,
-					true, false,false, internalType.rep.clazz.getCanonicalName(), exposedType);
-		}
-
-		private AtsdType substituteForOdbcCompatibility(AtsdType type) {
-			return odbcCompatible && type == AtsdType.BIGINT_DATA_TYPE ? AtsdType.DOUBLE_DATA_TYPE : type;
+			final JsonConvertedType jsonConvertedType = JsonTypeResolver.resolve(name);
+			final AtsdType atsdType = this.atsdType.getCompatibleType(odbcCompatible);
+			final ColumnMetaData.AvaticaType internalType = atsdType.getAvaticaType(false);
+			final ColumnMetaData.AvaticaType exposedType = atsdType.getAvaticaType(odbcCompatible);
+			return new AtsdColumnMetaData(columnIndex, nullable, label,
+					name, getValueNotNull(schema), table, getValueNotNull(catalog),
+					atsdType, internalType, exposedType, assignColumnNames, jsonConvertedType);
 		}
 
 		private String getValueNotNull(String value) {

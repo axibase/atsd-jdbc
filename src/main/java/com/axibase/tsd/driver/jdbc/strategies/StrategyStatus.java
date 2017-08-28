@@ -18,27 +18,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class StrategyStatus {
 	private boolean inProgress;
-	private long lockPosition;
-	private long lockSize;
-	private long currentSize;
 	private long processed;
 	private CountDownLatch syncLatch = new CountDownLatch(1);
-
-	public long getLockPosition() {
-		return lockPosition;
-	}
-
-	public void setLockPosition(long lockPosition) {
-		this.lockPosition = lockPosition;
-	}
-
-	public long getCurrentSize() {
-		return currentSize;
-	}
-
-	public void setCurrentSize(long currentSize) {
-		this.currentSize = currentSize;
-	}
 
 	public boolean isInProgress() {
 		return inProgress;
@@ -54,14 +35,6 @@ public class StrategyStatus {
 
 	public void setSyncLatch(CountDownLatch syncLatch) {
 		this.syncLatch = syncLatch;
-	}
-
-	public long getLockSize() {
-		return lockSize;
-	}
-
-	public void setLockSize(long lockSize) {
-		this.lockSize = lockSize;
 	}
 
 	public long getProcessed() {

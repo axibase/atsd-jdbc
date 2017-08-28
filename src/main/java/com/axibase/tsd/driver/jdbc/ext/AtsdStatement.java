@@ -14,11 +14,10 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaStatement;
 import org.apache.calcite.avatica.Meta;
@@ -26,10 +25,17 @@ import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class AtsdStatement extends AvaticaStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdStatement.class);
 
-	protected AtsdStatement(AvaticaConnection connection, StatementHandle statementHandle, int resultSetType,
+	@Getter
+	@Setter
+	private boolean tagsEncoding;
+
+	AtsdStatement(AvaticaConnection connection, StatementHandle statementHandle, int resultSetType,
 			int resultSetConcurrency, int resultSetHoldability) {
 		super(connection, statementHandle, resultSetType, resultSetConcurrency, resultSetHoldability);
 		logger.trace("[AtsdStatement#new] {}", this.handle.id);

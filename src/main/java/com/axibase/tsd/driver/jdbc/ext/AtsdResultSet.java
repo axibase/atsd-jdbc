@@ -15,7 +15,10 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
+import com.axibase.tsd.driver.jdbc.enums.JsonConvertedType;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import com.axibase.tsd.driver.jdbc.util.TagsUtil;
 import org.apache.calcite.avatica.AvaticaResultSet;
 import org.apache.calcite.avatica.AvaticaStatement;
 import org.apache.calcite.avatica.Meta;
@@ -23,11 +26,13 @@ import org.apache.calcite.avatica.Meta.Frame;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.QueryState;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.TimeZone;
+import java.util.TreeMap;
 
 public class AtsdResultSet extends AvaticaResultSet {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdResultSet.class);
@@ -42,9 +47,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 		this.meta = connection.getMeta();
 		this.handle = statement.handle;
 		this.context = meta.getContextFromMap(statement.handle);
-		if (logger.isTraceEnabled()) {
-			logger.trace("[ctor] " + this.handle.id);
-		}
+		logger.trace("[ctor] {}", this.handle.id);
 	}
 
 	@Override
@@ -505,6 +508,64 @@ public class AtsdResultSet extends AvaticaResultSet {
 	@Override
 	public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
 		return super.getBigDecimal(columnLabel, 0);
+	}
+
+	private String decodeTags(String tags) throws SQLException {
+		try {
+			return TagsUtil.tagsToString(JsonMappingUtil.mapToTags(tags));
+		} catch (IOException e) {
+			throw new SQLException(e.getMessage(), e);
+		}
+	}
+
+	private JsonConvertedType getJsonType(int columnIndex) {
+		return ((AtsdColumnMetaData)columnMetaDataList.get(columnIndex - 1)).jsonConvertedType;
+	}
+
+	@Override
+	public String getString(String columnLabel) throws SQLException {
+		if (context.isEncodeTags()) {
+			final int column = findColumn(columnLabel);
+			if (column > 0 && getJsonType(column)== JsonConvertedType.TAGS) {
+				return decodeTags(super.getString(column));
+			}
+		}
+		return super.getString(columnLabel);
+	}
+
+	@Override
+	public String getString(int columnIndex) throws SQLException {
+		if (context.isEncodeTags()) {
+			if (columnIndex > 0 && columnIndex <= columnMetaDataList.size() && getJsonType(columnIndex) == JsonConvertedType.TAGS) {
+				return decodeTags(super.getString(columnIndex));
+			}
+		}
+		return super.getString(columnIndex);
+	}
+
+	public TreeMap<String, String> getTags(String columnLabel) throws SQLException {
+		return getTags(findColumn(columnLabel));
+	}
+
+	public TreeMap<String, String> getTags(int parameterIndex) throws SQLException {
+		validateGetTags(parameterIndex);
+		try {
+			return JsonMappingUtil.mapToTags(super.getString(parameterIndex));
+		} catch (IOException e) {
+			throw new SQLException(e.getMessage(), e);
+		}
+	}
+
+	private void validateGetTags(int parameterIndex) throws SQLException {
+		if (!context.isEncodeTags()) {
+			throw new SQLException("Statement.setTagsEncoding(true) must be called");
+		}
+		if (parameterIndex <= 0 || parameterIndex > columnMetaDataList.size()) {
+			throw new SQLException("Index out of bounds");
+		}
+		if (getJsonType(parameterIndex) != JsonConvertedType.TAGS) {
+			throw new SQLException("column " + parameterIndex + " is not a tags column");
+		}
 	}
 
 	@Override

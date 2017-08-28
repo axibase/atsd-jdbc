@@ -14,36 +14,24 @@
 */
 package com.axibase.tsd.driver.jdbc.content;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.calcite.avatica.Meta;
 
 import java.sql.SQLException;
 import java.sql.SQLWarning;
-import java.util.UUID;
 
 @Getter
 @Setter
 public class StatementContext {
+	private final String queryId;
+	private final boolean encodeTags;
 	private SQLException exception;
 	private SQLWarning warning;
-	@Setter(AccessLevel.NONE)
-	private String queryId;
-	private int version;
 
-	public StatementContext() {
-		this.queryId = UUID.randomUUID().toString().substring(0, 10);
-	}
-
-	public StatementContext(Meta.StatementHandle statementHandle) {
+	public StatementContext(Meta.StatementHandle statementHandle, boolean encodeTags) {
 		this.queryId = statementHandle.connectionId.substring(0, 8) + Integer.toHexString(statementHandle.id);
-	}
-
-	public StatementContext(SQLException exception, SQLWarning warning) {
-		this();
-		this.exception = exception;
-		this.warning = warning;
+		this.encodeTags = encodeTags;
 	}
 
 	public void addException(SQLException ex) {
@@ -60,9 +48,5 @@ public class StatementContext {
 		} else {
 			setWarning(warn);
 		}
-	}
-
-	public boolean isAbleToCancelAtsdQueries() {
-		return true;
 	}
 }

@@ -22,6 +22,7 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
 import com.axibase.tsd.driver.jdbc.intf.IConsumer;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
+import lombok.Getter;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,6 +41,7 @@ public class Consumer implements IConsumer {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(Consumer.class);
 
 	protected final StrategyStatus status;
+	@Getter
 	protected final StatementContext context;
 	protected final OnMissingMetricAction onMissingMetricAction;
 	protected final String source;
@@ -53,15 +55,8 @@ public class Consumer implements IConsumer {
 	}
 
 	@Override
-	public StatementContext getContext() {
-		return context;
-	}
-
-	@Override
 	public void close() throws IOException {
-		if (logger.isTraceEnabled()) {
-			logger.trace("[close]");
-		}
+		logger.trace("[close]");
 		if (iterator != null) {
 			iterator.close();
 		}
@@ -69,14 +64,13 @@ public class Consumer implements IConsumer {
 
 	@Override
 	public String[] open(InputStream inputStream, List<ColumnMetaData> columnMetadataList) throws IOException {
-		iterator = RowIterator.newDefaultIterator(inputStream, columnMetadataList, context.getVersion());
+		iterator = RowIterator.newDefaultIterator(inputStream, columnMetadataList, context.isEncodeTags());
 		return iterator.getHeader();
 	}
 
 	@Override
 	public Iterator<Object[]> iterator(){
 		if (iterator == null) {
-			assert source != null;
 			throw new IllegalStateException(source + " has not opened yet");
 		}
 		return iterator;

@@ -18,7 +18,10 @@ import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
+import com.axibase.tsd.driver.jdbc.util.TagsUtil;
 import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaPreparedStatement;
@@ -33,10 +36,8 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
@@ -45,6 +46,10 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdPreparedStatement.class);
 
 	private final ConcurrentSkipListMap<Integer, TypedValue> parameters = new ConcurrentSkipListMap<>();
+
+	@Getter
+	@Setter
+	private boolean tagsEncoding;
 
 	protected AtsdPreparedStatement(AvaticaConnection connection, StatementHandle h, Signature signature,
 									int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
@@ -356,6 +361,13 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	private AtsdConnection getAtsdConnection() {
 		return (AtsdConnection) super.getConnection();
+	}
+
+	public void setTags(int parameterIndex, Map<String, String> tags) throws SQLException {
+		if (!tagsEncoding) {
+			throw new SQLException("tagsEncoding must be enabled");
+		}
+		setString(parameterIndex, TagsUtil.tagsToString(tags));
 	}
 
 	@Override

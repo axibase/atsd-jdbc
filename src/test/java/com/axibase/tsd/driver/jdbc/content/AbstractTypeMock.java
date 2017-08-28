@@ -4,6 +4,7 @@ import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
+import org.apache.calcite.avatica.Meta;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
@@ -29,8 +30,9 @@ public abstract class AbstractTypeMock extends AbstractFetchTest {
 		properties.setProperty("password", LOGIN_PASSWORD);
 		AtsdConnectionInfo info = new AtsdConnectionInfo(properties);
 		final String endpoint = Location.SQL_ENDPOINT.getUrl(info);
+		final StatementContext context = new StatementContext(new Meta.StatementHandle("1", 1, null), false);
 		final ContentDescription contentDescription = new ContentDescription(
-				endpoint, info, "SELECT * FROM " + getTable(), new StatementContext());
+				endpoint, info, "SELECT * FROM " + getTable(), context);
 		contentDescription.setJsonScheme(getSchema());
 		this.protocolImpl = PowerMockito.spy(new SdkProtocolImpl(contentDescription));
 	}

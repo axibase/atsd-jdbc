@@ -110,7 +110,7 @@ public class AtsdMeta extends MetaImpl {
 		if (signature.columns.isEmpty()) {
 			final String metaEndpoint = Location.SQL_META_ENDPOINT.getUrl(atsdConnectionInfo);
 			final ContentDescription contentDescription = new ContentDescription(
-					metaEndpoint, atsdConnectionInfo, signature.sql, new StatementContext(handle));
+					metaEndpoint, atsdConnectionInfo, signature.sql, new StatementContext(handle, false));
 			try (final IContentProtocol protocol = new SdkProtocolImpl(contentDescription)) {
 				final List<ColumnMetaData> columnMetaData = ContentMetadata.buildMetadataList(protocol.readContent(0),
 						atsdConnectionInfo.catalog(), atsdConnectionInfo.assignColumnNames(), atsdConnectionInfo.odbc2Compatibility());
@@ -157,15 +157,17 @@ public class AtsdMeta extends MetaImpl {
 		}
         final StatementType statementType = statement.getStatementType();
         try {
-			IDataProvider provider = createDataProvider(statementHandle, query, statementType);
 			final int timeoutMillis = statement.getQueryTimeout() * 1000;
 			final ExecuteResult result;
 			if (SELECT == statementType) {
+				final boolean encodeTags = isEncodeTags(statement);
+				final IDataProvider provider = createDataProvider(statementHandle, query, statementType, encodeTags);
 				final int maxRows = statement.getMaxRows();
 				provider.fetchData(maxRows, timeoutMillis);
 				final ContentMetadata contentMetadata = createMetadata(query, statementHandle.connectionId, statementHandle.id);
 				result = new ExecuteResult(contentMetadata.getList());
 			} else {
+				IDataProvider provider = createDataProvider(statementHandle, query, statementType, false);
 				List<String> content = convertToCommands(statementType, query);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(timeoutMillis);
@@ -186,6 +188,22 @@ public class AtsdMeta extends MetaImpl {
 			throw new AtsdRuntimeException(e.getMessage(), e);
 		}
 	}
+
+	public static boolean isEncodeTags(AvaticaStatement statement) {
+		if (statement instanceof AtsdPreparedStatement) {
+			return ((AtsdPreparedStatement) statement).isTagsEncoding();
+		} else if (statement instanceof AtsdStatement) {
+			return ((AtsdStatement) statement).isTagsEncoding();
+		}
+		return false;
+	}
+
+//	private void fillContextWithJsonTypeMetadata(StatementHandle statementHandle, List<ContentMetadata> contentMetadata) {
+//		final StatementContext context = getContextFromMap(statementHandle);
+//		for (ContentMetadata metadata : contentMetadata) {
+//
+//		}
+//	}
 
 	@SuppressWarnings("unchecked")
 	private List<String> convertToCommands(StatementType statementType, String query) throws SQLException {
@@ -279,7 +297,8 @@ public class AtsdMeta extends MetaImpl {
 	@Override
 	public ExecuteResult prepareAndExecute(StatementHandle statementHandle, String query, long maxRowCount,
 										   PrepareCallback callback) throws NoSuchStatementException {
-		return prepareAndExecute(statementHandle, query, maxRowCount, 0, callback);
+		throw new UnsupportedOperationException();
+//		return prepareAndExecute(statementHandle, query, maxRowCount, 0, callback);
 	}
 
 	@Override
@@ -291,13 +310,15 @@ public class AtsdMeta extends MetaImpl {
 		try {
 			final AvaticaStatement statement = (AvaticaStatement) callback.getMonitor();
 			final StatementType statementType = statement.getStatementType() == null ? EnumUtil.getStatementTypeByQuery(query) : statement.getStatementType();
-			final IDataProvider provider = createDataProvider(statementHandle, query, statementType);
 			final long updateCount;
 			if (SELECT == statementType) {
+				final boolean encodeTags = isEncodeTags(statement);
+				final IDataProvider provider = createDataProvider(statementHandle, query, statementType, encodeTags);
 				provider.fetchData(limit, statement.getQueryTimeout());
 				updateCount = -1;
 			} else {
 				List<String> content = convertToCommands(statementType, query);
+				final IDataProvider provider = createDataProvider(statementHandle, query, statementType, false);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
@@ -337,7 +358,7 @@ public class AtsdMeta extends MetaImpl {
 				if (SELECT == statementType) {
 					throw new IllegalArgumentException("Invalid statement type: " + statementType);
 				}
-				final IDataProvider provider = createDataProvider(statementHandle, query, statementType);
+				final IDataProvider provider = createDataProvider(statementHandle, query, statementType,false);
 				List<String> content = convertToCommands(statementType, query);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(statement.getQueryTimeout());
@@ -368,14 +389,14 @@ public class AtsdMeta extends MetaImpl {
 		final String query = ((AtsdPreparedStatement) statement).getSql();
 		final List<List<Object>> preparedValueBatch = prepareValueBatch(parameterValueBatch);
 		try {
-            IDataProvider provider = createDataProvider(statementHandle, query, statementType);
+            IDataProvider provider = createDataProvider(statementHandle, query, statementType,false);
             final int timeoutMillis = statement.getQueryTimeout();
             final AtsdSqlConverter converter = AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz());
 			@SuppressWarnings("unchecked")
 			List<String> content = converter.convertBatchToCommands(query, preparedValueBatch);
 			provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 			long updateCount = provider.sendData(timeoutMillis);
-			long[] updateCounts = updateCount == 0 ? generateExecuteBatchResult(parameterValueBatch.size(), 0) : converter.getCommandCounts();
+			long[] updateCounts = updateCount == 0 ? new long[parameterValueBatch.size()] : converter.getCommandCounts();
 			return new ExecuteBatchResult(updateCounts);
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
 			log.error("[executeBatch] error", e.getMessage());
@@ -833,21 +854,12 @@ public class AtsdMeta extends MetaImpl {
 				CursorFactory.record(clazz, Arrays.asList(fields), fieldNames), new Frame(0, true, iterable));
 	}
 
-	private IDataProvider createDataProvider(StatementHandle statementHandle, String sql, StatementType statementType) throws UnsupportedEncodingException {
-		assert connection instanceof AtsdConnection;
-		AtsdConnection atsdConnection = (AtsdConnection) connection;
-		final StatementContext newContext = new StatementContext(statementHandle);
+	private IDataProvider createDataProvider(StatementHandle statementHandle, String sql, StatementType statementType, boolean encodeTags) throws UnsupportedEncodingException {
+		final StatementContext newContext = new StatementContext(statementHandle, encodeTags);
 		contextMap.put(statementHandle.id, newContext);
-		try {
-			AtsdDatabaseMetaData metaData = atsdConnection.getAtsdDatabaseMetaData();
-			newContext.setVersion(metaData.getConnectedAtsdVersion());
-			final IDataProvider dataProvider = new DataProvider(atsdConnectionInfo, sql, newContext, statementType);
-			providerCache.put(statementHandle.id, dataProvider);
-			return dataProvider;
-		} catch (SQLException e) {
-			log.error("[createDataProvider] Error attempting to get databaseMetadata", e);
-			throw new AtsdRuntimeException(e.getMessage(), e);
-		}
+		final IDataProvider dataProvider = new DataProvider(atsdConnectionInfo, sql, newContext, statementType);
+		providerCache.put(statementHandle.id, dataProvider);
+		return dataProvider;
 	}
 
 	private ContentMetadata createMetadata(String sql, String connectionId, int statementId)
@@ -868,13 +880,13 @@ public class AtsdMeta extends MetaImpl {
 	// Since Calcite 1.6.0
 
 	@Override
-	public void commit(ConnectionHandle ch) {
-		log.debug("[commit] {} -> {}", ch.id, ch.toString());
+	public void commit(ConnectionHandle handle) {
+		log.debug("[commit] {} -> {}", handle.id, handle);
 	}
 
 	@Override
-	public void rollback(ConnectionHandle ch) {
-		log.debug("[rollback] {} -> {}", ch.id, ch.toString());
+	public void rollback(ConnectionHandle handle) {
+		log.debug("[rollback] {} -> {}", handle.id, handle);
 	}
 
 	private static List<List<Object>> prepareValueBatch(List<List<TypedValue>> parameterValueBatch) {
@@ -905,12 +917,6 @@ public class AtsdMeta extends MetaImpl {
 			}
 		}
 		log.debug("[preparedValues] {}", result);
-		return result;
-	}
-
-	private static long[] generateExecuteBatchResult(int size, long value) {
-		long[] result = new long[size];
-		Arrays.fill(result, value);
 		return result;
 	}
 
