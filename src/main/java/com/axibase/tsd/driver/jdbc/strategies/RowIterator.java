@@ -128,7 +128,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		}
 	}
 
-	private static CsvParserSettings prepareParserSettings(RowProcessor rowProcessor) {
+	static CsvParserSettings prepareParserSettings(RowProcessor rowProcessor) {
 		final CsvParserSettings settings = new CsvParserSettings();
 		settings.setInputBufferSize(16 * 1024);
 		settings.setReadInputOnSeparateThread(false);

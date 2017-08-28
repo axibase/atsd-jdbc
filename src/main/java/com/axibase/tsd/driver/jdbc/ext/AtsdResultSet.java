@@ -535,10 +535,9 @@ public class AtsdResultSet extends AvaticaResultSet {
 
 	@Override
 	public String getString(int columnIndex) throws SQLException {
-		if (context.isEncodeTags()) {
-			if (columnIndex > 0 && columnIndex <= columnMetaDataList.size() && getJsonType(columnIndex) == JsonConvertedType.TAGS) {
-				return decodeTags(super.getString(columnIndex));
-			}
+		if (context.isEncodeTags() && columnIndex > 0 && columnIndex <= columnMetaDataList.size()
+				&& getJsonType(columnIndex) == JsonConvertedType.TAGS) {
+			return decodeTags(super.getString(columnIndex));
 		}
 		return super.getString(columnIndex);
 	}

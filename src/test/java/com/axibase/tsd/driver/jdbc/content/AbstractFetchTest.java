@@ -68,7 +68,8 @@ public abstract class AbstractFetchTest {
 	}
 
 	protected static IStoreStrategy getMockStrategyObject() {
-		final StatementContext context = new StatementContext(new Meta.StatementHandle("1", 1, null), false);
+		final Meta.StatementHandle statementHandle = new Meta.StatementHandle("12345678", 1, null);
+		final StatementContext context = new StatementContext(statementHandle, false);
 		return PowerMockito.spy(StrategyFactory.create(StrategyFactory.findClassByName(READ_STRATEGY), context, OnMissingMetricAction.ERROR));
 	}
 }

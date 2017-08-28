@@ -30,7 +30,8 @@ public abstract class AbstractTypeMock extends AbstractFetchTest {
 		properties.setProperty("password", LOGIN_PASSWORD);
 		AtsdConnectionInfo info = new AtsdConnectionInfo(properties);
 		final String endpoint = Location.SQL_ENDPOINT.getUrl(info);
-		final StatementContext context = new StatementContext(new Meta.StatementHandle("1", 1, null), false);
+		final Meta.StatementHandle statementHandle = new Meta.StatementHandle("12345678", 1, null);
+		final StatementContext context = new StatementContext(statementHandle, false);
 		final ContentDescription contentDescription = new ContentDescription(
 				endpoint, info, "SELECT * FROM " + getTable(), context);
 		contentDescription.setJsonScheme(getSchema());

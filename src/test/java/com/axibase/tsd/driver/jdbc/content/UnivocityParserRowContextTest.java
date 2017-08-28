@@ -1,13 +1,8 @@
 package com.axibase.tsd.driver.jdbc.content;
 
-import java.io.StringReader;
-import java.lang.reflect.Method;
-import java.util.List;
-
-import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.TestUtil;
 import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
-import com.axibase.tsd.driver.jdbc.strategies.RowIterator;
+import com.axibase.tsd.driver.jdbc.strategies.Trojan;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.calcite.avatica.ColumnMetaData;
@@ -15,27 +10,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
 
+import java.io.StringReader;
+import java.util.List;
+
 import static com.axibase.tsd.driver.jdbc.content.UnivocityParserRowContext.lastCharForColumn;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 public class UnivocityParserRowContextTest {
 	private static final String CSV = TestUtil.resourceToString("/csv/csvWithQuotes.csv", UnivocityParserRowContext.class);
 	private static final List<ColumnMetaData> metadata = TestUtil.prepareMetadata("/csv/csvWithQuotes.csv", UnivocityParserRowContext.class);
-	private static final CsvParserSettings settings = prepareSettings();
+	private static final CsvParserSettings settings = Trojan.preparesSettings();
 	private static final String FIRST_LINE_AFTER_HEADER = "entity-1,24.4,\"hello\nworld\"\n";
-
-	private static CsvParserSettings prepareSettings() {
-		try {
-			Method method = RowIterator.class.getDeclaredMethod("prepareParserSettings", Integer.TYPE);
-			method.setAccessible(true);
-			return (CsvParserSettings) method.invoke(null, DriverConstants.MIN_SUPPORTED_ATSD_REVISION);
-		} catch (Exception e) {
-			fail(e.getMessage());
-			return null;
-		}
-	}
 
 	private CsvParser parser;
 	private ParserRowContext rowContext;
