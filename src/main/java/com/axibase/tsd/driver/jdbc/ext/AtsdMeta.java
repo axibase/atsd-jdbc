@@ -198,13 +198,6 @@ public class AtsdMeta extends MetaImpl {
 		return false;
 	}
 
-//	private void fillContextWithJsonTypeMetadata(StatementHandle statementHandle, List<ContentMetadata> contentMetadata) {
-//		final StatementContext context = getContextFromMap(statementHandle);
-//		for (ContentMetadata metadata : contentMetadata) {
-//
-//		}
-//	}
-
 	@SuppressWarnings("unchecked")
 	private List<String> convertToCommands(StatementType statementType, String query) throws SQLException {
 		return AtsdSqlConverterFactory.getConverter(statementType, atsdConnectionInfo.timestampTz()).convertToCommands(query);
@@ -295,10 +288,10 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	@Override
+	@Deprecated
 	public ExecuteResult prepareAndExecute(StatementHandle statementHandle, String query, long maxRowCount,
 										   PrepareCallback callback) throws NoSuchStatementException {
-		throw new UnsupportedOperationException();
-//		return prepareAndExecute(statementHandle, query, maxRowCount, 0, callback);
+		return prepareAndExecute(statementHandle, query, maxRowCount, -1, callback);
 	}
 
 	@Override
