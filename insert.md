@@ -305,42 +305,42 @@ Parameterized queries improve parsing performance and ensure correct mappings be
 A question mark (?) without quotes is used as a parameter placeholder. Question marks inside string literals and object identifiers are treated as regular characters.
 
 ```java
-	String sensorId = "sensor-01";
-	long sampleTime = System.currentTimeMillis();
-	String tagString = "surface=Outer;status=Initial";
-	double value = 24.5;
+    String sensorId = "sensor-01";
+    long sampleTime = System.currentTimeMillis();
+    String tagString = "surface=Outer;status=Initial";
+    double value = 24.5;
 
-	String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
-	PreparedStatement statement = connection.prepareStatement(insertQuery);
-	statement.setString(1, sensorId);
-	statement.setString(2, tagString);
-	statement.setLong(3, sampleTime);	
-	statement.setDouble(4, value);
+    String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
+    PreparedStatement statement = connection.prepareStatement(insertQuery);
+    statement.setString(1, sensorId);
+    statement.setString(2, tagString);
+    statement.setLong(3, sampleTime);	
+    statement.setDouble(4, value);
 
-	statement.execute();
+    statement.execute();
 ```
 
 In order to set multiple tags as map, cast the `PreparedStatement` to `AtsdPreparedStatement`.
 
 ```java
-	String sensorId = "sensor-01";
-	String timeStringUtc = "2017-08-20 08:30";
+    String sensorId = "sensor-01";
+    String timeStringUtc = "2017-08-20 08:30";
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("UTC"));
     final Timestamp ts = Timestamp.from(ZonedDateTime.parse(stringTime, formatter).toInstant());	
-	Map<String, String> seriesTags = new HashMap<String, String>();
-	seriesTags.put("surface", "Outer");
-	seriesTags.put("status", "Initial");
-	double value = 24.5;
+    Map<String, String> seriesTags = new HashMap<String, String>();
+    seriesTags.put("surface", "Outer");
+    seriesTags.put("status", "Initial");
+    double value = 24.5;
 
-	String insertQuery = "INSERT INTO temperature (entity, tags, datetime, value) VALUES (?, ?, ?, ?)";
-	PreparedStatement statement = connection.prepareStatement(insertQuery);
-	AtsdPreparedStatement atsdStatement = (AtsdPreparedStatement)statement;
-	statement.setString(1, sensorId);
-	atsdStatement.setTags(2, seriesTags);
-	statement.setTimestamp(3, ts);
-	statement.setDouble(4, value);
+    String insertQuery = "INSERT INTO temperature (entity, tags, datetime, value) VALUES (?, ?, ?, ?)";
+    PreparedStatement statement = connection.prepareStatement(insertQuery);
+    AtsdPreparedStatement atsdStatement = (AtsdPreparedStatement)statement;
+    statement.setString(1, sensorId);
+    atsdStatement.setTags(2, seriesTags);
+    statement.setTimestamp(3, ts);
+    statement.setDouble(4, value);
 
-	statement.execute();
+    statement.execute();
 ```
 
 ## Batch Inserts
@@ -348,7 +348,7 @@ In order to set multiple tags as map, cast the `PreparedStatement` to `AtsdPrepa
 Batch queries improve insert performance by sending commands in batches.
 
 ```java
-	int maxBatchSize = 50;
+    int maxBatchSize = 50;
     String sensorId = "sensor-01";
     String tagString = "surface=Outer";
     String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
