@@ -319,7 +319,7 @@ public class AtsdMeta extends MetaImpl {
 				updateCount = -1;
 			} else {
 				final List<String> content = convertToCommands(statementType, normalizedQuery);
-				final IDataProvider provider = createDataProvider(statementHandle, normalizedQuery, statementType, false);
+				final IDataProvider provider = createDataProvider(statementHandle, query, statementType, false);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
@@ -355,12 +355,13 @@ public class AtsdMeta extends MetaImpl {
 			long[] updateCounts = new long[queries.size()];
 			int count = 0;
 			for (String query : queries) {
-				final StatementType statementType = statement.getStatementType() == null ? EnumUtil.getStatementTypeByQuery(query) : statement.getStatementType();
+				final String normalizedQuery = normalizeQuery(query);
+				final StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
 				if (SELECT == statementType) {
-					throw new IllegalArgumentException("Invalid statement type: " + statementType);
+					throw new IllegalArgumentException("Batch SELECT statements are not supported");
 				}
+				final List<String> content = convertToCommands(statementType, normalizedQuery);
 				final IDataProvider provider = createDataProvider(statementHandle, query, statementType,false);
-				List<String> content = convertToCommands(statementType, query);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				long updateCount = provider.sendData(statement.getQueryTimeout());
 				updateCounts[count++] = updateCount;
