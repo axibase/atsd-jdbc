@@ -256,44 +256,44 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
     The `Timestamp.getTime()` method returns the number of milliseconds since 1970-Jan-01 00:00:00 in **local** time zone.
 
 ```java
-    final String timeZone = "Europe/Berline";
+    final String timeZone = "Europe/Berlin";
     final String stringTime = "2017-08-15 00:00:00";
     final DateTimeFormatter formatter = DateTimeFormatter
             .ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.of(timeZone));
     final long millis = ZonedDateTime.parse(stringTime, formatter).toInstant().toEpochMilli();
     final String query = "INSERT INTO temperature (entity, datetime, value) VALUES (?, ?, 24.5)";
-    
+
     // timestamptz=true (default value)
     try (final PreparedStatement stmt = tzTrueConnection.prepareStatement(query)) {
-    
-        stmt.setString(1, 'sensor-01');
+
+        stmt.setString(1, "sensor-01");
         stmt.setString(2, stringTime);
-        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
-    
-    	stmt.setString(1, 'sensor-02');
+        stmt.executeUpdate(); // stored as 	2017-08-15T00:00:00Z (utc) - 2017-08-15 02:00:00 (local)
+
+        stmt.setString(1, "sensor-02");
         stmt.setTimestamp(2, new Timestamp(millis));
-        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
-    
-    	stmt.setString(1, 'sensor-03');
+        stmt.executeUpdate(); // stored as 2017-08-14T22:00:00Z (utc) - 2017-08-15 00:00:00 (local)
+
+        stmt.setString(1, "sensor-03");
         stmt.setLong(2, millis);
-        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
+        stmt.executeUpdate(); // stored as 2017-08-14T22:00:00Z (utc) - 2017-08-15 00:00:00 (local)
     }
-    
+
     // timestamptz=false
     try (final PreparedStatement stmt = tzFalseConnection.prepareStatement(query)) {
-    
-    	stmt.setString(1, 'sensor-04');
-        stmt.setString(2, stringTime);
-        stmt.executeUpdate(); // stored as 2017-08-15T22:00:00Z (utc) - 2017-08-15T00:00:00 (local)
- 
-     	stmt.setString(1, 'sensor-05');   
-        stmt.setTimestamp(2, new Timestamp(millis));
-        stmt.executeUpdate(); // stored as 2017-08-15T02:00:00Z (utc) - 2017-08-15T00:00:00 (local)
 
-    	stmt.setString(1, 'sensor-06');    
+        stmt.setString(1, "sensor-04");
+        stmt.setString(2, stringTime);
+        stmt.executeUpdate(); // stored as 2017-08-14T22:00:00Z (utc) - 2017-08-15 00:00:00 (local)
+
+        stmt.setString(1, "sensor-05");
+        stmt.setTimestamp(2, new Timestamp(millis));
+        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15 02:00:00 (local)
+
+        stmt.setString(1, "sensor-06");
         stmt.setLong(2, millis);
-        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
+        stmt.executeUpdate(); // stored as 2017-08-14T22:00:00Z (utc) - 2017-08-15 00:00:00 (local)
     }
 ```
 
@@ -349,32 +349,32 @@ Batch queries improve insert performance by sending commands in batches.
 
 ```java
 	int maxBatchSize = 50;
-	String sensorId = "sensor-01";
-	String tagString = "surface=Outer";
-	String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
-	long sampleTime = System.currentTimeMillis() - 60000*60;
-	PreparedStatement statement = connection.prepareStatement(insertQuery);
-	int batchSize = 0;
-	while (baseTime < System.currentTimeMillis()) {
-		statement.setString(1, sensorId);
-		statement.setString(2, tagString);
-		statement.setLong(3, sampleTime);
-		statement.setLong(4, 20 + 10*Math.random());
-		statement.addBatch();
-		sampleTime += 60000;
-		batchSize++;
-		if (batchSize >= maxBatchSize) {
-			int results = statement.executeBatch();
-			System.out.println("Inserted batch: " + Arrays.toString(results));
-			batchSize = 0;
-			statement.clearBatch();
-		}
-	}
+    String sensorId = "sensor-01";
+    String tagString = "surface=Outer";
+    String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
+    long sampleTime = System.currentTimeMillis() - 60000 * 60;
+    PreparedStatement statement = connection.prepareStatement(insertQuery);
+    int batchSize = 0;
+    while (sampleTime < System.currentTimeMillis()) {
+        statement.setString(1, sensorId);
+        statement.setString(2, tagString);
+        statement.setLong(3, sampleTime);
+        statement.setLong(4, 20 + (long)(10 * Math.random()));
+        statement.addBatch();
+        sampleTime += 60000;
+        batchSize++;
+        if (batchSize >= maxBatchSize) {
+            int[] results = statement.executeBatch();
+            System.out.println("Inserted batch: " + Arrays.toString(results));
+            batchSize = 0;
+            statement.clearBatch();
+        }
+    }
 
-	if (batchSize > 0) {
-		int results = statement.executeBatch();
-		System.out.println("Inserted last batch: " + Arrays.toString(results));
-	}
+    if (batchSize > 0) {
+        int[] results = statement.executeBatch();
+        System.out.println("Inserted last batch: " + Arrays.toString(results));
+    }
 ```
 
 ## Transactions
