@@ -356,7 +356,7 @@ public class AtsdMeta extends MetaImpl {
 			int count = 0;
 			for (String query : queries) {
 				final String normalizedQuery = normalizeQuery(query);
-				final StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
+				final StatementType statementType = EnumUtil.getStatementTypeByQuery(normalizedQuery);
 				if (SELECT == statementType) {
 					throw new IllegalArgumentException("Batch SELECT statements are not supported");
 				}
