@@ -364,9 +364,6 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	}
 
 	public void setTags(int parameterIndex, Map<String, String> tags) throws SQLException {
-		if (!tagsEncoding) {
-			throw new SQLException("tagsEncoding must be enabled");
-		}
 		setString(parameterIndex, TagsUtil.tagsToString(tags));
 	}
 
