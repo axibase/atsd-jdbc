@@ -398,12 +398,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	protected List<TypedValue> copyParameterValues() {
-		List<TypedValue> current = getParameterValues();
-		List<TypedValue> copy = new ArrayList<>(current.size());
-		for (TypedValue value : current) {
-			copy.add(value);
-		}
-		return copy;
+		return getParameterValues();
 	}
 
 }

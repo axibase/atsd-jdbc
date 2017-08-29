@@ -98,11 +98,18 @@ public class AtsdMeta extends MetaImpl {
 		if (StringUtils.isBlank(query)) {
 			throw new SQLException("Failed to prepare statement with blank query");
 		}
-		final List<String> queryParts = splitQueryByPlaceholder(query);
-		queryPartsMap.put(statementHandleId, queryParts);
-		final StatementType statementType = EnumUtil.getStatementTypeByQuery(query);
-		Signature signature = new Signature(new ArrayList<ColumnMetaData>(), query, Collections.<AvaticaParameter>emptyList(), null,
-				statementType == SELECT ? CursorFactory.LIST : null, statementType);
+		final String normalizedQuery = normalizeQuery(query);
+		final StatementType statementType = EnumUtil.getStatementTypeByQuery(normalizedQuery);
+		final Signature signature;
+		if (statementType == SELECT) {
+			queryPartsMap.put(statementHandleId, splitQueryByPlaceholder(query));
+			signature = new Signature(new ArrayList<ColumnMetaData>(), query, Collections.<AvaticaParameter>emptyList(), null,
+					CursorFactory.LIST, statementType);
+		} else {
+			queryPartsMap.put(statementHandleId, splitQueryByPlaceholder(normalizedQuery));
+			signature = new Signature(new ArrayList<ColumnMetaData>(), query, Collections.<AvaticaParameter>emptyList(), null,
+					null, statementType);
+		}
 		return new StatementHandle(connectionHandle.id, statementHandleId, signature);
 	}
 
@@ -302,7 +309,8 @@ public class AtsdMeta extends MetaImpl {
 		log.trace("[prepareAndExecute] handle: {} maxRowCount: {} query: {}", statementHandle, limit, query);
 		try {
 			final AvaticaStatement statement = (AvaticaStatement) callback.getMonitor();
-			final StatementType statementType = statement.getStatementType() == null ? EnumUtil.getStatementTypeByQuery(query) : statement.getStatementType();
+			final String normalizedQuery = normalizeQuery(query);
+			final StatementType statementType = EnumUtil.getStatementTypeByQuery(normalizedQuery);
 			final long updateCount;
 			if (SELECT == statementType) {
 				final boolean encodeTags = isEncodeTags(statement);
@@ -310,8 +318,8 @@ public class AtsdMeta extends MetaImpl {
 				provider.fetchData(limit, statement.getQueryTimeout());
 				updateCount = -1;
 			} else {
-				List<String> content = convertToCommands(statementType, query);
-				final IDataProvider provider = createDataProvider(statementHandle, query, statementType, false);
+				final List<String> content = convertToCommands(statementType, normalizedQuery);
+				final IDataProvider provider = createDataProvider(statementHandle, normalizedQuery, statementType, false);
 				provider.getContentDescription().setPostContent(StringUtils.join(content,'\n'));
 				updateCount = provider.sendData(statement.getQueryTimeout());
 			}
@@ -434,6 +442,30 @@ public class AtsdMeta extends MetaImpl {
 			throw new MissingResultsException(statementHandle);
 		}
 
+	}
+
+	static String normalizeQuery(String query) {
+		final int length = query.length();
+		int start = -1;
+		for (int i = 0; i < length; i++) {
+			final char currentChar = query.charAt(i);
+			if (!Character.isWhitespace(currentChar)) {
+				if (currentChar == '-') {
+					final int nextLine = query.indexOf('\n', i);
+					i = nextLine != -1 ? nextLine : length;
+				} else {
+					start = i;
+					break;
+				}
+			}
+		}
+		if (start == -1) {
+			return null;
+		} else if (start == 0) {
+			return query;
+		} else {
+			return query.substring(start);
+		}
 	}
 
 	void cancelStatement(StatementHandle statementHandle) {

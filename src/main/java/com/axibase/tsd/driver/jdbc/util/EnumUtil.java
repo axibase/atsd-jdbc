@@ -120,6 +120,9 @@ public class EnumUtil {
 	}
 
 	public static Meta.StatementType getStatementTypeByQuery(final String query) {
+		if (query == null) {
+			return SELECT;
+		}
 		final String queryKind = new StringTokenizer(query).nextToken().toUpperCase(Locale.US);
 		try {
 			final Meta.StatementType statementType = Meta.StatementType.valueOf(queryKind);
