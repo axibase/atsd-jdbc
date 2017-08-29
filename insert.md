@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ATSD JDBC driver provides support for writing data into ATSD using `INSERT` and `UPDATE` statements. The statements are parsed by the driver into [network commands](https://github.com/axibase/atsd/tree/master/api/network#network-api) which are uploaded into the database with the [Data API `command`](https://github.com/axibase/atsd/blob/master/api/data/ext/command.md) method.
+The ATSD JDBC driver provides support for writing data into ATSD using `INSERT` and `UPDATE` statements. The statements are parsed by the driver into [network commands](https://github.com/axibase/atsd/tree/master/api/network#network-api) which are inserted into the database with the [Data API `command`](https://github.com/axibase/atsd/blob/master/api/data/ext/command.md) method.
 
 ```sql
 INSERT INTO temperature (entity, datetime, value, tags.surface)
@@ -15,24 +15,32 @@ The above query is translated into a [series command](https://github.com/axibase
 series e:sensor-01 d:2017-08-21T00:00:00Z m:temperature=24.5 t:surface=Outer
 ```
 
-## Insert vs Update
+The same command can be produced with equivalent `UPDATE` statements:
 
-`INSERT` and `UPDATE` statements are converted into the same commands which are processed as follows:
+```sql
+UPDATE temperature SET value = 24.5 WHERE entity = 'sensor-01' AND datetime = '2017-08-21T00:00:00Z' AND tags.surface = 'Outer'
+UPDATE temperature SET datetime = '2017-08-21T00:00:00Z', value = 24.5  WHERE entity = 'sensor-01' AND tags.surface = 'Outer'
+```
 
-* If the record doesn't exist, new value is inserted.
+## UPDATE Statement
 
-* If the record exists, the old value is automatically updated.
+The `UPDATE` statement is processed similar to `INSERT` statement in that it is converted into one `series` command and optional `metric` and `entity` commands.
 
-This type of query is sometimes referred to as `UPSERT` or `MERGE`.
+The `series` command contains all columns referenced in the `SET` and `WHERE` parts. The `WHERE` clause must contain at least one column.
 
-There are no checks for the existence of records as part of the `UPDATE` statement.
+There are no checks for the existence of records as part of the `UPDATE` statement processing.
 
-Because new metric and entities are automatically registered by the database, there is no need to create metrics ahead of time in order to insert records into a new table.
+New value is inserted if the record identified by the series key and time doesn't exist. Otherwise, the existing record is updated with the new value.
+
+This type of `UPDATE` query is often referred to as `UPSERT` or `MERGE`.
+
+## Tables
+
+Because new metrics are automatically registered by the database, there is no need to create metrics ahead of time in order to insert records into a new table.
 
 ```sql
 /*  
-  The database will automatically create new metric 'mtr-1'
-  and new entity 'ent-1', if necessary.
+  The database will automatically create new metric 'mtr-1', if necessary.
 */
 INSERT INTO "mtr-1" (entity, datetime, value)
              VALUES ('ent-1', '2017-08-21T00:00:00Z', 100)
@@ -176,17 +184,21 @@ Generated commands | 1 series command<br>1 optional metric command<br>1 optional
 UPDATE "{metric name}" SET value = {numeric value} [, text = '{string value}' [, {metric field} = {metric field value}]] WHERE entity = {entity name} AND [time = {millis} | datetime = '{iso8601 time}']
 ```
 
+> The columns can be specified in the `SET` clause or the `WHERE` clause with equal results. The `WHERE` clause must contain at least one column.
+
 Example:
 
 ```sql
 UPDATE "temperature" SET value = 25.5 WHERE entity = 'sensor-01' AND tags.surface = 'Outer' AND datetime = '2017-08-21T00:00:00Z'
+-- equivalent syntax
+UPDATE "temperature" SET value = 25.5, datetime = '2017-08-21T00:00:00Z' WHERE entity = 'sensor-01' AND tags.surface = 'Outer'
 ```
 
-The `WHERE` condition in `UPDATE` statements supports only:
+The `WHERE` condition in `UPDATE` statements supports the following comparators and operators:
 
 * `=` (equal) comparator.
 * `LIKE` comparator with optional `ESCAPE` clause if it can be substituted with an `=` (equal) comparator.
-* Boolean operator `AND` (`OR` operator is not supported).
+* Logical operator `AND` (`OR` operator is not supported).
 
 ```sql
 WHERE entity = 'sensor-1'
@@ -244,41 +256,91 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
     The `Timestamp.getTime()` method returns the number of milliseconds since 1970-Jan-01 00:00:00 in **local** time zone.
 
 ```java
-    // Assuming that current time zone is Europe/Berlin
-    final String user = "atsd_user_name";
-    final String password = "atsd_user_password";
-    final String timeStamp = "2017-08-22 00:00:00";
+    final String timeZone = "Europe/Berline";
+    final String stringTime = "2017-08-15 00:00:00";
     final DateTimeFormatter formatter = DateTimeFormatter
             .ofPattern("yyyy-MM-dd HH:mm:ss")
-            .withZone(ZoneId.of("UTC"));
-    final long millis = ZonedDateTime.parse(timeStamp, formatter).toInstant().toEpochMilli();
-    final String query = "INSERT INTO \"m-insert-dt\" (datetime, entity, value) VALUES (?,'test-tz',0)";
+            .withZone(ZoneId.of(timeZone));
+    final long millis = ZonedDateTime.parse(stringTime, formatter).toInstant().toEpochMilli();
+    final String query = "INSERT INTO temperature (entity, datetime, value) VALUES (?, ?, 24.5)";
     
-    try (final Connection connection = DriverManager.getConnection("jdbc:atsd://atsd_host:8443;timestamptz=true", user, password);
-         final PreparedStatement stmt = connection.prepareStatement(query)) {
+    // timestamptz=true (default value)
+    try (final PreparedStatement stmt = tzTrueConnection.prepareStatement(query)) {
     
-        stmt.setString(1, timeStamp);
-        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+        stmt.setString(1, 'sensor-01');
+        stmt.setString(2, stringTime);
+        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
     
-        stmt.setTimestamp(1, new Timestamp(millis));
-        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    	stmt.setString(1, 'sensor-02');
+        stmt.setTimestamp(2, new Timestamp(millis));
+        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
     
-        stmt.setLong(1, millis);
-        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    	stmt.setString(1, 'sensor-03');
+        stmt.setLong(2, millis);
+        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
     }
     
-    try (final Connection connection = DriverManager.getConnection("jdbc:atsd://atsd_host:8443;timestamptz=false", user, password);
-         final PreparedStatement stmt = connection.prepareStatement(query)) {
+    // timestamptz=false
+    try (final PreparedStatement stmt = tzFalseConnection.prepareStatement(query)) {
     
-        stmt.setString(1, timeStamp);
-        stmt.executeUpdate(); // 2017-08-21T22:00:00.000Z
-    
-        stmt.setTimestamp(1, new Timestamp(millis));
-        stmt.executeUpdate(); // 2017-08-22T02:00:00.000Z
-    
-        stmt.setLong(1, millis);
-        stmt.executeUpdate(); // 2017-08-22T00:00:00.000Z
+    	stmt.setString(1, 'sensor-04');
+        stmt.setString(2, stringTime);
+        stmt.executeUpdate(); // stored as 2017-08-15T22:00:00Z (utc) - 2017-08-15T00:00:00 (local)
+ 
+     	stmt.setString(1, 'sensor-05');   
+        stmt.setTimestamp(2, new Timestamp(millis));
+        stmt.executeUpdate(); // stored as 2017-08-15T02:00:00Z (utc) - 2017-08-15T00:00:00 (local)
+
+    	stmt.setString(1, 'sensor-06');    
+        stmt.setLong(2, millis);
+        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15T00:00:00 (local)
     }
+```
+
+
+## Parameterized Queries
+
+Parameterized queries improve parsing performance and ensure correct mappings between column data types and parameter values.
+
+A question mark (?) without quotes is used as a parameter placeholder. Question marks inside string literals and object identifiers are treated as regular characters.
+
+```java
+	String sensorId = "sensor-01";
+	long sampleTime = System.currentTimeMillis();
+	String tagString = "surface=Outer;status=Initial";
+	double value = 24.5;
+
+	String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
+	PreparedStatement statement = connection.prepareStatement(insertQuery);
+	statement.setString(1, sensorId);
+	statement.setString(2, tagString);
+	statement.setLong(3, sampleTime);	
+	statement.setDouble(4, value);
+
+	statement.execute();
+```
+
+In order to set multiple tags as map, cast the `PreparedStatement` to `AtsdPreparedStatement`.
+
+```java
+	String sensorId = "sensor-01";
+	String timeStringUtc = "2017-08-20 08:30";
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("UTC"));
+    final Timestamp ts = Timestamp.from(ZonedDateTime.parse(stringTime, formatter).toInstant());	
+	Map<String, String> seriesTags = new HashMap<String, String>();
+	seriesTags.put("surface", "Outer");
+	seriesTags.put("status", "Initial");
+	double value = 24.5;
+
+	String insertQuery = "INSERT INTO temperature (entity, tags, datetime, value) VALUES (?, ?, ?, ?)";
+	PreparedStatement statement = connection.prepareStatement(insertQuery);
+	AtsdPreparedStatement atsdStatement = (AtsdPreparedStatement)statement;
+	statement.setString(1, sensorId);
+	atsdStatement.setTags(2, seriesTags);
+	statement.setTimestamp(3, ts);
+	statement.setDouble(4, value);
+
+	statement.execute();
 ```
 
 ## Batch Inserts
@@ -286,102 +348,34 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
 Batch queries improve insert performance by sending commands in batches.
 
 ```java
-public class BatchStatementExample {
-	public static void main(String[] args) throws Exception {
-		Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-
-		String userName = "atsd_user_name";
-        String password = "atsd_user_password";
-        String connectionString = "jdbc:atsd://atsd_host:8443";
-
-		final String insertQuery = "INSERT INTO \"test-metric\" (time, entity, value, entity.tags, metric.tags) VALUES (%s,%s,%s,%s,%s)";
-		final String insertAtsdSeriesQuery = "INSERT INTO atsd_series (metric, time, entity, value, entity.tags, metric.tags) VALUES ('test-metric',%s,%s,%s,%s,%s)";
-		try (final Connection connection = DriverManager.getConnection(connectionString, userName, password);
-			 Statement stmt = connection.createStatement()) {
-			final String entityName = "test-entity";
-			int i = 1;
-			stmt.addBatch(buildQuery(insertQuery, i * 1000, entityName, i++, null, "test1=value1"));
-			stmt.addBatch(buildQuery(insertQuery, i * 1000, entityName, i++, "test1=value1", null));
-			stmt.addBatch(buildQuery(insertAtsdSeriesQuery, i * 1000, entityName, i++, null, null));
-			stmt.addBatch(buildQuery(insertAtsdSeriesQuery, i * 1000, entityName, i++, "test1=value1", "test1=value1"));
-			System.out.println("Inserted: " + Arrays.toString(stmt.executeBatch()));
+	int maxBatchSize = 50;
+	String sensorId = "sensor-01";
+	String tagString = "surface=Outer";
+	String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
+	long sampleTime = System.currentTimeMillis() - 60000*60;
+	PreparedStatement statement = connection.prepareStatement(insertQuery);
+	int batchSize = 0;
+	while (baseTime < System.currentTimeMillis()) {
+		statement.setString(1, sensorId);
+		statement.setString(2, tagString);
+		statement.setLong(3, sampleTime);
+		statement.setLong(4, 20 + 10*Math.random());
+		statement.addBatch();
+		sampleTime += 60000;
+		batchSize++;
+		if (batchSize >= maxBatchSize) {
+			int results = statement.executeBatch();
+			System.out.println("Inserted batch: " + Arrays.toString(results));
+			batchSize = 0;
+			statement.clearBatch();
 		}
 	}
 
-	private static String buildQuery(String query, long time, String entity, double value,
-									 String entityTags, String metricTags) {
-		return String.format(query, time, formatStringArgument(entity), value, formatStringArgument(entityTags), formatStringArgument(metricTags));
+	if (batchSize > 0) {
+		int results = statement.executeBatch();
+		System.out.println("Inserted last batch: " + Arrays.toString(results));
 	}
-
-	private static String formatStringArgument(String parameter) {
-		return parameter == null ? "null" : "'" + parameter + "'";
-	}
-}
 ```
-
-The following commands will be generated and sent to ATSD.
-
-```ls
-series e:test-entity ms:1000 m:test-metric=1.0
-metric m:test-metric t:test1=value1
-
-series e:test-entity ms:2000 m:test-metric=2.0
-entity e:test-entity t:test1=value1
-
-series e:test-entity ms:3000 m:test-metric=3.0
-
-series e:test-entity ms:4000 m:test-metric=4.0
-entity e:test-entity t:test1=value1
-metric m:test-metric t:test1=value1
-```
-
-## Parameterized Queries
-
-In the query above String operations were used for filling parameters. A better approach is to use PreparedStatement which will apply proper arguments formatting based on their type.
-
-A question mark (?) is used as a parameter placeholder. Question marks inside single or double quotes are not determined as placeholders.
-
-```java
-public class PreparedStatementExample {
-	public static void main(String[] args) throws Exception {
-		Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-
-		String userName = "atsd_user_name";
-		String password = "atsd_user_password";
-		String connectionString = "jdbc:atsd://atsd_host:8443";
-
-		final String insertQuery = "INSERT INTO \"test-metric\" (time, entity, value, entity.tags, metric.tags) VALUES (?,?,?,?,?)";
-		final String insertAtsdSeriesQuery = "INSERT INTO atsd_series (metric, time, entity, value, entity.tags, metric.tags) VALUES ('test-metric',?,?,?,?,?)";
-		try (final Connection connection = DriverManager.getConnection(connectionString, userName, password);
-			 PreparedStatement simplePs = connection.prepareStatement(insertQuery);
-			 PreparedStatement atsdSeriesPs = connection.prepareStatement(insertAtsdSeriesQuery)) {
-			final String entityName = "test-entity";
-			long i = 0;
-			fillParameters(simplePs, i * 1000, entityName, i++, null, "'test1=value1'").addBatch();
-			fillParameters(simplePs, i * 1000, entityName, i++, "'test1=value1'", null).addBatch();
-			fillParameters(atsdSeriesPs, i * 1000, entityName, i++, null, null).addBatch();
-			fillParameters(atsdSeriesPs, i * 1000, entityName, i++, "'test1=value1'", "'test1=value1'").addBatch();
-			System.out.println("Inserted with 'INSERT INTO \"test-metric\"': " + Arrays.toString(simplePs.executeBatch()));
-			System.out.println("Inserted with 'INSERT INTO atsd_series': " + Arrays.toString(atsdSeriesPs.executeBatch()));
-		}
-	}
-
-	private static PreparedStatement fillParameters(PreparedStatement ps, long time, String entity, double value,
-													String entityTags, String metricTags) throws SQLException {
-		int i = 1;
-		ps.setLong(i++, time);
-		ps.setString(i++, entity);
-		ps.setDouble(i++, value);
-		ps.setString(i++, entityTags);
-		ps.setString(i, metricTags);
-		return ps;
-	}
-}
-```
-
-## Examples
-
-* [BatchExample.java](https://github.com/axibase/atsd-jdbc-test/blob/master/src/test/java/com/axibase/tsd/driver/jdbc/examples/BatchExample.java)
 
 ## Transactions
 
