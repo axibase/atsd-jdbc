@@ -34,13 +34,14 @@ public class PrepareMetricUrlTest {
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][]{
-				{Collections.singletonList("*"), "my.metric", "name like 'my.metric'"},
-				{Collections.singletonList("*"), "my_metric", "name like 'my?metric'"},
-				{Collections.singletonList("*"), "my%", "name like 'my*'"},
-				{Collections.singletonList("*"), "%", "name like '*'"},
-				{Collections.singletonList("atsd*"), "%", "name like 'atsd*'"},
-				{Collections.singletonList("*"), null, "name like '*'"},
-				{Collections.singletonList("atsd*"), null, "name like 'atsd*'"},
+				{Collections.singletonList("%"), "my.metric", "name like 'my.metric'"},
+				{Collections.singletonList("%"), "my_metric", "name like 'my?metric'"},
+				{Collections.singletonList("%"), "my%", "name like 'my*'"},
+				{Collections.singletonList("%"), "%", "name like '*'"},
+				{Collections.singletonList("atsd%"), "%", "name like 'atsd*'"},
+				{Collections.singletonList("atsd*"), "%", "name like 'atsd\\*'"},
+				{Collections.singletonList("%"), null, "name like '*'"},
+				{Collections.singletonList("atsd%"), null, "name like 'atsd*'"},
 				{Collections.emptyList(), null, null},
 				{Collections.emptyList(), "%", null},
 				{Collections.emptyList(), "atsd%", "name like 'atsd*'"},

@@ -14,17 +14,12 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.DriverConstants;
 import com.axibase.tsd.driver.jdbc.content.*;
 import com.axibase.tsd.driver.jdbc.content.json.Metric;
 import com.axibase.tsd.driver.jdbc.content.json.Series;
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverter;
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
-import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import com.axibase.tsd.driver.jdbc.enums.DefaultColumn;
-import com.axibase.tsd.driver.jdbc.enums.EntityColumn;
-import com.axibase.tsd.driver.jdbc.enums.Location;
-import com.axibase.tsd.driver.jdbc.enums.MetricColumn;
+import com.axibase.tsd.driver.jdbc.enums.*;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.intf.IDataProvider;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
@@ -46,12 +41,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLDataException;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -660,7 +652,7 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	private static String buildAtsdPattern(String sqlPattern) {
-		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsd(sqlPattern);
+		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(sqlPattern);
 		return "name like '" + atsdPattern + "'";
 	}
 
@@ -671,7 +663,7 @@ public class AtsdMeta extends MetaImpl {
 				buffer.append(" or ");
 			}
 			buffer.append("name like '")
-					.append(WildcardsUtil.replaceSqlWildcardsWithAtsd(mask))
+					.append(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(mask))
 					.append('\'');
 		}
 		return buffer.toString();

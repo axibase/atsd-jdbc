@@ -17,12 +17,19 @@ public class WildcardsUtilTest {
 	}
 
 	@Test
-	public void testSqlToAtsdWildcardsConvertion() {
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("%t"), is("*t"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("%_t"), is("*?t"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("%_%%%__%t"), is("*?***??*t"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsd("__t__"), is("??t??"));
+	public void hasWildcards() throws Exception {
+		assertThat(WildcardsUtil.hasWildcards("jvm_memory_used"), is(true));
+		assertThat(WildcardsUtil.hasWildcards("jvm\\_memory\\_used"), is(false));
+		assertThat(WildcardsUtil.hasWildcards("jvm\\_memory_used"), is(true));
+	}
 
+	@Test
+	public void testSqlToAtsdWildcardsConvertionWithEscape() {
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%t"), is("*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_t"), is("*?t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_**%__%t"), is("*?\\*\\**??*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_%%%__%t*"), is("*?***??*t\\*"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("????"), is("\\?\\?\\?\\?"));
 	}
 
 }

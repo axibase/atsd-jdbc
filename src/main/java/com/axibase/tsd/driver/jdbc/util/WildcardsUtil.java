@@ -5,16 +5,20 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class WildcardsUtil {
 	private static final char ONE_ANY_SYMBOL = '_';
 	private static final char NONE_OR_MORE_SYMBOLS = '%';
-	private static final String ATSD_WILDCARDS = "?*";
-	private static final String SQL_WILDCARDS = "_%";
+	private static final char ATSD_ONE_ANY_SYMBOL = '?';
+	private static final char ATSD_NONE_OR_MORE_SYMBOLS = '*';
+	private static final char ESCAPE_CHAR = '\\';
 	private static final int NOT_FOUND = -1;
 
+	private static final Pattern SQL_WILDCARDS_PATTERN = Pattern.compile("(?<!\\\\)[%_]");
+
 	public static boolean hasWildcards(String text) {
-		return hasWildcards(text, ONE_ANY_SYMBOL, NONE_OR_MORE_SYMBOLS);
+		return text == null || SQL_WILDCARDS_PATTERN.matcher(text).find();
 	}
 
 	private static boolean hasWildcards(String text, char oneSymbolWildcard, char manySymbolsWildcard) {
@@ -151,8 +155,52 @@ public class WildcardsUtil {
 		return list.toArray(new String[list.size()]);
 	}
 
-	public static String replaceSqlWildcardsWithAtsd(String text) {
-		return StringUtils.replaceChars(text, SQL_WILDCARDS, ATSD_WILDCARDS);
+	public static String replaceSqlWildcardsWithAtsdUseEscaping(String text) {
+		if (StringUtils.isEmpty(text)) {
+			return text;
+		}
+		boolean modified = false;
+		int newStrIndex = 0;
+		final char[] chars = text.toCharArray();
+		char[] newStrChars = chars;
+		for (final char symbol : chars) {
+			switch (symbol) {
+				case ONE_ANY_SYMBOL:
+					newStrChars[newStrIndex] = ATSD_ONE_ANY_SYMBOL;
+					modified = true;
+					break;
+				case NONE_OR_MORE_SYMBOLS:
+					newStrChars[newStrIndex] = ATSD_NONE_OR_MORE_SYMBOLS;
+					modified = true;
+					break;
+				case ATSD_ONE_ANY_SYMBOL:
+					newStrChars = initNewStringCharArray(chars, newStrChars, newStrIndex);
+					newStrChars[newStrIndex++] = ESCAPE_CHAR;
+					newStrChars[newStrIndex] = ATSD_ONE_ANY_SYMBOL;
+					modified = true;
+					break;
+				case ATSD_NONE_OR_MORE_SYMBOLS:
+					newStrChars = initNewStringCharArray(chars, newStrChars, newStrIndex);
+					newStrChars[newStrIndex++] = ESCAPE_CHAR;
+					newStrChars[newStrIndex] = ATSD_NONE_OR_MORE_SYMBOLS;
+					modified = true;
+					break;
+				default:
+					newStrChars[newStrIndex] = symbol;
+			}
+			++newStrIndex;
+		}
+
+		return modified ? new String(newStrChars, 0, newStrIndex) : text;
+
+	}
+
+	private static char[] initNewStringCharArray(char[] old, char[] newArray, int index) {
+		if (old == newArray) {
+			newArray = new char[old.length * 2 - index];
+			System.arraycopy(old, 0, newArray, 0, index);
+		}
+		return newArray;
 	}
 
 	private static void flushBuffer(StringBuilder buffer, List<String> list) {
