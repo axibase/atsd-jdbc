@@ -18,13 +18,11 @@ import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.DbMetadataUtils;
 import lombok.Data;
-import lombok.SneakyThrows;
 import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,19 +59,20 @@ public class ContentDescription {
 		this.queryId = queryId;
 	}
 
-	@SneakyThrows(UnsupportedEncodingException.class)
 	public String getEncodedQuery() {
-		return URLEncoder.encode(query, DEFAULT_CHARSET.name());
+		return DbMetadataUtils.urlEncode(query);
 	}
 
 	public void initDataFetchingContent() {
 		if (StringUtils.isEmpty(query)) {
             return;
         } else if (endpoint.endsWith(Location.SQL_META_ENDPOINT.getEndpoint())) {
-            this.postContent = Q_PARAM_NAME + '=' + getEncodedQuery();
+			final String encodedQuery = getEncodedQuery();
+			this.postContent = Q_PARAM_NAME + '=' + encodedQuery;
         } else {
-            this.postContent = QUERY_ID_PARAM_NAME + '=' + queryId + '&' +
-                    Q_PARAM_NAME + '=' + getEncodedQuery() + '&' +
+			final String encodedQuery = getEncodedQuery();
+			this.postContent = QUERY_ID_PARAM_NAME + '=' + queryId + '&' +
+                    Q_PARAM_NAME + '=' + encodedQuery + '&' +
                     FORMAT_PARAM_NAME + '=' + FORMAT_PARAM_VALUE + '&' +
                     METADATA_FORMAT_PARAM_NAME + '=' + metadataFormat + '&' +
                     LIMIT_PARAM_NAME + '=' + maxRowsCount;

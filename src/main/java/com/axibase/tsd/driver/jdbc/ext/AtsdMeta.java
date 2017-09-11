@@ -31,6 +31,7 @@ import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
+import com.axibase.tsd.driver.jdbc.util.DbMetadataUtils;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.WildcardsUtil;
@@ -45,7 +46,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLDataException;
@@ -55,7 +55,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_TABLE_NAME;
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
@@ -602,7 +601,7 @@ public class AtsdMeta extends MetaImpl {
 		final Map<String, AtsdType> metricNamesToTypes = getAndFilterMetricsFromAtsd(metricMasks, connectionInfo, pattern);
         if (metricNamesToTypes != Collections.EMPTY_MAP) {
             for (String metricMask : metricMasks) {
-                if (!WildcardsUtil.hasAtsdWildcards(metricMask) && !DEFAULT_TABLE_NAME.equalsIgnoreCase(metricMask)) {
+                if (!WildcardsUtil.hasWildcards(metricMask) && !DEFAULT_TABLE_NAME.equalsIgnoreCase(metricMask)) {
 					metricNamesToTypes.put(metricMask, AtsdType.DEFAULT_VALUE_TYPE);
                 }
             }
@@ -637,7 +636,7 @@ public class AtsdMeta extends MetaImpl {
 
 	private static boolean containsAtsdSeriesTable(List<String> metricMasks) {
 		for (String metricMask : metricMasks) {
-			if (WildcardsUtil.atsdWildcardMatch(DEFAULT_TABLE_NAME, metricMask)) {
+			if (WildcardsUtil.wildcardMatch(DEFAULT_TABLE_NAME, metricMask)) {
 				return true;
 			}
 
@@ -645,10 +644,9 @@ public class AtsdMeta extends MetaImpl {
 		return false;
 	}
 
-	@SneakyThrows(UnsupportedEncodingException.class)
 	static String prepareUrlWithMetricExpression(String metricEndpoint, List<String> metricMasks, String tablesFilter) {
 		final String expression;
-		if (WildcardsUtil.isRetrieveAllPattern(tablesFilter) || StringUtils.isBlank(tablesFilter)) {
+		if (WildcardsUtil.isRetrieveAllPattern(tablesFilter) || tablesFilter.isEmpty()) {
 			if (metricMasks.isEmpty()) {
 				return null;
 			} else {
@@ -657,27 +655,26 @@ public class AtsdMeta extends MetaImpl {
 		} else  {
 			expression = buildAtsdPattern(tablesFilter);
 		}
-
-		return metricEndpoint + "?expression=" + URLEncoder.encode(expression, DEFAULT_CHARSET.name());
+		final String urlencoded = DbMetadataUtils.urlEncode(expression);
+		return metricEndpoint + "?expression=" + urlencoded;
 	}
 
 	private static String buildAtsdPattern(String sqlPattern) {
-		return "name like '" + WildcardsUtil.replaceSqlWildcardsWithAtsd(sqlPattern) + "'";
+		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsd(sqlPattern);
+		return "name like '" + atsdPattern + "'";
 	}
 
 	private static String buildPatternDisjunction(List<String> patterns) {
 		StringBuilder buffer = new StringBuilder();
-		appendPatternsDisjunctionToSb(patterns, buffer);
-		return buffer.toString();
-	}
-
-	private static void appendPatternsDisjunctionToSb(List<String> patterns, StringBuilder expressionBuilder) {
 		for (String mask : patterns) {
-			if (expressionBuilder.length() > 1) {
-				expressionBuilder.append(" or ");
+			if (buffer.length() > 1) {
+				buffer.append(" or ");
 			}
-			expressionBuilder.append("name like '").append(mask).append('\'');
+			buffer.append("name like '")
+					.append(WildcardsUtil.replaceSqlWildcardsWithAtsd(mask))
+					.append('\'');
 		}
+		return buffer.toString();
 	}
 
 	@Override
@@ -733,7 +730,7 @@ public class AtsdMeta extends MetaImpl {
 				tableNamesAndValueTypes.put(DEFAULT_TABLE_NAME, AtsdType.DEFAULT_VALUE_TYPE);
 			}
 			for (String metricMask : metricMasks) {
-				if (!WildcardsUtil.hasAtsdWildcards(metricMask)) {
+				if (!WildcardsUtil.hasWildcards(metricMask)) {
 					if (!tableNamesAndValueTypes.containsKey(metricMask)) {
 						tableNamesAndValueTypes.put(metricMask, AtsdType.DEFAULT_VALUE_TYPE);
 					}
@@ -753,7 +750,7 @@ public class AtsdMeta extends MetaImpl {
 					continue;
 				}
 				Set<String> tags = getTags(tableName);
-				if (tags.isEmpty() && StringUtils.startsWith(colNamePattern, TagColumn.PREFIX) && !WildcardsUtil.hasAtsdWildcards(colNamePattern)) {
+				if (tags.isEmpty() && StringUtils.startsWith(colNamePattern, TagColumn.PREFIX) && !WildcardsUtil.hasWildcards(colNamePattern)) {
 					final TagColumn column = new TagColumn(StringUtils.substringAfter(colNamePattern, TagColumn.PREFIX));
 					columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible));
 				} else {
@@ -839,10 +836,10 @@ public class AtsdMeta extends MetaImpl {
 		return Collections.emptySet();
 	}
 
-	@SneakyThrows(UnsupportedEncodingException.class)
 	private String toSeriesEndpoint(AtsdConnectionInfo connectionInfo, String metric) {
-		String encodedMetric = URLEncoder.encode(metric, DriverConstants.DEFAULT_CHARSET.name());
-		return Location.METRICS_ENDPOINT.getUrl(connectionInfo) + "/" + encodedMetric + "/series";
+		final String encodedMetric = DbMetadataUtils.urlEncode(metric);
+		final String baseMetricUrl = Location.METRICS_ENDPOINT.getUrl(connectionInfo);
+		return baseMetricUrl + "/" + encodedMetric + "/series";
 	}
 
 	private Object createColumnMetaData(MetadataColumnDefinition column, String table, AtsdType valueType, int ordinal, boolean odbcCompatible) {

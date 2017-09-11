@@ -1,7 +1,12 @@
 package com.axibase.tsd.driver.jdbc.util;
 
+import com.axibase.tsd.driver.jdbc.DriverConstants;
+import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 @UtilityClass
 public class DbMetadataUtils {
@@ -26,5 +31,10 @@ public class DbMetadataUtils {
 
 	public static String getSupportedTimeFunctions() {
 		return "DATE_PARSE,DATE_FORMAT,CURRENT_TIMESTAMP,DBTIMEZONE,PERIOD";
+	}
+
+	@SneakyThrows(UnsupportedEncodingException.class)
+	public static String urlEncode(String decoded) {
+		return URLEncoder.encode(decoded, DriverConstants.DEFAULT_CHARSET.name());
 	}
 }

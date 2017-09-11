@@ -9,18 +9,12 @@ import java.util.List;
 public class WildcardsUtil {
 	private static final char ONE_ANY_SYMBOL = '_';
 	private static final char NONE_OR_MORE_SYMBOLS = '%';
-	private static final char ATSD_MATCH_ONE_WILDCARD = '?';
-	private static final char ATSD_MATCH_MANY_WILDCARD = '*';
 	private static final String ATSD_WILDCARDS = "?*";
 	private static final String SQL_WILDCARDS = "_%";
 	private static final int NOT_FOUND = -1;
 
 	public static boolean hasWildcards(String text) {
 		return hasWildcards(text, ONE_ANY_SYMBOL, NONE_OR_MORE_SYMBOLS);
-	}
-
-	public static boolean hasAtsdWildcards(String text) {
-		return hasWildcards(text, ATSD_MATCH_ONE_WILDCARD, ATSD_MATCH_MANY_WILDCARD);
 	}
 
 	private static boolean hasWildcards(String text, char oneSymbolWildcard, char manySymbolsWildcard) {
@@ -33,10 +27,6 @@ public class WildcardsUtil {
 
 	public static boolean wildcardMatch(String text, String pattern) {
 		return wildcardMatch(text, pattern, ONE_ANY_SYMBOL, NONE_OR_MORE_SYMBOLS);
-	}
-
-	public static boolean atsdWildcardMatch(String text, String pattern) {
-		return wildcardMatch(text, pattern, ATSD_MATCH_ONE_WILDCARD, ATSD_MATCH_MANY_WILDCARD);
 	}
 
 	private static boolean wildcardMatch(String text, String pattern, char anySymbol, char manySymbol) {
