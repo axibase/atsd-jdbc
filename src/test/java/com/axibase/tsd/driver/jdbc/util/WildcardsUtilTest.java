@@ -14,6 +14,7 @@ public class WildcardsUtilTest {
 		assertThat(WildcardsUtil.wildcardMatch("disk_used","_isk_%"), is(true));
 		assertThat(WildcardsUtil.wildcardMatch("disk_used","_sk_%"), is(false));
 		assertThat(WildcardsUtil.wildcardMatch("disabled_entity_received_per_second","%t"), is(false));
+		assertThat(WildcardsUtil.wildcardMatch("atsd_series","atsd\\_series"), is(true));
 	}
 
 	@Test

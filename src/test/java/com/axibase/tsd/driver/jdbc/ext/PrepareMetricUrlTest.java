@@ -47,6 +47,7 @@ public class PrepareMetricUrlTest {
 				{Collections.emptyList(), "atsd%", "name like 'atsd*'"},
 				{Collections.emptyList(), "my.metric", "name like 'my.metric'"},
 				{Collections.emptyList(), "my_metric", "name like 'my?metric'"},
+				{Collections.emptyList(), "my\\_metric", "name like 'my_metric'"},
 				{Collections.emptyList(), "my%", "name like 'my*'"},
 				{Collections.singletonList("abc"), null, "name like 'abc'"},
 				{Collections.singletonList("abc"), "%", "name like 'abc'"},

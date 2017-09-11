@@ -594,7 +594,7 @@ public class AtsdMeta extends MetaImpl {
         if (metricNamesToTypes != Collections.EMPTY_MAP) {
             for (String metricMask : metricMasks) {
                 if (!WildcardsUtil.hasWildcards(metricMask) && !DEFAULT_TABLE_NAME.equalsIgnoreCase(metricMask)) {
-					metricNamesToTypes.put(metricMask, AtsdType.DEFAULT_VALUE_TYPE);
+					metricNamesToTypes.put(WildcardsUtil.wildcardToTableName(metricMask), AtsdType.DEFAULT_VALUE_TYPE);
                 }
             }
         }
