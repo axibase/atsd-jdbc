@@ -724,7 +724,7 @@ public class AtsdMeta extends MetaImpl {
 			for (String metricMask : metricMasks) {
 				if (!WildcardsUtil.hasWildcards(metricMask)) {
 					if (!tableNamesAndValueTypes.containsKey(metricMask)) {
-						tableNamesAndValueTypes.put(metricMask, AtsdType.DEFAULT_VALUE_TYPE);
+						tableNamesAndValueTypes.put(WildcardsUtil.wildcardToTableName(metricMask), AtsdType.DEFAULT_VALUE_TYPE);
 					}
 				}
 			}
