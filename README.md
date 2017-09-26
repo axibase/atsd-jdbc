@@ -37,7 +37,7 @@ jdbc:atsd://10.102.0.6:8443
 Properties can be appended to the JDBC URL using a semicolon as a separator:
 
 ```ls
-jdbc:atsd://10.102.0.6:8443;tables=infla*;expandTags=true
+jdbc:atsd://10.102.0.6:8443;tables=infla%;expandTags=true
 ```
 
 ## License
@@ -74,7 +74,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | connectTimeout | number | 1.2.7+ | 5 | Connection timeout, in seconds. |
 | readTimeout | number | 1.2.7+ | 0 | Read I/O timeout, in seconds. |
 | strategy | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
-| tables | comma-separated list | 1.2.21+ | `*` | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
+| tables | comma-separated list | 1.2.21+ | `%` | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
 | expandTags | boolean | 1.2.21+ | `false` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
 | metaColumns | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | assignColumnNames | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, method returns column labels. |
