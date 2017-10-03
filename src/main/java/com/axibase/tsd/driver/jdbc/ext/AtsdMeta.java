@@ -53,8 +53,7 @@ import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 public class AtsdMeta extends MetaImpl {
 	private static final LoggingFacade log = LoggingFacade.getLogger(AtsdMeta.class);
 
-	public static final FastDateFormat TIMESTAMP_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-	public static final FastDateFormat TIMESTAMP_SHORT_FORMATTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	public static final FastDateFormat TIMESTAMP_PRINTER = prepareFormatter("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
 	private final AtomicInteger idGenerator = new AtomicInteger(1);
 	private final Map<Integer, ContentMetadata> metaCache = new ConcurrentHashMap<>();
@@ -265,7 +264,7 @@ public class AtsdMeta extends MetaImpl {
 				break;
 			case JAVA_SQL_TIMESTAMP:
 			case JAVA_UTIL_DATE:
-				buffer.append('\'').append(TIMESTAMP_FORMATTER.format(value)).append('\'');
+				buffer.append('\'').append(TIMESTAMP_PRINTER.format(value)).append('\'');
 				break;
 			case OBJECT:
 				appendObjectValue(value, buffer);
@@ -279,7 +278,7 @@ public class AtsdMeta extends MetaImpl {
 		if (value instanceof String) {
 			buffer.append('\'').append(value).append('\'');
 		} else if (value instanceof Date) {
-			buffer.append('\'').append(TIMESTAMP_FORMATTER.format((Date) value)).append('\'');
+			buffer.append('\'').append(TIMESTAMP_PRINTER.format((Date) value)).append('\'');
 		} else {
 			buffer.append(value);
 		}
@@ -926,7 +925,7 @@ public class AtsdMeta extends MetaImpl {
 			if (value instanceof Number || value instanceof String) {
 				result.add(value);
 			} else if (value instanceof Date) {
-				result.add(TIMESTAMP_FORMATTER.format((Date) value));
+				result.add(TIMESTAMP_PRINTER.format((Date) value));
 			} else {
 				result.add(value == null ? null : String.valueOf(value));
 			}

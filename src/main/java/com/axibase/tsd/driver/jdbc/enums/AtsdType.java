@@ -2,6 +2,7 @@ package com.axibase.tsd.driver.jdbc.enums;
 
 import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.IsoDateParseUtil;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.ColumnMetaData.Rep;
 import org.apache.commons.lang3.StringUtils;
@@ -9,12 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.ParseException;
 import java.util.Arrays;
-import java.util.Date;
-
-import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_FORMATTER;
-import static com.axibase.tsd.driver.jdbc.ext.AtsdMeta.TIMESTAMP_SHORT_FORMATTER;
 
 public enum AtsdType {
 	BIGINT_DATA_TYPE("bigint", "bigint", Types.BIGINT, Rep.LONG, 19, 20, 0) {
@@ -126,28 +122,12 @@ public enum AtsdType {
 				return null;
 			}
 			try {
-				return readTimestampValue(cell);
-			} catch (final ParseException e) {
-				return readShortTimestampValue(cell);
+				final long millis = IsoDateParseUtil.parseIso8601(cell);
+				return new Timestamp(millis);
+			} catch (Exception e) {
+				log.debug("[readValue] {}", e.getMessage());
+				return null;
 			}
-		}
-
-		private Object readTimestampValue(String cell) throws ParseException {
-			Date date = TIMESTAMP_FORMATTER.parse(cell);
-			return new Timestamp(date.getTime());
-		}
-
-		private Object readShortTimestampValue(String cell) {
-			Object value = null;
-			try {
-				final Date date = TIMESTAMP_SHORT_FORMATTER.parse(cell);
-				value = new Timestamp(date.getTime());
-			} catch (ParseException parseException) {
-				if (log.isDebugEnabled()) {
-					log.debug("[readShortTimestampValue] " + parseException.getMessage());
-				}
-			}
-			return value;
 		}
 	};
 
