@@ -1,31 +1,31 @@
 ## 1.4.0
-* Force double quotes for table names, single quptes for string literals.
-* Added missing `atsd_series` table columns when calling `DatabaseMetadata#getColumns()`.
+* Force double quotes for database identifiers (table and column names), single quotes for string literals.
+* Added missing columns for the `atsd_series` table when calling `DatabaseMetadata#getColumns()`.
 * Fixed offset calculation for UPDATE statements when `timestamptz=false`.
 * Added the `AtsdResultSet#getTags()` and `AtsdPreparedStatement#setTags(Map<String, String> tags)` methods.
 * Fixed comments handling on the first line.
-* Use SQL wildcards in `tables` connection property instead of ATSD expression wildcards.
+* Use SQL wildcards `%` and `_` instead of `*` and `?` in the `tables` connection property.
 
 ## 1.3.4
-* Added support for metric and entity fields in INSERT and UPDATE queries
+* Added support for metric and entity fields in `INSERT` and `UPDATE` queries.
 
 ## 1.3.3
 * Fixed `PreparedStatement#setObject` behavior.
 * Fixed `Statement#setQueryTimeout` taking millis instead of seconds.
 * Added ODBC2 compatibility mode.
-* Numeric values can be used to set `datetime` column in INSERT statements.
+* Numeric values can be used to set `datetime` column in `INSERT` statements.
 
 ## 1.3.2
 * New syntax for connection string: `jdbc:atsd://host:port/catalog;params`.
 * Fixed Statement#getMetadata() for long queries.
-* Connection string properties refactoring. `trustServerCertificate` -> `trust`, `host protocol` -> `secure`.
+* Connection string properties refactoring. `trustServerCertificate` -> `trust`, `protocol` -> `secure`.
 * PreparedStatement#getMetadata throws SQLDataException instead of AtsdRuntimeException if queried metric is not found.
-* Added support for INSERT and UPDATE statements with escaped table names.
-* Added support for `tags` field in INSERT statements.
-* Extended list of supported time functions with CURRENT_TIMESTAMP and DBTIMEZONE.
-* Added the `timestamptz` property.
-* Added the `missingMetric` property to specify the behavior when querying the non-existing metric.
-* Added the `atsd_series` to list of tables returned by `DatabaseMetadata#getTables` method.
+* Added support for `INSERT` and `UPDATE` statements with escaped table names.
+* Added support for `tags` field in `INSERT` statements.
+* Extended list of supported time functions with `CURRENT_TIMESTAMP` and `DBTIMEZONE`.
+* Added the `timestamptz` connection property.
+* Added the `missingMetric` connection property to specify the behavior when querying a non-existing metric.
+* Added the `atsd_series` table to the list of tables returned by `DatabaseMetadata#getTables` method.
 
 ## 1.3.0
 * Added support for INSERT and UPDATE statements.
