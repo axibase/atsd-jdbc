@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.axibase/atsd-jdbc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.axibase/atsd-jdbc)
 [![Dependency Status](https://www.versioneye.com/user/projects/57b45de0f0b3bb0049ff712b/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/57b45de0f0b3bb0049ff712b)
+[![Known Vulnerabilities](https://snyk.io/test/github/axibase/atsd-jdbc/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/axibase/atsd-jdbc?targetFile=pom.xml)
 
 # JDBC driver
 
