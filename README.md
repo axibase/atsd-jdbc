@@ -466,7 +466,7 @@ The following example shows how to extract metadata from the database:
 
 Results:
 
-```
+```csv
 Product Name:   	Axibase
 Product Version:	Axibase Time Series Database, <ATSD_EDITION>, Revision: <ATSD_REVISION_NUMBER>
 Driver Name:    	ATSD JDBC driver
