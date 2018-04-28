@@ -5,7 +5,7 @@ cache:
     - $HOME/.m2
 install:
   - mvn dependency:resolve
-  - if [ "$TRAVIS_JOB_NUMBER" = "$TRAVIS_BUILD_NUMBER.1" ]; then; nvm install 8 && nvm use 8 && install_checkers; fi
+  - if [ "$TRAVIS_JOB_NUMBER" = "$TRAVIS_BUILD_NUMBER.1" ]; then nvm install 8 && nvm use 8 && install_checkers; fi
 script:
   - wget https://raw.githubusercontent.com/axibase/atsd/master/.travis-functions.sh && source .travis-functions.sh
   - spellcheck
