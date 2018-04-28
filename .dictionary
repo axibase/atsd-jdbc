@@ -9,4 +9,3 @@ AtsdRuntimeException
 AtsdStatement
 AtsdPreparedStatement
 AtsdResultSet
-EndTime
