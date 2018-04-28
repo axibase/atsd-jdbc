@@ -1,8 +1,4 @@
 sudo: false
-jdk:
-  - openjdk7
-  - openjdk8
-  - oraclejdk8
 matrix:
   include:
     - language: java
@@ -31,5 +27,9 @@ matrix:
       cache:
         directories:
           - $(npm config get prefix)/lib/node_modules
+jdk:
+  - openjdk7
+  - openjdk8
+  - oraclejdk8
 notifications:
   webhooks: https://apps.axibase.com/api/v1/messages/wk-travis-ci/travis-ci
