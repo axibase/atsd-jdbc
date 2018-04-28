@@ -137,7 +137,7 @@ Add `atsd-jdbc` dependency to `pom.xml` in your project.
 </dependency>
 ```
 
-The ATSD JDBC driver is published in MavenCentral/SonaType repositories and will be imported automatically.
+The ATSD JDBC driver is published in Maven Central/Sonatype repositories and will be imported automatically.
 
 Alternatively, build the project from sources:
 
@@ -237,7 +237,7 @@ In order to access additional methods you need to cast the standard JDBC classes
 
 > Supported in 1.2.9+.
 
-To set an [`endTime`](https://github.com/axibase/atsd/blob/master/end-time-syntax.md) expression as a parameter in a prepared statement, cast the statement to `AtsdPreparedStatement` and invoke the `setTimeExpression` method.
+To set a [`time expression`](https://github.com/axibase/atsd/blob/master/shared/calendar.md) as a parameter in a prepared statement, cast the statement to `AtsdPreparedStatement` and invoke the `setTimeExpression` method.
 
 ```java
     String query = "SELECT * FROM \"df.disk_used\" WHERE datetime > ? LIMIT 1";
@@ -502,8 +502,8 @@ See an example [here](https://github.com/axibase/atsd-jdbc-test/tree/master/src/
 
 ```java
 
-    @Configuration
-    public class AtsdRepositoryConfig {
+@Configuration
+public class AtsdRepositoryConfig {
 
     @Bean
     public SqlGenerator sqlGenerator() {
@@ -521,28 +521,28 @@ See an example [here](https://github.com/axibase/atsd-jdbc-test/tree/master/src/
     }
 
     @Bean
-    public EntityValueDoubleRepository entityRepository() {
-        return new EntityValueDoubleRepository(table);
+    public EntityValueFloatRepository entityRepository() {
+        return new EntityValueFloatRepository(table);
     }
 
 }
 ```
 
-[repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueDoubleRepository.java) gist:
+[repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueFloatRepository.java) gist:
 
 ```java
 
     @Repository
-    public class EntityValueDoubleRepository extends JdbcRepository<EntityValueDouble, Double> {
+    public class EntityValueFloatRepository extends JdbcRepository<EntityValueFloat, Float> {
 
-    public EntityValueDoubleRepository(String table) {
-        super(ROW_MAPPER, new MissingRowUnmapper<EntityValueDouble>(), table);
+    public EntityValueFloatRepository(String table) {
+        super(ROW_MAPPER, new MissingRowUnmapper<EntityValueFloat>(), table);
     }
 
-    public static final RowMapper<EntityValueDouble> ROW_MAPPER = new RowMapper<EntityValueDouble>() {
+    public static final RowMapper<EntityValueFloat> ROW_MAPPER = new RowMapper<EntityValueFloat>() {
         @Override
-        public EntityValueDouble mapRow(ResultSet rs, int rowNum) throws SQLException {
-            return new EntityValueDouble(rs.getString("entity"), rs.getLong("time"), rs.getDouble("value"));
+        public EntityValueFloat mapRow(ResultSet rs, int rowNum) throws SQLException {
+            return new EntityValueFloat(rs.getString("entity"), rs.getLong("time"), rs.getFloat("value"));
         }
     };
 
@@ -554,13 +554,13 @@ Usage example with [Spring Boot](https://github.com/axibase/atsd-jdbc-test/blob/
 ```java
 
     @Resource
-    private EntityValueDoubleRepository entityRepository;
+    private EntityValueFloatRepository entityRepository;
 
     @Override
     public void run(String... args) throws Exception {
         PageRequest page = new PageRequest(0, 1000, Direction.DESC, "time", "value");
-        Page<EntityValueDouble> result = entityRepository.findAll(page);
-        List<EntityValueDouble> list = result.getContent();
+        Page<EntityValueFloat> result = entityRepository.findAll(page);
+        List<EntityValueFloat> list = result.getContent();
         assert list != null && !list.isEmpty();
     }
 
