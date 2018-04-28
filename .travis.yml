@@ -6,10 +6,12 @@ cache:
 install:
   - mvn dependency:resolve
   - wget https://raw.githubusercontent.com/axibase/atsd/master/.travis-functions.sh && source .travis-functions.sh
-  - if [ "$TRAVIS_JOB_NUMBER" = "$TRAVIS_BUILD_NUMBER.1" ]; then nvm install 8 && nvm use 8 && install_checkers; fi
+  - install_checkers_in_non_doc_project
 script:
-  - spellcheck
   - bash .travis-deploy.sh
+  - spellcheck
+  - linkcheck
+  - stylecheck
 jdk:
   - openjdk7
   - openjdk8
