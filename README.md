@@ -233,11 +233,11 @@ In order to access additional methods you need to cast the standard JDBC classes
 * `void setTags(Map<String, String> tagMap)` - supported by AtsdPreparedStatement.
 * `void setTimeExpression(String string)` - supported by AtsdPreparedStatement.
 
-### EndTime Expressions
+### Calendar Expressions
 
 > Supported in 1.2.9+.
 
-To set a [`time expression`](https://github.com/axibase/atsd/blob/master/shared/calendar.md) as a parameter in a prepared statement, cast the statement to `AtsdPreparedStatement` and invoke the `setTimeExpression` method.
+To set a [`calendar expression`](https://github.com/axibase/atsd/blob/master/shared/calendar.md) as a parameter in a prepared statement, cast the statement to `AtsdPreparedStatement` and invoke the `setTimeExpression` method.
 
 ```java
     String query = "SELECT * FROM \"df.disk_used\" WHERE datetime > ? LIMIT 1";
