@@ -405,7 +405,8 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>20.0</version>
+			<version>25.1-android</version>
+			<!--android version is used for Java 7 support-->
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
