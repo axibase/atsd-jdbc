@@ -152,15 +152,15 @@ Follow the instructions to create a custom JDBC driver based on the ATSD jar fil
 
 ### Reporting Tools
 
-  * [Alteryx Designer](https://github.com/axibase/atsd/blob/master/integration/alteryx/README.md)
-  * [IBM SPSS Modeler](https://github.com/axibase/atsd/blob/master/integration/spss/modeler/README.md)
-  * [IBM SPSS Statistics](https://github.com/axibase/atsd/blob/master/integration/spss/statistics/README.md)
-  * [MatLab](https://github.com/axibase/atsd/blob/master/integration/matlab/README.md)
-  * [Pentaho Data Integration](https://github.com/axibase/atsd/blob/master/integration/pentaho/data-integration/README.md)
-  * [Pentaho Report Designer](https://github.com/axibase/atsd/blob/master/integration/pentaho/report-designer/README.md)  
-  * [Stata](https://github.com/axibase/atsd/blob/master/integration/stata/README.md)
-  * [Tableau](https://github.com/axibase/atsd/blob/master/integration/tableau/README.md)
-  * Generic [ODBC](https://github.com/axibase/atsd/blob/master/integration/odbc/README.md)
+* [Alteryx Designer](https://github.com/axibase/atsd/blob/master/integration/alteryx/README.md)
+* [IBM SPSS Modeler](https://github.com/axibase/atsd/blob/master/integration/spss/modeler/README.md)
+* [IBM SPSS Statistics](https://github.com/axibase/atsd/blob/master/integration/spss/statistics/README.md)
+* [MatLab](https://github.com/axibase/atsd/blob/master/integration/matlab/README.md)
+* [Pentaho Data Integration](https://github.com/axibase/atsd/blob/master/integration/pentaho/data-integration/README.md)
+* [Pentaho Report Designer](https://github.com/axibase/atsd/blob/master/integration/pentaho/report-designer/README.md)  
+* [Stata](https://github.com/axibase/atsd/blob/master/integration/stata/README.md)
+* [Tableau](https://github.com/axibase/atsd/blob/master/integration/tableau/README.md)
+* Generic [ODBC](https://github.com/axibase/atsd/blob/master/integration/odbc/README.md)
 
 ## Supported Data Types
 
@@ -275,10 +275,10 @@ When retrieving records from the database, make sure that tag encoding is enable
     String query = "SELECT datetime, value, tags, entity.tags FROM temperature WHERE entity = 'sensor-01' LIMIT 1";
     AtsdResultSet rs = (AtsdResultSet)atsdStatement.executeQuery(query);
     while (rs.next()) {
-    	Timestamp ts = rs.getTimestamp(1);
-	double value = rs.getDouble(2);
-	Map<String, String> seriesTags = rs.getTags(3);
-	Map<String, String> entityTags = rs.getTags(4);
+        Timestamp ts = rs.getTimestamp(1);
+        double value = rs.getDouble(2);
+        Map<String, String> seriesTags = rs.getTags(3);
+        Map<String, String> entityTags = rs.getTags(4);
     }
 ```
 
@@ -317,8 +317,8 @@ public class TestQuery {
     public static void main(String[] args) throws Exception {
 
         Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");  
-	String host = args[0];
-	String port = args[1];
+        String host = args[0];
+        String port = args[1];
         String username = args[2];
         String password = args[3];
 
@@ -466,27 +466,27 @@ The following example shows how to extract metadata from the database:
 Results:
 
 ```csv
-Product Name:   	Axibase
-Product Version:	Axibase Time Series Database, <ATSD_EDITION>, Revision: <ATSD_REVISION_NUMBER>
-Driver Name:    	ATSD JDBC driver
-Driver Version: 	1.4.0
+Product Name:       Axibase
+Product Version:    Axibase Time Series Database, <ATSD_EDITION>, Revision: <ATSD_REVISION_NUMBER>
+Driver Name:        ATSD JDBC driver
+Driver Version:     1.4.0
 
 TypeInfo:
-	Name:bigint 	    CS: false 	Type: -5 	Precision: 19
-	Name:boolean 	    CS: false 	Type: 16 	Precision: 1
-	Name:decimal 	    CS: false 	Type: 3 	Precision: 0
-	Name:double 	    CS: false 	Type: 8 	Precision: 15
-	Name:float          CS: false 	Type: 7 	Precision: 7
-	Name:integer 	    CS: false 	Type: 4 	Precision: 10
-	Name:java_object 	CS: false 	Type: 2000 	Precision: 2147483647
-	Name:smallint 	    CS: false 	Type: 5 	Precision: 5
-	Name:varchar 	    CS: true 	Type: 12 	Precision: 131072
-	Name:timestamp 	    CS: false 	Type: 93 	Precision: 23
+    Name:bigint         CS: false     Type: -5    Precision: 19
+    Name:boolean        CS: false     Type: 16    Precision: 1
+    Name:decimal        CS: false     Type: 3     Precision: 0
+    Name:double         CS: false     Type: 8     Precision: 15
+    Name:float          CS: false     Type: 7     Precision: 7
+    Name:integer        CS: false     Type: 4     Precision: 10
+    Name:java_object    CS: false     Type: 2000  Precision: 2147483647
+    Name:smallint       CS: false     Type: 5     Precision: 5
+    Name:varchar        CS: true      Type: 12    Precision: 131072
+    Name:timestamp      CS: false     Type: 93    Precision: 23
 
 TableTypes:
-	TABLE
-	VIEW
-	SYSTEM
+    TABLE
+    VIEW
+    SYSTEM
 
 Catalog: null
 ```
