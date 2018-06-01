@@ -302,8 +302,8 @@ The list of tables and columns can be retrieved using `DatabaseMetaData#getTable
 ```java
  // Match tables disk_used, disk_used_percent
  ResultSet rs = dbMetadata.getTables(null, null, "_isk_%", null);
- ```
- 
+```
+
 The list of tables visible to these methods can be filtered with the `tables={expression}` connection property.
 
 ## Basic Example
