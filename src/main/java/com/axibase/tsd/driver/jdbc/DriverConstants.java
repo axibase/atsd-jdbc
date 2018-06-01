@@ -71,7 +71,7 @@ public final class DriverConstants {
 	public static final String COMPRESSION_ENCODING = "gzip";
 	public static final String DEFAULT_ENCODING = "identity";
 	public static final String FORM_URLENCODED_TYPE = "application/x-www-form-urlencoded";
-	public static final String USER_AGENT = "ATSD Client/1.0 axibase.com";
+	public static final String USER_AGENT = "ATSD JDBC Client/" + JDBC_DRIVER_VERSION_DEFAULT;
 
 	public static final String DEFAULT_TABLE_NAME = "atsd_series";
 	public static final String TEXT_TITLES = "text";
