@@ -4,7 +4,7 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import lombok.Getter;
 
 public enum Location {
-	SQL_ENDPOINT("/api/sql"),
+	SQL_ENDPOINT("/api/sql?datetimeAsNumber=true"),
 	SQL_META_ENDPOINT("/api/sql/meta"),
 	CANCEL_ENDPOINT("/api/sql/cancel"),
 	METRICS_ENDPOINT("/api/v1/metrics"),

@@ -122,6 +122,9 @@ public enum AtsdType {
 				return null;
 			}
 			try {
+				if (cell.charAt(cell.length() - 1) != 'Z') { // datetime is not in ISO format, hence datetimeAsNumber option used
+					return new Timestamp(Long.parseLong(cell));
+				}
 				final long millis = IsoDateParseUtil.parseIso8601(cell);
 				return new Timestamp(millis);
 			} catch (Exception e) {

@@ -57,8 +57,11 @@ public class EnumUtil {
 		return isTokenInSet(token, reservedWordsSql2003);
 	}
 
-	public static AtsdType getAtsdTypeByOriginalName(String name) {
-		AtsdType result = atsdNameTypeMapping.get(name);
+	public static AtsdType getAtsdTypeByOriginalName(String serverTypeName, String columnName) {
+		if ("datetime".equals(columnName)) {
+			return AtsdType.TIMESTAMP_DATA_TYPE; // ATSD may return bigint for datetime column to eliminate parsing operation.
+		}
+		AtsdType result = atsdNameTypeMapping.get(serverTypeName);
 		if (result == null) {
 			result = AtsdType.DEFAULT_TYPE;
 		}

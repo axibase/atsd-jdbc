@@ -49,7 +49,7 @@ public class DataProvider implements IDataProvider {
 		switch (statementType) {
 			case SELECT: {
 				if (context.isEncodeTags()) {
-					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo) + "?encodeTags=true";
+					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo) + "&encodeTags=true";
 				} else {
 					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
 				}

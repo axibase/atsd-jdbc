@@ -86,7 +86,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		}
 	}
 
-	public static RowIterator newDefaultIterator(InputStream inputStream, List<ColumnMetaData> metadata, boolean encodeTags) throws IOException {
+	public static RowIterator newDefaultIterator(InputStream inputStream, List<ColumnMetaData> metadata) throws IOException {
 		Reader reader = new InputStreamReader(inputStream, DEFAULT_CHARSET);
 		return newDefaultIterator(reader, metadata);
 	}

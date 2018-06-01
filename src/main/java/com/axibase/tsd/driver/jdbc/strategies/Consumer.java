@@ -64,7 +64,7 @@ public class Consumer implements IConsumer {
 
 	@Override
 	public String[] open(InputStream inputStream, List<ColumnMetaData> columnMetadataList) throws IOException {
-		iterator = RowIterator.newDefaultIterator(inputStream, columnMetadataList, context.isEncodeTags());
+		iterator = RowIterator.newDefaultIterator(inputStream, columnMetadataList);
 		return iterator.getHeader();
 	}
 
