@@ -29,7 +29,7 @@
 
 ## 1.3.0
 * Added support for INSERT and UPDATE statements.
-* Changed connection string. Host should be specified without `/api/sql` endpoint.
+* Changed connection string. Host must be specified without `/api/sql` endpoint.
 * Fixed datatype information.
 
 ## 1.2.21
@@ -60,7 +60,7 @@
 * Fixed generation of database metadata result sets. Better support of DbVis 9.2.
 * The `Connection#getCatalog` method is implemented.
 * Fixed NPE in `AtsdResultSet#close` for constant result sets.
-* Implemented the `Statement#cancel` method. As of ATSD revision 14451, `Statement#cancel` will force ATSD to cancel the executed query. Older ATSD revisions release drivers break the connection. Manual query cancellation may be needed.
+* Implemented the `Statement#cancel` method. As of ATSD revision 14451, `Statement#cancel` forces ATSD to cancel the executed query. Older ATSD revisions release drivers break the connection. Manual query cancellation can be needed.
 
 ## 1.2.14
 * Better support for GUI tools working with custom databases.

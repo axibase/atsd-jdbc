@@ -79,7 +79,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | `metaColumns` | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | `assignColumnNames` | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, method returns column labels. |
 | `timestamptz` | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the timezone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local timezone. |
-| `missingMetric` | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control behavior when the referenced metric doesn't exist. If 'error' is specified, the driver will raise an `AtsdMetricNotFoundException`. If `warning` is specified, an SQL Warning will be returned without errors. If `none` is specified, no error or warning will be created. |
+| `missingMetric` | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control behavior when the referenced metric doesn't exist. If 'error' is specified, the driver raises an `AtsdMetricNotFoundException`. If `warning` is specified, an SQL Warning will be returned without errors. If `none` is specified, no error or warning will be created. |
 | `compatibility` | `odbc2` | 1.3.2+ | not set | Simulate behavior of ODBC2.0 drivers: substitute `bigint` datatype with `double`, return `11` as `timestamp` type code |
 
 ## Resultset Processing Strategy
@@ -93,7 +93,7 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 |`memory`| Buffers data received from the database into the application memory and returns rows on the `ResultSet.next()` invocation directly from a memory structure. |
 
 * The `memory` strategy is more efficient than the `file` strategy but requires more memory. The `memory` strategy is optimal for queries returning some amount of rows on the order of one hundred thousand or less, whereas the `file` strategy can process millions of rows during operation, provided enough disk space is available.
-* The `stream` strategy is faster than both alternatives, at the expense of keeping the database connection open. It is not recommended if row processing may last a significant time on a slow client.
+* The `stream` strategy is faster than both alternatives, at the expense of keeping the database connection open. It is not recommended if row processing can last a significant time on a slow client.
 
 ## Requirements
 
@@ -136,7 +136,7 @@ Add `atsd-jdbc` dependency to `pom.xml` in your project.
 </dependency>
 ```
 
-The ATSD JDBC driver is published in Maven Central/Sonatype repositories and will be imported automatically.
+The ATSD JDBC driver is published in Maven Central/Sonatype repositories and is imported automatically.
 
 Alternatively, build the project from sources:
 
@@ -213,7 +213,7 @@ Extensions implement additional methods for the standard JDBC `java.sql.Statemen
 * Class `com.axibase.tsd.driver.jdbc.ext.AtsdPreparedStatement` extends `java.sql.PreparedStatement`.
 * Class `com.axibase.tsd.driver.jdbc.ext.AtsdResultSet` extends `java.sql.ResultSet`.
 
-In order to access additional methods you need to cast the standard JDBC classes to ATSD classes:
+To access additional methods you need to cast the standard JDBC classes to ATSD classes:
 
 ```java
     Statement stmt = //get statement;
@@ -266,7 +266,7 @@ Use the `setTags` and `getTags` methods to encode and decode tag columns (series
     aps.execute();
 ```
 
-When retrieving records from the database, make sure that tag encoding is enabled before the query is executed.
+When retrieving records from the database, ensure that tag encoding is enabled before the query is executed.
 
 ```java
     AtsdStatement atsdStatement = (AtsdStatement) statement;
@@ -284,7 +284,7 @@ When retrieving records from the database, make sure that tag encoding is enable
 
 ## SQL Warnings
 
-The database may return SQL warnings, as opposed to raising a non-recoverable error, in case of an unknown tag or tag value.
+The database can return SQL warnings, as opposed to raising a non-recoverable error, in case of an unknown tag or tag value.
 
 To retrieve SQL warnings, invoke the `resultSet.getWarnings()` method:
 

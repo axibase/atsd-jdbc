@@ -4,7 +4,7 @@ The ATSD JDBC driver uses the [SLF4J](https://www.slf4j.org/) facade for its int
 
 ## Downloads
 
-You may use any logging library supported by SLF4J. The examples below are based on log4j. 
+You can use any logging library supported by SLF4J. The examples below are based on log4j. 
 
 Download the [log4j library](http://central.maven.org/maven2/log4j/log4j/1.2.17/log4j-1.2.17.jar) and [slf4j-log4j binding](http://central.maven.org/maven2/org/slf4j/slf4j-log4j12/1.7.25/slf4j-log4j12-1.7.25.jar).
 
@@ -35,7 +35,7 @@ Some tools either do not use SLF4J or execute the driver's code in an isolated p
 
 Lets enable logging for the [DataGrip](https://www.jetbrains.com/datagrip/) tool as an example.
 
-* Make sure that the ATSD JDBC driver, necessary logging dependencies, and logging configuration files are located in the /opt/atsd_jdbc directory.
+* Ensure that the ATSD JDBC driver, necessary logging dependencies, and logging configuration files are located in the /opt/atsd_jdbc directory.
 
 * Create a ATSD JDBC driver configuration in DataGrip.
 
@@ -52,7 +52,7 @@ Lets enable logging for the [DataGrip](https://www.jetbrains.com/datagrip/) tool
 
 ### Enabling logging for ODBC-JDBC bridge
 
-For this example we will be using the Easysoft [ODBC-JDBC bridge](https://github.com/axibase/atsd/blob/master/integration/odbc/README.md).
+For this example we are using the Easysoft [ODBC-JDBC bridge](https://github.com/axibase/atsd/blob/master/integration/odbc/README.md).
 
 * Copy the ATSD JDBC driver and logging dependencies in the `C:\JDBC_Driver` directory.
 * Create a `log4j.properties` file in the `C:\JDBC_Driver` directory as follows:
@@ -71,7 +71,7 @@ log4j.appender.file.layout=org.apache.log4j.PatternLayout
 log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss} %t %-5p %c{1}:%L - %m%n
 ```
 
-This will redirect driver trace messages to the file `C:\JDBC.log`.
+This redirects driver trace messages to the file `C:\JDBC.log`.
 
 * Open the ODBC Data Sources and choose the configured ATSD Gateway. 
 

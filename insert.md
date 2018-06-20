@@ -320,7 +320,7 @@ A question mark (?) without quotes is used as a parameter placeholder. Question 
     statement.execute();
 ```
 
-In order to set multiple tags as map, cast the `PreparedStatement` to `AtsdPreparedStatement`.
+To set multiple tags as map, cast the `PreparedStatement` to `AtsdPreparedStatement`.
 
 ```java
     String sensorId = "sensor-01";
