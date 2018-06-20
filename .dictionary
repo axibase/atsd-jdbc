@@ -9,3 +9,7 @@ AtsdRuntimeException
 AtsdStatement
 AtsdPreparedStatement
 AtsdResultSet
+appenders
+Holdability
+Savepoints
+Schemas

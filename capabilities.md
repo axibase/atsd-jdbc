@@ -20,8 +20,8 @@
 | Identifier Quote String |  "  |
 | Is Catalog At Start |  false  |
 | Is Read Only |  true  |
-| JDBCMajor Version |  4  |
-| JDBCMinor Version |  1  |
+| JDBC Major Version |  4  |
+| JDBC Minor Version |  1  |
 | Locators Update Copy |  false  |
 | Max Binary Literal Length |  0  |
 | Max Catalog Name Length |  0  |
@@ -72,13 +72,13 @@
 | Supports Catalogs In Table Definitions |  false  |
 | Supports Column Aliasing |  true  |
 | Supports Convert |  false  |
-| Supports Core SQLGrammar |  false  |
+| Supports Core SQL Grammar |  false  |
 | Supports Correlated Subqueries |  false  |
 | Supports Data Definition And Data Manipulation Transactions |  false  |
 | Supports Data Manipulation Transactions Only |  true  |
 | Supports Different Table Correlation Names |  false  |
 | Supports Expressions In Order By |  true  |
-| Supports Extended SQLGrammar |  false  |
+| Supports Extended SQL Grammar |  false  |
 | Supports Full Outer Joins |  true  |
 | Supports Get Generated Keys |  false  |
 | Supports Group By |  true  |
@@ -87,7 +87,7 @@
 | Supports Integrity Enhancement Facility |  false |
 | Supports Like Escape Clause |  true  |
 | Supports Limited Outer Joins |  true  |
-| Supports Minimum SQLGrammar |  false  |
+| Supports Minimum SQL Grammar |  false  |
 | Supports Mixed Case Identifiers |  false  |
 | Supports Mixed Case Quoted Identifiers |  false |
 | Supports Multiple Open Results |  false  |
