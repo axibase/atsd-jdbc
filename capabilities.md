@@ -1,4 +1,4 @@
-## Database Capabilities
+# Database Capabilities
 
 | **Feature** | **Value** |
 |:--------|:------|

@@ -78,7 +78,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | `expandTags` | boolean | 1.2.21+ | `false` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
 | `metaColumns` | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | `assignColumnNames` | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, method returns column labels. |
-| `timestamptz` | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the timezone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local timezone. |
+| `timestamptz` | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the time zone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local time zone. |
 | `missingMetric` | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control behavior when the referenced metric doesn't exist. If 'error' is specified, the driver raises an `AtsdMetricNotFoundException`. If `warning` is specified, an SQL Warning will be returned without errors. If `none` is specified, no error or warning will be created. |
 | `compatibility` | `odbc2` | 1.3.2+ | not set | Simulate behavior of ODBC2.0 drivers: substitute `bigint` datatype with `double`, return `11` as `timestamp` type code |
 

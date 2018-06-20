@@ -269,7 +269,7 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
 
         stmt.setString(1, "sensor-01");
         stmt.setString(2, stringTime);
-        stmt.executeUpdate(); // stored as 	2017-08-15T00:00:00Z (utc) - 2017-08-15 02:00:00 (local)
+        stmt.executeUpdate(); // stored as 2017-08-15T00:00:00Z (utc) - 2017-08-15 02:00:00 (local)
 
         stmt.setString(1, "sensor-02");
         stmt.setTimestamp(2, new Timestamp(millis));
@@ -297,7 +297,6 @@ The results of setting `datetime` column value using `PreparedStatement#setTimes
     }
 ```
 
-
 ## Parameterized Queries
 
 Parameterized queries improve parsing performance and ensure correct mappings between column data types and parameter values.
@@ -314,7 +313,7 @@ A question mark (?) without quotes is used as a parameter placeholder. Question 
     PreparedStatement statement = connection.prepareStatement(insertQuery);
     statement.setString(1, sensorId);
     statement.setString(2, tagString);
-    statement.setLong(3, sampleTime);	
+    statement.setLong(3, sampleTime);
     statement.setDouble(4, value);
 
     statement.execute();
@@ -326,7 +325,7 @@ To set multiple tags as map, cast the `PreparedStatement` to `AtsdPreparedStatem
     String sensorId = "sensor-01";
     String timeStringUtc = "2017-08-20 08:30";
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.of("UTC"));
-    final Timestamp ts = Timestamp.from(ZonedDateTime.parse(stringTime, formatter).toInstant());	
+    final Timestamp ts = Timestamp.from(ZonedDateTime.parse(stringTime, formatter).toInstant());
     Map<String, String> seriesTags = new HashMap<String, String>();
     seriesTags.put("surface", "Outer");
     seriesTags.put("status", "Initial");
