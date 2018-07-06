@@ -20,6 +20,15 @@ public enum AtsdType {
 		}
 
 		@Override
+		protected Object readValueHelperFallback(String cell) {
+			try {
+				return "NaN".equals(cell) ? null : new BigDecimal(cell).longValue();
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		@Override
 		public AtsdType getCompatibleType(boolean odbcCompatible) {
 			return odbcCompatible ? DOUBLE_DATA_TYPE : this;
 		}
@@ -53,6 +62,15 @@ public enum AtsdType {
 		protected Object readValueHelper(String cell) {
 			return Integer.valueOf(cell);
 		}
+
+		@Override
+		protected Object readValueHelperFallback(String cell) {
+			try {
+				return "NaN".equals(cell) ? null : new BigDecimal(cell).intValue();
+			} catch (Exception e) {
+				return null;
+			}
+		}
 	},
 	JAVA_OBJECT_TYPE("java_object", "java_object", Types.JAVA_OBJECT, Rep.OBJECT, 2147483647, 128 * 1024, 0) {
 		@Override
@@ -81,6 +99,18 @@ public enum AtsdType {
 		@Override
 		protected Object readValueHelper(String cell) {
 			return Short.valueOf(cell);
+		}
+
+		@Override
+		protected Object readValueHelperFallback(String cell) {
+			try {
+				if (!"NaN".equals(cell)) {
+					final int intValue = new BigDecimal(cell).intValue();
+					return intValue > Short.MAX_VALUE ? Short.MAX_VALUE : Math.max(intValue, Short.MIN_VALUE);
+				}
+			} catch (Exception e) { //do nothing
+			}
+			return null;
 		}
 	},
 	STRING_DATA_TYPE("string", "varchar", Types.VARCHAR, Rep.STRING, 128 * 1024, 128 * 1024, 0) {
@@ -161,6 +191,10 @@ public enum AtsdType {
 
 	protected abstract Object readValueHelper(String cell);
 
+	protected Object readValueHelperFallback(String cell) {
+		return null;
+	}
+
 	public Object readValue(String[] values, int index, boolean nullable, ParserRowContext context) {
 		final String cell = values[index];
 		if (StringUtils.isEmpty(cell)) {
@@ -172,7 +206,7 @@ public enum AtsdType {
 			if (log.isDebugEnabled()) {
 				log.debug("[readValue] {} type mismatched: {} on {} position", sqlType, Arrays.toString(values), index);
 			}
-			return null;
+			return readValueHelperFallback(cell);
 		}
 	}
 
