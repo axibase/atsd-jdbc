@@ -1,10 +1,10 @@
 package com.axibase.tsd.driver.jdbc.enums;
 
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
-
-import static com.axibase.tsd.driver.jdbc.enums.AtsdType.*;
 import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
 import lombok.Getter;
+
+import static com.axibase.tsd.driver.jdbc.enums.AtsdType.*;
 
 @Getter
 public enum MetricColumn implements MetadataColumnDefinition {
@@ -23,7 +23,6 @@ public enum MetricColumn implements MetadataColumnDefinition {
     PERSISTENT(AtsdColumn.METRIC_PERSISTENT, BOOLEAN_DATA_TYPE),
     RETENTION_INTERVAL_DAYS(AtsdColumn.METRIC_RETENTION_INTERVAL_DAYS, INTEGER_DATA_TYPE),
     TAGS(AtsdColumn.METRIC_TAGS, STRING_DATA_TYPE),
-    TIME_PRECISION(AtsdColumn.METRIC_TIME_PRECISION, STRING_DATA_TYPE),
     TIME_ZONE(AtsdColumn.METRIC_TIME_ZONE, STRING_DATA_TYPE),
     VERSIONING(AtsdColumn.METRIC_VERSIONING, BOOLEAN_DATA_TYPE),
     UNITS(AtsdColumn.METRIC_UNITS, STRING_DATA_TYPE);

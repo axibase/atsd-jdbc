@@ -82,7 +82,6 @@ The `INSERT` and `UPDATE` statements can reference only the following predefined
 `metric.retentionIntervalDays` | `integer` |
 `metric.tags.{name}` | `varchar` | Metric tag with name `{name}`
 `metric.tags` | `varchar` | Multiple metric tags (4)
-`metric.timePrecision` | `varchar` |
 `metric.timeZone` | `varchar` |
 `metric.versioning` | `boolean` |
 
