@@ -29,6 +29,7 @@ import org.apache.calcite.avatica.ColumnMetaData;
 import java.io.*;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_CHARSET;
@@ -132,7 +133,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		final CsvParserSettings settings = new CsvParserSettings();
 		settings.setInputBufferSize(16 * 1024);
 		settings.setReadInputOnSeparateThread(false);
-		settings.setCommentCollectionEnabled(false);
+		settings.setCommentCollectionEnabled(true);
 		settings.setEmptyValue("");
 		settings.setNullValue(null);
 		settings.setNumberOfRowsToSkip(1);
@@ -152,28 +153,17 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 	}
 
 	private void fillCommentSectionWithParsedComments() {
-		final String comments = csvParser.getContext().currentParsedContent();
-		if (comments == null) {
+		final Map<Long, String> commentsMap = csvParser.getContext().comments();
+		if (commentsMap.isEmpty()) {
 			return;
 		}
-		int startIndex = comments.indexOf(COMMENT_SYMBOL) + 1;
-		if (startIndex > 0) {
-			final int length = comments.length();
-			StringBuilder buffer = new StringBuilder(length - startIndex);
-			while (startIndex != -1) {
-				final int endIndex = comments.indexOf("\n#", startIndex);
-				final String substring;
-				if (endIndex == -1) {
-					substring = comments.substring(startIndex);
-					startIndex = -1;
-				} else {
-					substring = comments.substring(startIndex, endIndex);
-					startIndex = endIndex + 2;
-				}
-				buffer.append(substring);
-			}
-			commentSection = buffer.toString();
+		StringBuilder buffer = new StringBuilder();
+		for (String commentRow : commentsMap.values()) {
+			buffer.append(commentRow).append('\n');
 		}
+		buffer.setLength(buffer.length() - 1);
+		this.commentSection = buffer.toString();
+		commentsMap.clear();
 	}
 
 	@Override

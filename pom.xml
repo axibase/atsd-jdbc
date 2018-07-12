@@ -44,7 +44,7 @@
 		<mockito.version>1.10.19</mockito.version>
 		<powermock.version>1.7.0</powermock.version>
 		<jackson.version>2.8.5</jackson.version>
-		<univocity.parsers.version>2.4.1</univocity.parsers.version>
+		<univocity.parsers.version>2.7.0</univocity.parsers.version>
 		<lombok.version>1.16.18</lombok.version>
 		<maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
 		<maven-compiler-plugin.version>3.6.2</maven-compiler-plugin.version>
@@ -69,9 +69,6 @@
 	<build>
 		<defaultGoal>clean package source:jar javadoc:jar gpg:sign</defaultGoal>
 		<finalName>${project.artifactId}-${project.version}</finalName>
-		<pluginManagement>
-			<plugins />
-		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
@@ -299,6 +296,27 @@
 				<groupId>org.eluder.coveralls</groupId>
 				<artifactId>coveralls-maven-plugin</artifactId>
 				<version>${coveralls-maven-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.1.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<relocations>
+								<relocation>
+									<pattern>com.univocity</pattern>
+									<shadedPattern>com.axibase.tsd.driver.jdbc.com.univocity</shadedPattern>
+								</relocation>
+							</relocations>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 		<resources>
