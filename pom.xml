@@ -55,6 +55,7 @@
 		<maven-source-plugin.version>3.0.1</maven-source-plugin.version>
 		<maven-site-plugin.version>3.6</maven-site-plugin.version>
 		<maven-resources-plugin.version>3.0.1</maven-resources-plugin.version>
+		<maven-shade-plugin.version>3.1.1</maven-shade-plugin.version>
 		<build-helper-plugin.version>3.0.0</build-helper-plugin.version>
 		<findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
@@ -300,7 +301,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.1.1</version>
+				<version>${maven-shade-plugin.version}</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -308,6 +309,11 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
+							<artifactSet>
+								<includes>
+									<include>com.univocity:univocity-parsers</include>
+								</includes>
+							</artifactSet>
 							<relocations>
 								<relocation>
 									<pattern>com.univocity</pattern>
@@ -531,35 +537,62 @@
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<version>${maven-assembly-plugin.version}</version>
-						<configuration>
-							<archive>
-								<addMavenDescriptor>false</addMavenDescriptor>
-								<manifest>
-									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-									<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-									<addClasspath>true</addClasspath>
-								</manifest>
-								<manifestEntries>
-									<Build-Source-Version>${java.source.version}</Build-Source-Version>
-									<Build-Target-Version>${java.target.version}</Build-Target-Version>
-									<Class-Path>.</Class-Path>
-								</manifestEntries>
-							</archive>
-							<descriptors>
-								<descriptor>${project.basedir}/src/main/assembly/assembly.xml</descriptor>
-							</descriptors>
-							<finalName>${project.artifactId}-${project.version}-DEPS</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-						</configuration>
+						<artifactId>maven-shade-plugin</artifactId>
+						<version>${maven-shade-plugin.version}</version>
 						<executions>
 							<execution>
-								<id>assembly</id>
 								<phase>package</phase>
 								<goals>
-									<goal>single</goal>
+									<goal>shade</goal>
 								</goals>
+								<configuration>
+									<artifactSet>
+										<includes>
+											<include>*</include>
+										</includes>
+										<excludes>
+											<exclude>com.google.code.findbugs:jsr305</exclude>
+											<exclude>afu:*</exclude>
+											<exclude>org.checkerframework:*</exclude>
+										</excludes>
+									</artifactSet>
+									<filters>
+										<filter>
+											<artifact>*:*</artifact>
+											<excludes>
+												<exclude>META-INF/maven/**</exclude>
+												<exclude>META-INF/services/com.fasterxml.*</exclude>
+												<exclude>META-INF/LICENSE*</exclude>
+												<exclude>META-INF/NOTICE*</exclude>
+												<exclude>META-INF/DEPENDENCIES*</exclude>
+												<exclude>META-INF/git.properties*</exclude>
+												<exclude>**/avatica/remote/Driver.class</exclude>
+												<exclude>**/avatica/remote/Driver$*.class</exclude>
+											</excludes>
+										</filter>
+									</filters>
+									<relocations>
+										<relocation>
+											<pattern>com.univocity</pattern>
+											<shadedPattern>com.axibase.tsd.driver.jdbc.com.univocity</shadedPattern>
+										</relocation>
+									</relocations>
+									<transformers>
+										<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+											<manifestEntries>
+												<Specification-Title>${project.name}</Specification-Title>
+												<Specification-Version>${project.version}</Specification-Version>
+												<Implementation-Title>${project.name}</Implementation-Title>
+												<Implementation-Version>${project.version}</Implementation-Version>
+												<Implementation-Vendor-Id>${project.groupId}</Implementation-Vendor-Id>
+												<Implementation-URL>${project.url}</Implementation-URL>
+												<Build-Source-Version>${java.source.version}</Build-Source-Version>
+												<Build-Target-Version>${java.target.version}</Build-Target-Version>
+											</manifestEntries>
+										</transformer>
+									</transformers>
+									<finalName>${project.artifactId}-${project.version}-DEPS</finalName>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
