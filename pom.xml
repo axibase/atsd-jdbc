@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.axibase</groupId>
 	<artifactId>atsd-jdbc</artifactId>
-	<version>1.4.1</version>
+	<version>1.4.2-SNAPSHOT</version>
 	<name>ATSD JDBC driver</name>
 	<description>JDBC driver for SQL API using</description>
 	<url>https://axibase.com</url>
