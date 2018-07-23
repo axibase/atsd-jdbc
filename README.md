@@ -27,17 +27,17 @@ com.axibase.tsd.driver.jdbc.AtsdDriver
 The ATSD JDBC driver prefix is `jdbc:atsd:`, followed by the ATSD hostname (IP address) and port, optional catalog, and driver properties.
 
 ```ls
-jdbc:atsd://hostname:port[/catalog][;property_name=property_value]
+jdbc:atsd://atsd_hostname:port[/catalog][;property_name=property_value]
 ```
 
 ```ls
-jdbc:atsd://10.102.0.6:8443
+jdbc:atsd://192.0.2.1:8443
 ```
 
 Properties can be appended to the JDBC URL using a semicolon as a separator:
 
 ```ls
-jdbc:atsd://10.102.0.6:8443;tables=infla%;expandTags=true
+jdbc:atsd://192.0.2.1:8443;tables=infla%;expandTags=true
 ```
 
 ## License
@@ -187,11 +187,11 @@ Follow the instructions to create a custom JDBC driver based on the ATSD jar fil
 To execute a query, load the driver class, open a connection, create an SQL statement, execute the query, and process the result set:
 
 ```java
-    Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-    Connection connection = DriverManager.getConnection("jdbc:atsd://10.102.0.5:8443", "user-1", "my-pwd!");
-    String query = "SELECT value, datetime FROM \"mpstat.cpu_busy\" WHERE entity = 'nurswgvml007' LIMIT 1";
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery(query);
+Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
+Connection connection = DriverManager.getConnection("jdbc:atsd://192.0.2.1:8443", "username", "password");
+String query = "SELECT value, datetime FROM \"mpstat.cpu_busy\" WHERE entity = 'nurswgvml007' LIMIT 1";
+Statement statement = connection.createStatement();
+ResultSet resultSet = statement.executeQuery(query);
 ```
 
 ## Prepared Statements
@@ -199,10 +199,10 @@ To execute a query, load the driver class, open a connection, create an SQL stat
 Initialize a prepared statement, set placeholder parameters, and execute the query:
 
 ```java
-    String query = "SELECT value, datetime FROM \"mpstat.cpu_busy\" WHERE entity = ? LIMIT 1";
-    PreparedStatement preparedStatement = connection.prepareStatement(query);
-    preparedStatement.setString(1, "nurswgvml007");
-    ResultSet resultSet = prepareStatement.executeQuery();
+String query = "SELECT value, datetime FROM \"mpstat.cpu_busy\" WHERE entity = ? LIMIT 1";
+PreparedStatement preparedStatement = connection.prepareStatement(query);
+preparedStatement.setString(1, "nurswgvml007");
+ResultSet resultSet = prepareStatement.executeQuery();
 ```
 
 ## ATSD Extensions
@@ -216,13 +216,13 @@ Extensions implement additional methods for the standard JDBC `java.sql.Statemen
 To access additional methods you need to cast the standard JDBC classes to ATSD classes:
 
 ```java
-    Statement stmt = //get statement;
-    AtsdStatement astmt = (AtsdStatement)stmt;
+Statement stmt = //get statement;
+AtsdStatement astmt = (AtsdStatement)stmt;
 ```
 
 ```java
-    PreparedStatement pstmt = //prepare statement;
-    AtsdPreparedStatement apstmt = (AtsdPreparedStatement)stmt;
+PreparedStatement pstmt = //prepare statement;
+AtsdPreparedStatement apstmt = (AtsdPreparedStatement)stmt;
 ```
 
 > Note that the `AtsdPreparedStatement` class is not a subclass of `AtsdStatement` and therefore cannot be cast from `AtsdStatement`.
@@ -239,10 +239,10 @@ To access additional methods you need to cast the standard JDBC classes to ATSD 
 To set a [`calendar expression`](https://github.com/axibase/atsd/blob/master/shared/calendar.md) as a parameter in a prepared statement, cast the statement to `AtsdPreparedStatement` and invoke the `setTimeExpression` method.
 
 ```java
-    String query = "SELECT * FROM \"df.disk_used\" WHERE datetime > ? LIMIT 1";
-    PreparedStatement preparedStatement = connection.prepareStatement(query);
-    AtsdPreparedStatement axibaseStatement = (AtsdPreparedStatement)preparedStatement;
-    axibaseStatement.setTimeExpression(1, "current_day - 1 * week + 2 * day");
+String query = "SELECT * FROM \"df.disk_used\" WHERE datetime > ? LIMIT 1";
+PreparedStatement preparedStatement = connection.prepareStatement(query);
+AtsdPreparedStatement axibaseStatement = (AtsdPreparedStatement)preparedStatement;
+axibaseStatement.setTimeExpression(1, "current_day - 1 * week + 2 * day");
 ```
 
 ### Tag Columns
@@ -252,34 +252,34 @@ To set a [`calendar expression`](https://github.com/axibase/atsd/blob/master/sha
 Use the `setTags` and `getTags` methods to encode and decode tag columns (series tags, metric tags, entity tags) into a `java.util.Map` instance.
 
 ```java
-    Map<String, String> seriesTags = new HashMap<String, String>();
-    seriesTags.put("surface", "Outer");
-    seriesTags.put("status", "Initial");
+Map<String, String> seriesTags = new HashMap<String, String>();
+seriesTags.put("surface", "Outer");
+seriesTags.put("status", "Initial");
 
-    String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
-    PreparedStatement ps = connection.prepareStatement(insertQuery);
-    AtsdPreparedStatement aps = (AtsdPreparedStatement)statement;
-    aps.setString(1, "sensor-01");
-    aps.setTags(2, seriesTags);
-    aps.setTimestamp(3, System.currentTimeMillis());
-    aps.setDouble(4, 24.5);
-    aps.execute();
+String insertQuery = "INSERT INTO temperature (entity, tags, time, value) VALUES (?, ?, ?, ?)";
+PreparedStatement ps = connection.prepareStatement(insertQuery);
+AtsdPreparedStatement aps = (AtsdPreparedStatement)statement;
+aps.setString(1, "sensor-01");
+aps.setTags(2, seriesTags);
+aps.setTimestamp(3, System.currentTimeMillis());
+aps.setDouble(4, 24.5);
+aps.execute();
 ```
 
 When retrieving records from the database, ensure that tag encoding is enabled before the query is executed.
 
 ```java
-    AtsdStatement atsdStatement = (AtsdStatement) statement;
-    atsdStatement.setTagsEncoding(true);
+AtsdStatement atsdStatement = (AtsdStatement) statement;
+atsdStatement.setTagsEncoding(true);
 
-    String query = "SELECT datetime, value, tags, entity.tags FROM temperature WHERE entity = 'sensor-01' LIMIT 1";
-    AtsdResultSet rs = (AtsdResultSet)atsdStatement.executeQuery(query);
-    while (rs.next()) {
-        Timestamp ts = rs.getTimestamp(1);
-        double value = rs.getDouble(2);
-        Map<String, String> seriesTags = rs.getTags(3);
-        Map<String, String> entityTags = rs.getTags(4);
-    }
+String query = "SELECT datetime, value, tags, entity.tags FROM temperature WHERE entity = 'sensor-01' LIMIT 1";
+AtsdResultSet rs = (AtsdResultSet)atsdStatement.executeQuery(query);
+while (rs.next()) {
+    Timestamp ts = rs.getTimestamp(1);
+    double value = rs.getDouble(2);
+    Map<String, String> seriesTags = rs.getTags(3);
+    Map<String, String> entityTags = rs.getTags(4);
+}
 ```
 
 ## SQL Warnings
@@ -289,10 +289,10 @@ The database can return SQL warnings, as opposed to raising a non-recoverable er
 To retrieve SQL warnings, invoke the `resultSet.getWarnings()` method:
 
 ```java
-    SQLWarning rsWarning = resultSet.getWarnings();
-    if (rsWarning != null) {
-        System.err.println(rsWarning.getMessage());
-    }
+SQLWarning rsWarning = resultSet.getWarnings();
+if (rsWarning != null) {
+    System.err.println(rsWarning.getMessage());
+}
 ```
 
 ## Database Metadata
@@ -300,8 +300,8 @@ To retrieve SQL warnings, invoke the `resultSet.getWarnings()` method:
 The list of tables and columns can be retrieved using `DatabaseMetaData#getTables` and `DatabaseMetaData#getColumns` methods. Use `%` and `_` wildcards when matching tables and columns by name.
 
 ```java
- // Match tables disk_used, disk_used_percent
- ResultSet rs = dbMetadata.getTables(null, null, "_isk_%", null);
+// Match tables disk_used, disk_used_percent
+ResultSet rs = dbMetadata.getTables(null, null, "_isk_%", null);
 ```
 
 The list of tables visible to these methods can be filtered with the `tables={expression}` connection property.
@@ -356,111 +356,108 @@ public class TestQuery {
 ## Additional Examples
 
 ```java
+Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
 
-    Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
+String host = args[0];
+String port = args[1];
+String username = args[2];
+String password = args[3];
+String jdbcUrl = "jdbc:atsd://" + host + ":" port;
 
-    String host = args[0];
-    String port = args[1];
-    String username = args[2];
-    String password = args[3];
-    String jdbcUrl = "jdbc:atsd://" + host + ":" port;
+String query = "SELECT entity, datetime, value, tags.mount_point, tags.file_system "
+        + "FROM \"df.disk_used_percent\" WHERE entity = 'NURSWGHBS001' AND datetime > now - 1 * HOUR LIMIT 10";
 
-    String query = "SELECT entity, datetime, value, tags.mount_point, tags.file_system "
-            + "FROM \"df.disk_used_percent\" WHERE entity = 'NURSWGHBS001' AND datetime > now - 1 * HOUR LIMIT 10";
+try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
+     Statement statement = conn.createStatement();
+     ResultSet resultSet = statement.executeQuery(query)) {
 
-    try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
-         Statement statement = conn.createStatement();
-         ResultSet resultSet = statement.executeQuery(query)) {
-
-        int rowNumber = 1;
-        while (resultSet.next()) {
-            System.out.print(rowNumber++);
-            System.out.print("\tentity = " + resultSet.getString("entity"));
-            System.out.print("\tdatetime = " + resultSet.getTimestamp("datetime").toString());
-            System.out.print("\tvalue = " + resultSet.getString("value"));
-            System.out.print("\ttags.mount_point = " + resultSet.getString("tags.mount_point"));
-            System.out.println("\ttags.file_system = " + resultSet.getString("tags.file_system"));
-        }
-
-        final SQLWarning warnings = resultSet.getWarnings();
-        if (warnings != null) {
-            warnings.printStackTrace();
-        }
-    } catch (Exception e){
-        e.printStackTrace();
+    int rowNumber = 1;
+    while (resultSet.next()) {
+        System.out.print(rowNumber++);
+        System.out.print("\tentity = " + resultSet.getString("entity"));
+        System.out.print("\tdatetime = " + resultSet.getTimestamp("datetime").toString());
+        System.out.print("\tvalue = " + resultSet.getString("value"));
+        System.out.print("\ttags.mount_point = " + resultSet.getString("tags.mount_point"));
+        System.out.println("\ttags.file_system = " + resultSet.getString("tags.file_system"));
     }
+
+    final SQLWarning warnings = resultSet.getWarnings();
+    if (warnings != null) {
+        warnings.printStackTrace();
+    }
+} catch (Exception e){
+    e.printStackTrace();
+}
 ```
 
 Results:
 
 ```ls
- 1 entity = nurswghbs001 datetime = 2016-08-22 12:52:03.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
- 2 entity = nurswghbs001 datetime = 2016-08-22 12:52:04.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
- 3 entity = nurswghbs001 datetime = 2016-08-22 12:52:18.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
- 4 entity = nurswghbs001 datetime = 2016-08-22 12:52:19.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
- 5 entity = nurswghbs001 datetime = 2016-08-22 12:52:33.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
- 6 entity = nurswghbs001 datetime = 2016-08-22 12:52:34.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
- 7 entity = nurswghbs001 datetime = 2016-08-22 12:52:48.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
- 8 entity = nurswghbs001 datetime = 2016-08-22 12:52:49.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
- 9 entity = nurswghbs001 datetime = 2016-08-22 12:53:03.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
+1  entity = nurswghbs001 datetime = 2016-08-22 12:52:03.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
+2  entity = nurswghbs001 datetime = 2016-08-22 12:52:04.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
+3  entity = nurswghbs001 datetime = 2016-08-22 12:52:18.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
+4  entity = nurswghbs001 datetime = 2016-08-22 12:52:19.0 value = 28.8116 tags.mount_point = / tags.file_system = /dev/md2
+5  entity = nurswghbs001 datetime = 2016-08-22 12:52:33.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
+6  entity = nurswghbs001 datetime = 2016-08-22 12:52:34.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
+7  entity = nurswghbs001 datetime = 2016-08-22 12:52:48.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
+8  entity = nurswghbs001 datetime = 2016-08-22 12:52:49.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
+9  entity = nurswghbs001 datetime = 2016-08-22 12:53:03.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
 10 entity = nurswghbs001 datetime = 2016-08-22 12:53:04.0 value = 28.8117 tags.mount_point = / tags.file_system = /dev/md2
 ```
 
 The following example shows how to extract metadata from the database:
 
 ```java
+Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
 
-    Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
+String host = args[0];
+String port = args[1];
+String username = args[2];
+String password = args[3];
 
-    String host = args[0];
-    String port = args[1];
-    String username = args[2];
-    String password = args[3];
+String jdbcUrl = "jdbc:atsd://" + host + ":" port;
 
-    String jdbcUrl = "jdbc:atsd://" + host + ":" port;
+try (Connection connection = DriverManager.getConnection(jdbcUrl, userName, password)) {
 
-    try (Connection connection = DriverManager.getConnection(jdbcUrl, userName, password)) {
+    DatabaseMetaData metaData = connection.getMetaData();
+    String databaseProductName = metaData.getDatabaseProductName();
+    String databaseProductVersion = metaData.getDatabaseProductVersion();
+    String driverName = metaData.getDriverName();
+    String driverVersion = metaData.getDriverVersion();
+    System.out.println("Product Name:   \t" + databaseProductName);
+    System.out.println("Product Version:\t" + databaseProductVersion);
+    System.out.println("Driver Name:    \t" + driverName);
+    System.out.println("Driver Version: \t" + driverVersion);
+    System.out.println("\nTypeInfo:");
 
-        DatabaseMetaData metaData = connection.getMetaData();
-        String databaseProductName = metaData.getDatabaseProductName();
-        String databaseProductVersion = metaData.getDatabaseProductVersion();
-        String driverName = metaData.getDriverName();
-        String driverVersion = metaData.getDriverVersion();
-        System.out.println("Product Name:   \t" + databaseProductName);
-        System.out.println("Product Version:\t" + databaseProductVersion);
-        System.out.println("Driver Name:    \t" + driverName);
-        System.out.println("Driver Version: \t" + driverVersion);
-        System.out.println("\nTypeInfo:");
+    ResultSet rs = metaData.getTypeInfo();
+    while (rs.next()) {
+        String name = rs.getString("TYPE_NAME");
+        int type = rs.getInt("DATA_TYPE");
+        int precision = rs.getInt("PRECISION");
+        boolean isCS = rs.getBoolean("CASE_SENSITIVE");
+        System.out.println(String.format(
+                "\tName:%s \tCS: %s \tType: %s \tPrecision: %s", name, isCS, type, precision));
+    }
+    System.out.println("\nTableTypes:");
 
-        ResultSet rs = metaData.getTypeInfo();
-        while (rs.next()) {
-            String name = rs.getString("TYPE_NAME");
-            int type = rs.getInt("DATA_TYPE");
-            int precision = rs.getInt("PRECISION");
-            boolean isCS = rs.getBoolean("CASE_SENSITIVE");
-            System.out.println(String.format(
-                    "\tName:%s \tCS: %s \tType: %s \tPrecision: %s", name, isCS, type, precision));
-        }
-        System.out.println("\nTableTypes:");
+    rs = metaData.getTableTypes();
+    while (rs.next()) {
+        String type = rs.getString(1);
+        System.out.println('\t' + type);
+    }
+    rs = metaData.getCatalogs();
 
-        rs = metaData.getTableTypes();
-        while (rs.next()) {
-            String type = rs.getString(1);
-            System.out.println('\t' + type);
-        }
-        rs = metaData.getCatalogs();
-
-        while (rs.next()) {
-            String catalog = rs.getString(1);
-            System.out.println("\nCatalog: \t" + catalog);
-            ResultSet rs1 = metaData.getSchemas(catalog, null);
-            while (rs1.next()) {
-                String schema = rs1.getString(1);
-                System.out.println("Schema: \t" + schema);
-            }
+    while (rs.next()) {
+        String catalog = rs.getString(1);
+        System.out.println("\nCatalog: \t" + catalog);
+        ResultSet rs1 = metaData.getSchemas(catalog, null);
+        while (rs1.next()) {
+            String schema = rs1.getString(1);
+            System.out.println("Schema: \t" + schema);
         }
     }
-
+}
 ```
 
 Results:
@@ -500,7 +497,6 @@ See an example [here](https://github.com/axibase/atsd-jdbc-test/tree/master/src/
 [config file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/AtsdRepositoryConfig.java) gist:
 
 ```java
-
 @Configuration
 public class AtsdRepositoryConfig {
 
@@ -530,9 +526,8 @@ public class AtsdRepositoryConfig {
 [repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueFloatRepository.java) gist:
 
 ```java
-
-    @Repository
-    public class EntityValueFloatRepository extends JdbcRepository<EntityValueFloat, Float> {
+@Repository
+public class EntityValueFloatRepository extends JdbcRepository<EntityValueFloat, Float> {
 
     public EntityValueFloatRepository(String table) {
         super(ROW_MAPPER, new MissingRowUnmapper<EntityValueFloat>(), table);
@@ -551,16 +546,14 @@ public class AtsdRepositoryConfig {
 Usage example with [Spring Boot](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/SampleDriverApplication.java):
 
 ```java
+@Resource
+private EntityValueFloatRepository entityRepository;
 
-    @Resource
-    private EntityValueFloatRepository entityRepository;
-
-    @Override
-    public void run(String... args) throws Exception {
-        PageRequest page = new PageRequest(0, 1000, Direction.DESC, "time", "value");
-        Page<EntityValueFloat> result = entityRepository.findAll(page);
-        List<EntityValueFloat> list = result.getContent();
-        assert list != null && !list.isEmpty();
-    }
-
+@Override
+public void run(String... args) throws Exception {
+    PageRequest page = new PageRequest(0, 1000, Direction.DESC, "time", "value");
+    Page<EntityValueFloat> result = entityRepository.findAll(page);
+    List<EntityValueFloat> list = result.getContent();
+    assert list != null && !list.isEmpty();
+}
 ```
