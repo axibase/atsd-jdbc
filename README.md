@@ -31,13 +31,13 @@ jdbc:atsd://atsd_hostname:port[/catalog][;property_name=property_value]
 ```
 
 ```ls
-jdbc:atsd://192.0.2.1:8443
+jdbc:atsd://127.0.0.1:8443
 ```
 
 Properties can be appended to the JDBC URL using a semicolon as a separator:
 
 ```ls
-jdbc:atsd://192.0.2.1:8443;tables=infla%;expandTags=true
+jdbc:atsd://127.0.0.1:8443;tables=infla%;expandTags=true
 ```
 
 ## License
@@ -188,7 +188,7 @@ To execute a query, load the driver class, open a connection, create an SQL stat
 
 ```java
 Class.forName("com.axibase.tsd.driver.jdbc.AtsdDriver");
-Connection connection = DriverManager.getConnection("jdbc:atsd://192.0.2.1:8443", "username", "password");
+Connection connection = DriverManager.getConnection("jdbc:atsd://127.0.0.1:8443", "username", "password");
 String query = "SELECT value, datetime FROM \"mpstat.cpu_busy\" WHERE entity = 'nurswgvml007' LIMIT 1";
 Statement statement = connection.createStatement();
 ResultSet resultSet = statement.executeQuery(query);
@@ -557,3 +557,5 @@ public void run(String... args) throws Exception {
     assert list != null && !list.isEmpty();
 }
 ```
+
+
