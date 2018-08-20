@@ -136,9 +136,10 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		settings.setCommentCollectionEnabled(true);
 		settings.setEmptyValue("");
 		settings.setNullValue(null);
-		settings.setNumberOfRowsToSkip(1);
+		settings.setNumberOfRowsToSkip(0);
 		settings.setSkipEmptyLines(false);
 		settings.setProcessor(rowProcessor);
+		settings.setHeaderExtractionEnabled(true);
 		return settings;
 	}
 
