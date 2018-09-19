@@ -614,7 +614,7 @@ public class AtsdMeta extends MetaImpl {
 				final Map<String, AtsdType> result = new LinkedHashMap<>();
 				for (Metric metric : metrics) {
 					if (WildcardsUtil.wildcardMatch(metric.getName(), pattern)) {
-						result.put(metric.getName(), EnumUtil.getAtsdTypeByOriginalName(metric.getDataType(), metric.getName()));
+						result.put(metric.getName(), EnumUtil.getAtsdTypeWithPropertyUrlHint(metric.getDataType(), null));
 					}
 				}
 				return result;

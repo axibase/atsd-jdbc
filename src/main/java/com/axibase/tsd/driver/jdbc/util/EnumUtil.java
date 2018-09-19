@@ -9,6 +9,7 @@ import lombok.experimental.UtilityClass;
 import org.apache.calcite.avatica.Meta;
 import org.apache.commons.lang3.EnumUtils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.apache.calcite.avatica.Meta.StatementType.*;
@@ -57,8 +58,8 @@ public class EnumUtil {
 		return isTokenInSet(token, reservedWordsSql2003);
 	}
 
-	public static AtsdType getAtsdTypeByOriginalName(String serverTypeName, String columnName) {
-		if ("datetime".equals(columnName)) {
+	public static AtsdType getAtsdTypeWithPropertyUrlHint(String serverTypeName, @Nullable String propertyUrl) {
+		if ("atsd:datetime".equals(propertyUrl)) {
 			return AtsdType.TIMESTAMP_DATA_TYPE; // ATSD may return bigint for datetime column to eliminate parsing operation.
 		}
 		AtsdType result = atsdNameTypeMapping.get(serverTypeName);
