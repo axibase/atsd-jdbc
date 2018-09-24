@@ -30,6 +30,8 @@ import com.axibase.tsd.driver.jdbc.util.DbMetadataUtils;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.WildcardsUtil;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.remote.TypedValue;
@@ -37,6 +39,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -590,7 +593,7 @@ public class AtsdMeta extends MetaImpl {
 		}
 
 		final Map<String, AtsdType> metricNamesToTypes = getAndFilterMetricsFromAtsd(metricMasks, connectionInfo, pattern);
-        if (metricNamesToTypes != Collections.EMPTY_MAP) {
+        if (metricNamesToTypes != Collections.<String, AtsdType>emptyMap()) { // some query was performed
             for (String metricMask : metricMasks) {
                 if (!WildcardsUtil.hasWildcards(metricMask) && !DEFAULT_TABLE_NAME.equalsIgnoreCase(metricMask)) {
 					metricNamesToTypes.put(WildcardsUtil.wildcardToTableName(metricMask), AtsdType.DEFAULT_VALUE_TYPE);
@@ -606,23 +609,26 @@ public class AtsdMeta extends MetaImpl {
 	}
 
 	private static Map<String, AtsdType> getAndFilterMetricsFromAtsd(List<String> metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
-		final String metricsUrl = prepareUrlWithMetricExpression(Location.METRICS_ENDPOINT.getUrl(connectionInfo), metricMasks, pattern);
-		if (metricsUrl != null) {
+		final Collection<MetricLocation> metricLocation = prepareGetMetricUrls(metricMasks, pattern);
+		if (metricLocation.isEmpty()) { // no limits set
+			return Collections.emptyMap();
+		}
+		final Map<String, AtsdType> result = new LinkedHashMap<>();
+		for (MetricLocation location : metricLocation) {
+			final String metricsUrl = location.toEndpointUrl(connectionInfo);
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.readInfo();
-				final Metric[] metrics = JsonMappingUtil.mapToMetrics(metricsInputStream);
-				final Map<String, AtsdType> result = new LinkedHashMap<>();
+				final List<Metric> metrics = JsonMappingUtil.mapToMetrics(metricsInputStream, location.returnsSingleElement());
 				for (Metric metric : metrics) {
 					if (WildcardsUtil.wildcardMatch(metric.getName(), pattern)) {
 						result.put(metric.getName(), EnumUtil.getAtsdTypeWithPropertyUrlHint(metric.getDataType(), null));
 					}
 				}
-				return result;
 			} catch (Exception e) {
 				log.error(e.getMessage());
 			}
 		}
-		return Collections.emptyMap();
+		return result;
 	}
 
 	private static boolean containsAtsdSeriesTable(List<String> metricMasks) {
@@ -635,37 +641,58 @@ public class AtsdMeta extends MetaImpl {
 		return false;
 	}
 
-	static String prepareUrlWithMetricExpression(String metricEndpoint, List<String> metricMasks, String tablesFilter) {
-		final String expression;
-		if (WildcardsUtil.isRetrieveAllPattern(tablesFilter) || tablesFilter.isEmpty()) {
+	/**
+	 * Prepare URL to retrieve metrics
+	 * @param metricMasks filter specified in `tables` connection string parameter
+	 * @param tableFilter filter specified in method parameter
+	 * @return MetricLocation
+	 */
+	@Nonnull
+	static Collection<MetricLocation> prepareGetMetricUrls(List<String> metricMasks, String tableFilter) {
+		if (WildcardsUtil.isRetrieveAllPattern(tableFilter) || tableFilter.isEmpty()) {
 			if (metricMasks.isEmpty()) {
-				return null;
+				return Collections.emptyList();
 			} else {
-				expression = buildPatternDisjunction(metricMasks);
+				return buildPatternDisjunction(metricMasks);
 			}
 		} else  {
-			expression = buildAtsdPattern(tablesFilter);
+			return Collections.singletonList(buildAtsdPatternUrl(tableFilter));
 		}
-		final String urlencoded = DbMetadataUtils.urlEncode(expression);
-		return metricEndpoint + "?expression=" + urlencoded;
 	}
 
-	private static String buildAtsdPattern(String sqlPattern) {
+	private static MetricLocation buildAtsdPatternUrl(String sqlPattern) {
 		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(sqlPattern);
-		return "name like '" + atsdPattern + "'";
+		if (StringUtils.equals(sqlPattern, atsdPattern)) { // no wildcards
+			return new MetricLocation(Location.METRIC_ENDPOINT, sqlPattern);
+		}
+		return new MetricLocation(Location.METRICS_ENDPOINT, "name like '" + atsdPattern + "'");
 	}
 
-	private static String buildPatternDisjunction(List<String> patterns) {
-		StringBuilder buffer = new StringBuilder();
-		for (String mask : patterns) {
-			if (buffer.length() > 1) {
-				buffer.append(" or ");
+	private static Collection<MetricLocation> buildPatternDisjunction(List<String> patterns) {
+		final Collection<String> preprocessedPatterns = new ArrayList<>(patterns.size());
+		boolean hasWildcard = false;
+		for (String pattern : patterns) {
+			final String preprocessed = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(pattern);
+			preprocessedPatterns.add(preprocessed);
+			if (!StringUtils.equals(pattern, preprocessed)) {
+				hasWildcard = true;
 			}
-			buffer.append("name like '")
-					.append(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(mask))
-					.append('\'');
 		}
-		return buffer.toString();
+		if (hasWildcard) {
+			StringBuilder buffer = new StringBuilder();
+			for (String mask : preprocessedPatterns) {
+				if (buffer.length() > 1) {
+					buffer.append(" or ");
+				}
+				buffer.append("name like '").append(mask).append('\'');
+			}
+			return Collections.singletonList(new MetricLocation(Location.METRICS_ENDPOINT, buffer.toString()));
+		}
+		final Collection<MetricLocation> result = new ArrayList<>(patterns.size());
+		for (String metric : preprocessedPatterns) {
+			result.add(new MetricLocation(Location.METRIC_ENDPOINT, metric));
+		}
+		return result;
 	}
 
 	@Override
@@ -721,10 +748,8 @@ public class AtsdMeta extends MetaImpl {
 				tableNamesAndValueTypes.put(DEFAULT_TABLE_NAME, AtsdType.DEFAULT_VALUE_TYPE);
 			}
 			for (String metricMask : metricMasks) {
-				if (!WildcardsUtil.hasWildcards(metricMask)) {
-					if (!tableNamesAndValueTypes.containsKey(metricMask)) {
-						tableNamesAndValueTypes.put(WildcardsUtil.wildcardToTableName(metricMask), AtsdType.DEFAULT_VALUE_TYPE);
-					}
+				if (!WildcardsUtil.hasWildcards(metricMask) && !tableNamesAndValueTypes.containsKey(metricMask)) {
+					tableNamesAndValueTypes.put(WildcardsUtil.wildcardToTableName(metricMask), AtsdType.DEFAULT_VALUE_TYPE);
 				}
 			}
 
@@ -937,5 +962,26 @@ public class AtsdMeta extends MetaImpl {
 	@Override
 	public StatementHandle createStatement(ConnectionHandle connectionHandle) {
 		return new StatementHandle(connectionHandle.id, idGenerator.getAndIncrement(), null);
+	}
+
+	@Getter
+	@AllArgsConstructor
+	static class MetricLocation {
+		private final Location location;
+		private final String expression;
+
+		private String toEndpointUrl(AtsdConnectionInfo connectionInfo) {
+			final String encodedExpression = DbMetadataUtils.urlEncode(expression);
+			if (location == Location.METRIC_ENDPOINT) {
+				return location.getUrl(connectionInfo) + "/" + encodedExpression + "?addInsertTime=false";
+			} else if (location == Location.METRICS_ENDPOINT) {
+				return location.getUrl(connectionInfo) + "?addInsertTime=false&expression=" + encodedExpression;
+			}
+			throw new IllegalStateException("Illegal location: " + location);
+		}
+
+		private boolean returnsSingleElement() {
+		    return location == Location.METRIC_ENDPOINT;
+        }
 	}
 }

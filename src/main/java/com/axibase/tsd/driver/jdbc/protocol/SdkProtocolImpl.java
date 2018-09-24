@@ -174,9 +174,8 @@ public class SdkProtocolImpl implements IContentProtocol {
 				&& StringUtils.isEmpty(contentDescription.getJsonScheme())) {
 			MetadataRetriever.retrieveJsonSchemeFromHeader(conn.getHeaderFields(), contentDescription);
 		}
-		long contentLength = conn.getContentLengthLong();
 		if (logger.isDebugEnabled()) {
-			logger.debug("[response] " + contentLength);
+			logger.debug("[response] length: {}", conn.getContentLengthLong());
 		}
 
 		final boolean gzipped = COMPRESSION_ENCODING.equals(conn.getContentEncoding());
@@ -184,7 +183,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		InputStream body;
 		if (code != HttpsURLConnection.HTTP_OK) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Response code: " + code);
+				logger.debug("Response code: {}", code);
 			}
 			if (code == HttpURLConnection.HTTP_UNAUTHORIZED) {
 				throw new AtsdException("Wrong credentials provided");

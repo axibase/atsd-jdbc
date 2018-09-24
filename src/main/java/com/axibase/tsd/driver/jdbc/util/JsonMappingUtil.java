@@ -15,17 +15,23 @@
 package com.axibase.tsd.driver.jdbc.util;
 
 import com.axibase.tsd.driver.jdbc.content.json.*;
+import lombok.experimental.UtilityClass;
 import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParser;
 import org.apache.calcite.avatica.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.calcite.avatica.com.fasterxml.jackson.databind.MappingJsonFactory;
 import org.apache.calcite.avatica.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.avatica.com.fasterxml.jackson.databind.ObjectReader;
+import org.apache.calcite.avatica.com.fasterxml.jackson.databind.type.CollectionType;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.TreeMap;
 
+@UtilityClass
 public class JsonMappingUtil {
 	private static final ObjectMapper MAPPER = prepareObjectMapper();
 	private static final ObjectReader READER = MAPPER.reader();
@@ -54,8 +60,14 @@ public class JsonMappingUtil {
 		return READER.forType(Version.class).readValue(jsonIs);
 	}
 
-	public static Metric[] mapToMetrics(InputStream inputStream) throws IOException {
-		return READER.forType(Metric[].class).readValue(inputStream);
+	public static List<Metric> mapToMetrics(InputStream inputStream, boolean single) throws IOException {
+		if (single) {
+			final Metric metric = READER.forType(Metric.class).readValue(inputStream);
+			return Collections.singletonList(metric);
+		}
+		final JsonParser parser = READER.getFactory().createParser(inputStream);
+        final CollectionType collectionType = MAPPER.getTypeFactory().constructCollectionType(ArrayList.class, Metric.class);
+        return READER.readValue(parser, collectionType);
 	}
 
 	public static Series[] mapToSeries(InputStream inputStream) throws IOException {
