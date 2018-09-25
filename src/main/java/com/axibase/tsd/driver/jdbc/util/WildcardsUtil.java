@@ -24,6 +24,10 @@ public class WildcardsUtil {
 		return text == null || SQL_WILDCARDS_PATTERN.matcher(text).find();
 	}
 
+	public static boolean hasAtsdWildcards(String text) {
+		return text == null || hasWildcards(text, ATSD_ONE_ANY_SYMBOL, ATSD_NONE_OR_MORE_SYMBOLS);
+	}
+
 	private static boolean hasWildcards(String text, char oneSymbolWildcard, char manySymbolsWildcard) {
 		return text == null || text.indexOf(oneSymbolWildcard) != NOT_FOUND || text.indexOf(manySymbolsWildcard) != NOT_FOUND;
 	}

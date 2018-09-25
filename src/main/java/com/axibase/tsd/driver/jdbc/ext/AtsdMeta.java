@@ -621,7 +621,7 @@ public class AtsdMeta extends MetaImpl {
 			final String metricsUrl = location.toEndpointUrl(connectionInfo, atsdRevision);
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.readInfo();
-				final List<Metric> metrics = JsonMappingUtil.mapToMetrics(metricsInputStream, location.returnsSingleElement());
+				final List<Metric> metrics = JsonMappingUtil.mapToMetrics(metricsInputStream, location.isReturnSingleElement());
 				for (Metric metric : metrics) {
 					if (WildcardsUtil.wildcardMatch(metric.getName(), pattern)) {
 						result.put(metric.getName(), EnumUtil.getAtsdTypeWithPropertyUrlHint(metric.getDataType(), null));
@@ -667,12 +667,17 @@ public class AtsdMeta extends MetaImpl {
 		}
 	}
 
+	private static boolean isWithWildcards(String sqlPattern, String atsdPattern) {
+		return (StringUtils.isEmpty(sqlPattern) || !StringUtils.equals(sqlPattern, atsdPattern))
+				&& WildcardsUtil.hasAtsdWildcards(atsdPattern);
+	}
+
 	private static MetricLocation buildAtsdPatternUrl(String sqlPattern) {
 		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(sqlPattern);
-		if (StringUtils.equals(sqlPattern, atsdPattern)) { // no wildcards
-			return new MetricLocation(Location.METRIC_ENDPOINT, sqlPattern);
+		if (!isWithWildcards(sqlPattern, atsdPattern)) { // no wildcards
+			return new MetricLocation(true, atsdPattern);
 		}
-		return new MetricLocation(Location.METRICS_ENDPOINT, "name like '" + atsdPattern + "'");
+		return new MetricLocation(false, "name like '" + atsdPattern + "'");
 	}
 
 	private static Collection<MetricLocation> buildPatternDisjunction(List<String> patterns) {
@@ -681,7 +686,7 @@ public class AtsdMeta extends MetaImpl {
 		for (String pattern : patterns) {
 			final String preprocessed = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(pattern);
 			preprocessedPatterns.add(preprocessed);
-			if (!StringUtils.equals(pattern, preprocessed)) {
+			if (isWithWildcards(pattern, preprocessed)) {
 				hasWildcard = true;
 			}
 		}
@@ -693,11 +698,11 @@ public class AtsdMeta extends MetaImpl {
 				}
 				buffer.append("name like '").append(mask).append('\'');
 			}
-			return Collections.singletonList(new MetricLocation(Location.METRICS_ENDPOINT, buffer.toString()));
+			return Collections.singletonList(new MetricLocation(false, buffer.toString()));
 		}
 		final Collection<MetricLocation> result = new ArrayList<>(patterns.size());
 		for (String metric : preprocessedPatterns) {
-			result.add(new MetricLocation(Location.METRIC_ENDPOINT, metric));
+			result.add(new MetricLocation(true, metric));
 		}
 		return result;
 	}
@@ -974,27 +979,23 @@ public class AtsdMeta extends MetaImpl {
 	@Getter
 	@AllArgsConstructor
 	static class MetricLocation {
-		private final Location location;
+		private final boolean returnSingleElement;
 		private final String expression;
 
 		private String toEndpointUrl(AtsdConnectionInfo connectionInfo, int atsdRevision) {
 			final String encodedExpression = DbMetadataUtils.urlEncode(expression);
-			if (location == Location.METRIC_ENDPOINT) {
-				final String addInsertTimeParam = addInsertTimeParamName(atsdRevision, API_METRIC_STATISTICS_RENAME_REV);
-				return location.getUrl(connectionInfo) + "/" + encodedExpression + "?" + addInsertTimeParam + "=false";
-			} else if (location == Location.METRICS_ENDPOINT) {
-				final String addInsertTimeParam = addInsertTimeParamName(atsdRevision, API_FIND_METRICS_STATISTICS_RENAME_REV);
-				return location.getUrl(connectionInfo) + "?" + addInsertTimeParam + "=false&expression=" + encodedExpression;
+			final String addInsertTimeParam = addInsertTimeParamName(atsdRevision);
+			final String base = Location.METRICS_ENDPOINT.getUrl(connectionInfo);
+			if (returnSingleElement) {
+				return base + "/" + encodedExpression + "?" + addInsertTimeParam + "=false";
+			} else {
+				return base + "?" + addInsertTimeParam + "=false&expression=" + encodedExpression;
 			}
-			throw new IllegalStateException("Illegal location: " + location);
 		}
 
-		private String addInsertTimeParamName(int revision, int threshold) {
+		private String addInsertTimeParamName(int revision) {
+			final int threshold = returnSingleElement ? API_METRIC_STATISTICS_RENAME_REV : API_FIND_METRICS_STATISTICS_RENAME_REV;
 			return revision < threshold ? "statistics" : "addInsertTime";
 		}
-
-		private boolean returnsSingleElement() {
-		    return location == Location.METRIC_ENDPOINT;
-        }
 	}
 }

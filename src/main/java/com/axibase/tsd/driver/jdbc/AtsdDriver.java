@@ -151,8 +151,8 @@ public class AtsdDriver extends UnregisteredDriver {
 			}
 			final AtsdVersion atsdVersion = version.toAtsdVersion();
 			if (logger.isDebugEnabled()) {
-				logger.debug("[initVersions] edition: {}", atsdVersion.getEdition());
-				logger.debug("[initVersions] revision: {}", atsdVersion.getRevision());
+				logger.debug("[getAtsdVersion] edition: {}", atsdVersion.getEdition());
+				logger.debug("[getAtsdVersion] revision: {}", atsdVersion.getRevision());
 			}
 			return atsdVersion;
 		} catch (UnknownHostException e) {
