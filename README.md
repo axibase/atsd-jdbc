@@ -105,7 +105,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | `metaColumns` | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
 | `assignColumnNames` | boolean | 1.3.0+ | `false` | Force `ResultSetMetaData.getColumnName(index)` method to return column names.<br> If disabled, method returns column labels. |
 | `timestamptz` | boolean | 1.3.2+ | `true` | Instantiate Timestamp fields with the time zone stored in the database (UTC). If `timestamptz` is set to `false`, the Timestamp fields are created based on the client's local time zone. |
-| `missingMetric` | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control behavior when the referenced metric doesn't exist. If 'error' is specified, the driver raises an `AtsdMetricNotFoundException`. If `warning` is specified, an `SQLWarning` is created. If `none` is specified, no error or warning is created. |
+| `missingMetric` | `error`, `warning`, `none` | 1.3.2+ | `warning` | Control behavior when the referenced metric does not exist. If 'error' is specified, the driver raises an `AtsdMetricNotFoundException`. If `warning` is specified, an `SQLWarning` is created. If `none` is specified, no error or warning is created. |
 | `compatibility` | `odbc2` | 1.3.2+ | not set | Simulate behavior of ODBC2.0 drivers: substitute `bigint` datatype with `double`, return `11` as `timestamp` type code |
 | `disableUnderscoreInColumns` | boolean | 1.4.4+ | `true` | Treat underscore as literal character in `DatabaseMetaData.getColumns` queries |
 
@@ -157,7 +157,7 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 * Restart the application or service to apply the settings.
 * Review the `atsd-jdbc.log` file for `driver.jdbc.AtsdDriver` messages.
 
-```
+```ls
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createDriverVersion] 1.4.3-SNAPSHOT
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [acceptsURL] jdbc:atsd://atsd_hostname:8443
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [connect] jdbc:atsd://atsd_hostname:8443
@@ -617,5 +617,3 @@ public void run(String... args) throws Exception {
     assert list != null && !list.isEmpty();
 }
 ```
-
-
