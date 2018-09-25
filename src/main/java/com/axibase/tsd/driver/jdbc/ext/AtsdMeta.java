@@ -50,6 +50,8 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.axibase.tsd.driver.jdbc.DriverConstants.API_FIND_METRICS_STATISTICS_RENAME_REV;
+import static com.axibase.tsd.driver.jdbc.DriverConstants.API_METRIC_STATISTICS_RENAME_REV;
 import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_TABLE_NAME;
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
@@ -608,14 +610,15 @@ public class AtsdMeta extends MetaImpl {
 		return metricList;
 	}
 
-	private static Map<String, AtsdType> getAndFilterMetricsFromAtsd(List<String> metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
+	private Map<String, AtsdType> getAndFilterMetricsFromAtsd(List<String> metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
 		final Collection<MetricLocation> metricLocation = prepareGetMetricUrls(metricMasks, pattern);
 		if (metricLocation.isEmpty()) { // no limits set
 			return Collections.emptyMap();
 		}
 		final Map<String, AtsdType> result = new LinkedHashMap<>();
+		final int atsdRevision = getAtsdConnection().getMetaData().getDatabaseMajorVersion();
 		for (MetricLocation location : metricLocation) {
-			final String metricsUrl = location.toEndpointUrl(connectionInfo);
+			final String metricsUrl = location.toEndpointUrl(connectionInfo, atsdRevision);
 			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.readInfo();
 				final List<Metric> metrics = JsonMappingUtil.mapToMetrics(metricsInputStream, location.returnsSingleElement());
@@ -629,6 +632,10 @@ public class AtsdMeta extends MetaImpl {
 			}
 		}
 		return result;
+	}
+
+	private AtsdConnection getAtsdConnection() {
+		return (AtsdConnection) connection;
 	}
 
 	private static boolean containsAtsdSeriesTable(List<String> metricMasks) {
@@ -970,14 +977,20 @@ public class AtsdMeta extends MetaImpl {
 		private final Location location;
 		private final String expression;
 
-		private String toEndpointUrl(AtsdConnectionInfo connectionInfo) {
+		private String toEndpointUrl(AtsdConnectionInfo connectionInfo, int atsdRevision) {
 			final String encodedExpression = DbMetadataUtils.urlEncode(expression);
 			if (location == Location.METRIC_ENDPOINT) {
-				return location.getUrl(connectionInfo) + "/" + encodedExpression + "?addInsertTime=false";
+				final String addInsertTimeParam = addInsertTimeParamName(atsdRevision, API_METRIC_STATISTICS_RENAME_REV);
+				return location.getUrl(connectionInfo) + "/" + encodedExpression + "?" + addInsertTimeParam + "=false";
 			} else if (location == Location.METRICS_ENDPOINT) {
-				return location.getUrl(connectionInfo) + "?addInsertTime=false&expression=" + encodedExpression;
+				final String addInsertTimeParam = addInsertTimeParamName(atsdRevision, API_FIND_METRICS_STATISTICS_RENAME_REV);
+				return location.getUrl(connectionInfo) + "?" + addInsertTimeParam + "=false&expression=" + encodedExpression;
 			}
 			throw new IllegalStateException("Illegal location: " + location);
+		}
+
+		private String addInsertTimeParamName(int revision, int threshold) {
+			return revision < threshold ? "statistics" : "addInsertTime";
 		}
 
 		private boolean returnsSingleElement() {

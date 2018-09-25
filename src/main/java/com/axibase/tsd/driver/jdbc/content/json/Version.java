@@ -14,6 +14,7 @@
 */
 package com.axibase.tsd.driver.jdbc.content.json;
 
+import com.axibase.tsd.driver.jdbc.ext.AtsdVersion;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -31,5 +32,9 @@ public class Version {
     private BuildInfo buildInfo;
     @JsonProperty("license")
     private License license;
+
+    public AtsdVersion toAtsdVersion() {
+        return new AtsdVersion(buildInfo.getAtsdRevisionNumber(), license.getProductVersion());
+    }
 
 }

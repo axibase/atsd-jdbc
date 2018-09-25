@@ -16,12 +16,13 @@ package com.axibase.tsd.driver.jdbc.ext;
 
 import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import java.sql.*;
-import java.util.Properties;
+import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
+import lombok.SneakyThrows;
+import org.apache.calcite.avatica.*;
 import org.apache.commons.lang3.StringUtils;
 
-import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
-import org.apache.calcite.avatica.*;
+import java.sql.*;
+import java.util.Properties;
 
 import static org.apache.calcite.avatica.Meta.StatementType.INSERT;
 import static org.apache.calcite.avatica.Meta.StatementType.UPDATE;
@@ -70,9 +71,11 @@ public class AtsdConnection extends AvaticaConnection {
 		return new AtsdConnectionInfo(this.info);
 	}
 
-    AtsdDatabaseMetaData getAtsdDatabaseMetaData() throws SQLException {
-        return (AtsdDatabaseMetaData) super.getMetaData();
-    }
+	@Override
+	@SneakyThrows(SQLException.class)
+	public AtsdDatabaseMetaData getMetaData() {
+		return (AtsdDatabaseMetaData) super.getMetaData();
+	}
 
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {

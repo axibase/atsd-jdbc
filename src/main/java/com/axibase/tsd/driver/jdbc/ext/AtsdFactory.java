@@ -14,7 +14,6 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import org.apache.calcite.avatica.*;
 
 import java.sql.ResultSetMetaData;
@@ -23,19 +22,18 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 public class AtsdFactory implements AvaticaFactory {
-	@SuppressWarnings("unused")
-	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdFactory.class);
-
 	private final int major;
 	private final int minor;
+	private final AtsdVersion atsdVersion;
 
-	public AtsdFactory() {
-		this(4, 1);
+	public AtsdFactory(AtsdVersion atsdVersion) {
+		this(4, 1, atsdVersion);
 	}
 
-	protected AtsdFactory(int major, int minor) {
+	private AtsdFactory(int major, int minor, AtsdVersion atsdVersion) {
 		this.major = major;
 		this.minor = minor;
+		this.atsdVersion = atsdVersion;
 	}
 
 	@Override
@@ -50,7 +48,7 @@ public class AtsdFactory implements AvaticaFactory {
 
 	@Override
 	public AvaticaDatabaseMetaData newDatabaseMetaData(AvaticaConnection connection) {
-		return new AtsdDatabaseMetaData(connection);
+		return new AtsdDatabaseMetaData(connection, atsdVersion);
 	}
 
 	@Override
@@ -81,7 +79,7 @@ public class AtsdFactory implements AvaticaFactory {
 
 	@Override
 	public AvaticaConnection newConnection(UnregisteredDriver driver, AvaticaFactory factory, String url,
-			Properties info) throws SQLException {
+			Properties info) {
 		return new AtsdConnection(driver, factory, url, info);
 	}
 }

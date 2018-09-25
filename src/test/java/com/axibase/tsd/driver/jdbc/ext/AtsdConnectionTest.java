@@ -17,7 +17,8 @@ public class AtsdConnectionTest {
 	public void before() {
 		final Properties info = new Properties();
 		info.setProperty("url", "test:8443");
-		connection = new AtsdConnection(new AtsdDriver(), new AtsdFactory(), "atsd:jdbc://test:8443", info);
+		final AtsdVersion atsdVersion = new AtsdVersion(20000, "Community Edition");
+		connection = new AtsdConnection(new AtsdDriver(), new AtsdFactory(atsdVersion), "atsd:jdbc://test:8443", info);
 	}
 
 	@After

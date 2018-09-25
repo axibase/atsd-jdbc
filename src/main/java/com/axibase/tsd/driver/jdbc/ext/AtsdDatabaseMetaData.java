@@ -14,22 +14,11 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.content.ContentDescription;
-import com.axibase.tsd.driver.jdbc.content.json.Version;
-import com.axibase.tsd.driver.jdbc.enums.Location;
-import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
-import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
-import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.util.DbMetadataUtils;
-import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
 
-import java.io.InputStream;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,44 +28,11 @@ import static com.axibase.tsd.driver.jdbc.DriverConstants.REVISION_LINE;
 
 public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdDatabaseMetaData.class);
-	@Getter
-	@Setter
-	private String revision = "Unknown Revision";
-	@Getter
-	@Setter
-	private String edition = "Unknown Edition";
+	private final AtsdVersion atsdVersion;
 
-	protected AtsdDatabaseMetaData(AvaticaConnection connection) {
+	protected AtsdDatabaseMetaData(AvaticaConnection connection, AtsdVersion atsdVersion) {
 		super(connection);
-	}
-
-	public void initVersions(AtsdConnectionInfo atsdConnectionInfo) throws SQLException {
-		final String versionUrl = Location.VERSION_ENDPOINT.getUrl(atsdConnectionInfo);
-		final ContentDescription contentDescription = new ContentDescription(versionUrl, atsdConnectionInfo);
-		try (final IContentProtocol protocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription)) {
-			assert protocol != null;
-			final InputStream databaseInfo = protocol.readInfo();
-			final Version version = JsonMappingUtil.mapToVersion(databaseInfo);
-			if (logger.isTraceEnabled()) {
-				logger.trace("[initVersions] " + version.toString());
-			}
-			edition = version.getLicense().getProductVersion();
-			revision = version.getBuildInfo().getRevisionNumber();
-			if (logger.isDebugEnabled()) {
-				logger.debug("[initVersions] edition: " + edition);
-				logger.debug("[initVersions] revision: " + revision);
-			}
-		} catch (UnknownHostException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug(e.getMessage());
-			}
-			throw new SQLException("Unknown host specified", e);
-		} catch (final Exception e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug(e.getMessage());
-			}
-			throw new SQLException(e);
-		}
+		this.atsdVersion = atsdVersion;
 	}
 
 	@Override
@@ -156,29 +112,18 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	@Override
 	public String getDatabaseProductVersion() throws SQLException {
 		logger.debug("[getDatabaseProductVersion]");
-		final String result = String.format("%s, %s, %s: %s", super.getDatabaseProductVersion(), edition, REVISION_LINE, revision);
+		final String result = String.format("%s, %s, %s: %s", super.getDatabaseProductVersion(), atsdVersion.getEdition(), REVISION_LINE, atsdVersion.getRevision());
 		logger.trace("[getDatabaseProductVersion] version: {}", result);
 		return result;
 	}
 
 	@Override
-	public int getDatabaseMajorVersion() throws SQLException {
-		return getConnectedAtsdVersion();
-	}
-
-	int getConnectedAtsdVersion() {
-		try {
-			return Integer.parseInt(revision);
-		} catch (NumberFormatException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug(e.getMessage());
-			}
-		}
-		return 1;
+	public int getDatabaseMajorVersion() {
+		return atsdVersion.getRevision();
 	}
 
 	@Override
-	public String getSQLKeywords() throws SQLException {
+	public String getSQLKeywords() {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getSQLKeywords]");
 		}
@@ -186,7 +131,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	}
 
 	@Override
-	public String getNumericFunctions() throws SQLException {
+	public String getNumericFunctions() {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[getNumericFunctions]");
 		}
@@ -194,7 +139,7 @@ public class AtsdDatabaseMetaData extends AvaticaDatabaseMetaData {
 	}
 
 	@Override
-	public boolean supportsBatchUpdates() throws SQLException {
+	public boolean supportsBatchUpdates() {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[supportsBatchUpdates]");
 		}

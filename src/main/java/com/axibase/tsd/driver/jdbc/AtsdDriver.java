@@ -14,18 +14,23 @@
 */
 package com.axibase.tsd.driver.jdbc;
 
+import com.axibase.tsd.driver.jdbc.content.ContentDescription;
+import com.axibase.tsd.driver.jdbc.content.json.Version;
 import com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties;
-import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
-import com.axibase.tsd.driver.jdbc.ext.AtsdDatabaseMetaData;
-import com.axibase.tsd.driver.jdbc.ext.AtsdFactory;
-import com.axibase.tsd.driver.jdbc.ext.AtsdMeta;
+import com.axibase.tsd.driver.jdbc.enums.Location;
+import com.axibase.tsd.driver.jdbc.ext.*;
+import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
+import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
+import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import org.apache.calcite.avatica.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -122,20 +127,49 @@ public class AtsdDriver extends UnregisteredDriver {
 		if (atsdConnectionInfo.timestampTz()) {
 			info.setProperty("timeZone", "UTC");
 		}
-		final AtsdFactory atsdFactory = new AtsdFactory();
-		final AvaticaConnection connection = atsdFactory.newConnection(this, atsdFactory, url, info);
-		AtsdDatabaseMetaData atsdDatabaseMetaData = (AtsdDatabaseMetaData) connection.getMetaData();
-		atsdDatabaseMetaData.initVersions(atsdConnectionInfo);
-		if (atsdDatabaseMetaData.getDatabaseMajorVersion() < DriverConstants.MIN_SUPPORTED_ATSD_REVISION) {
-			throw new SQLException("ATSD revision is not supported. Current revision: " + atsdDatabaseMetaData.getDatabaseMajorVersion()
+		final AtsdVersion atsdVersion = getAtsdVersion(atsdConnectionInfo);
+		if (atsdVersion.getRevision() < DriverConstants.MIN_SUPPORTED_ATSD_REVISION) {
+			throw new SQLException("ATSD revision is not supported. Current revision: " + atsdVersion.getRevision()
 					+ ". Minimum supported revision: " + DriverConstants.MIN_SUPPORTED_ATSD_REVISION);
 		}
+		final AtsdFactory atsdFactory = new AtsdFactory(atsdVersion);
+		@SuppressWarnings("squid:S2095")
+		final AvaticaConnection connection = atsdFactory.newConnection(this, atsdFactory, url, info);
 		handler.onConnectionInit(connection);
 		return connection;
 	}
 
+	private static AtsdVersion getAtsdVersion(AtsdConnectionInfo atsdConnectionInfo) throws SQLException {
+		final String versionUrl = Location.VERSION_ENDPOINT.getUrl(atsdConnectionInfo);
+		final ContentDescription contentDescription = new ContentDescription(versionUrl, atsdConnectionInfo);
+		try (final IContentProtocol protocol = ProtocolFactory.create(SdkProtocolImpl.class, contentDescription)) {
+			assert protocol != null;
+			final InputStream databaseInfo = protocol.readInfo();
+			final Version version = JsonMappingUtil.mapToVersion(databaseInfo);
+			if (logger.isTraceEnabled()) {
+				logger.trace("[getAtsdVersion] {}", version.toString());
+			}
+			final AtsdVersion atsdVersion = version.toAtsdVersion();
+			if (logger.isDebugEnabled()) {
+				logger.debug("[initVersions] edition: {}", atsdVersion.getEdition());
+				logger.debug("[initVersions] revision: {}", atsdVersion.getRevision());
+			}
+			return atsdVersion;
+		} catch (UnknownHostException e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug(e.getMessage());
+			}
+			throw new SQLException("Unknown host specified", e);
+		} catch (final Exception e) {
+			if (logger.isDebugEnabled()) {
+				logger.debug(e.getMessage());
+			}
+			throw new SQLException(e);
+		}
+	}
+
 	@Override
-	public boolean acceptsURL(String url) throws SQLException {
+	public boolean acceptsURL(String url) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[acceptsURL] " + url);
 		}

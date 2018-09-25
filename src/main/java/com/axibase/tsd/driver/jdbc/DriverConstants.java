@@ -62,6 +62,8 @@ public final class DriverConstants {
 	public static final String LIMIT_PARAM_NAME = "limit";
 
 	public static final int	MIN_SUPPORTED_ATSD_REVISION = 17285;
+	public static final int API_FIND_METRICS_STATISTICS_RENAME_REV = 19437;
+	public static final int API_METRIC_STATISTICS_RENAME_REV = 20295;
 	public static final String REVISION_LINE = "Revision";
 
 	public static final String CONN_KEEP_ALIVE = "Keep-Alive";

@@ -18,6 +18,7 @@ package com.axibase.tsd.driver.jdbc.content.json;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -34,4 +35,9 @@ public class BuildInfo {
     private String buildNumber;
     @JsonProperty("buildId")
     private String buildId;
+
+    @JsonIgnore
+    public int getAtsdRevisionNumber() {
+        return Integer.parseInt(revisionNumber);
+    }
 }
