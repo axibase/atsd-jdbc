@@ -50,7 +50,7 @@ public class PrepareMetricUrlTest {
 
 	@Test
 	public void testExpression() {
-		final Collection<AtsdMeta.MetricLocation> metricLocations = AtsdMeta.prepareGetMetricUrls(patternsFromConnectionString, tablesPattern);
+		final Collection<AtsdMeta.MetricLocation> metricLocations = AtsdMeta.prepareGetMetricUrls(patternsFromConnectionString, tablesPattern, false);
 		final Collection<String> metricExpressions = new ArrayList<>(metricLocations.size());
 		for (AtsdMeta.MetricLocation metricLocation : metricLocations) {
 			metricExpressions.add(metricLocation.getExpression());

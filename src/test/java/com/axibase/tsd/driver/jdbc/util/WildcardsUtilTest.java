@@ -25,12 +25,27 @@ public class WildcardsUtilTest {
 	}
 
 	@Test
-	public void testSqlToAtsdWildcardsConvertionWithEscape() {
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%t"), is("*t"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_t"), is("*?t"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_**%__%t"), is("*?\\*\\**??*t"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_%%%__%t*"), is("*?***??*t\\*"));
-		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("????"), is("\\?\\?\\?\\?"));
+	public void testSqlToAtsdWildcardsConvertionWithEscapeUnderscoreAsLiteral() {
+		final boolean underscoreAsLiteral = true;
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%t", underscoreAsLiteral), is("*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%\\t", underscoreAsLiteral), is("*\\t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_t", underscoreAsLiteral), is("*_t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%\\_t", underscoreAsLiteral), is("*\\_t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_**%__%t", underscoreAsLiteral), is("*_\\*\\**__*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_%%%__%t*", underscoreAsLiteral), is("*_***__*t\\*"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("????", underscoreAsLiteral), is("\\?\\?\\?\\?"));
+	}
+
+	@Test
+	public void testSqlToAtsdWildcardsConvertionWithEscapeUnderscoreAsMetacharacter() {
+		final boolean underscoreAsLiteral = false;
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%t", underscoreAsLiteral), is("*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%\\t", underscoreAsLiteral), is("*\\t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_t", underscoreAsLiteral), is("*?t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%\\_t", underscoreAsLiteral), is("*_t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_**%__%t", underscoreAsLiteral), is("*?\\*\\**??*t"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("%_%%%__%t*", underscoreAsLiteral), is("*?***??*t\\*"));
+		assertThat(WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping("????", underscoreAsLiteral), is("\\?\\?\\?\\?"));
 	}
 
 }

@@ -193,7 +193,7 @@ public class WildcardsUtil {
 		return list.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 	}
 
-	public static String replaceSqlWildcardsWithAtsdUseEscaping(String text) {
+	public static String replaceSqlWildcardsWithAtsdUseEscaping(String text, boolean underscoreAsLiteral) {
 		if (StringUtils.isEmpty(text)) {
 			return text;
 		}
@@ -212,13 +212,21 @@ public class WildcardsUtil {
 					}
 					break;
 				case ONE_ANY_SYMBOL:
-					if (escapeMode) {
+					if (underscoreAsLiteral) {
+						if (escapeMode) {
+							newStrChars[newStrIndex++] = ESCAPE_CHAR;
+							escapeMode = false;
+						}
 						newStrChars[newStrIndex++] = symbol;
-						escapeMode = false;
 					} else {
-						newStrChars[newStrIndex++] = ATSD_ONE_ANY_SYMBOL;
+						if (escapeMode) {
+							newStrChars[newStrIndex++] = symbol;
+							escapeMode = false;
+						} else {
+							newStrChars[newStrIndex++] = ATSD_ONE_ANY_SYMBOL;
+						}
+						modified = true;
 					}
-					modified = true;
 					break;
 				case NONE_OR_MORE_SYMBOLS:
 					if (escapeMode) {

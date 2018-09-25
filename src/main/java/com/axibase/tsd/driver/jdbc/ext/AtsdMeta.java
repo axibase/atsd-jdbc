@@ -594,7 +594,7 @@ public class AtsdMeta extends MetaImpl {
 			metricList.add(generateDefaultMetaTable());
 		}
 
-		final Map<String, AtsdType> metricNamesToTypes = getAndFilterMetricsFromAtsd(metricMasks, connectionInfo, pattern);
+		final Map<String, AtsdType> metricNamesToTypes = getAndFilterMetricsFromAtsd(metricMasks, pattern, false);
         if (metricNamesToTypes != Collections.<String, AtsdType>emptyMap()) { // some query was performed
             for (String metricMask : metricMasks) {
                 if (!WildcardsUtil.hasWildcards(metricMask) && !DEFAULT_TABLE_NAME.equalsIgnoreCase(metricMask)) {
@@ -610,16 +610,16 @@ public class AtsdMeta extends MetaImpl {
 		return metricList;
 	}
 
-	private Map<String, AtsdType> getAndFilterMetricsFromAtsd(List<String> metricMasks, AtsdConnectionInfo connectionInfo, String pattern) {
-		final Collection<MetricLocation> metricLocation = prepareGetMetricUrls(metricMasks, pattern);
+	private Map<String, AtsdType> getAndFilterMetricsFromAtsd(List<String> metricMasks, String pattern, boolean underscoreAsLiteral) {
+		final Collection<MetricLocation> metricLocation = prepareGetMetricUrls(metricMasks, pattern, underscoreAsLiteral);
 		if (metricLocation.isEmpty()) { // no limits set
 			return Collections.emptyMap();
 		}
 		final Map<String, AtsdType> result = new LinkedHashMap<>();
 		final int atsdRevision = getAtsdConnection().getMetaData().getDatabaseMajorVersion();
 		for (MetricLocation location : metricLocation) {
-			final String metricsUrl = location.toEndpointUrl(connectionInfo, atsdRevision);
-			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, connectionInfo))) {
+			final String metricsUrl = location.toEndpointUrl(atsdConnectionInfo, atsdRevision);
+			try (final IContentProtocol contentProtocol = new SdkProtocolImpl(new ContentDescription(metricsUrl, atsdConnectionInfo))) {
 				final InputStream metricsInputStream = contentProtocol.readInfo();
 				final List<Metric> metrics = JsonMappingUtil.mapToMetrics(metricsInputStream, location.isReturnSingleElement());
 				for (Metric metric : metrics) {
@@ -652,18 +652,19 @@ public class AtsdMeta extends MetaImpl {
 	 * Prepare URL to retrieve metrics
 	 * @param metricMasks filter specified in `tables` connection string parameter
 	 * @param tableFilter filter specified in method parameter
+	 * @param underscoreAsLiteral treat underscore as not a metacharacter
 	 * @return MetricLocation
 	 */
 	@Nonnull
-	static Collection<MetricLocation> prepareGetMetricUrls(List<String> metricMasks, String tableFilter) {
+	static Collection<MetricLocation> prepareGetMetricUrls(List<String> metricMasks, String tableFilter, boolean underscoreAsLiteral) {
 		if (WildcardsUtil.isRetrieveAllPattern(tableFilter) || tableFilter.isEmpty()) {
 			if (metricMasks.isEmpty()) {
 				return Collections.emptyList();
 			} else {
-				return buildPatternDisjunction(metricMasks);
+				return buildPatternDisjunction(metricMasks, underscoreAsLiteral);
 			}
 		} else  {
-			return Collections.singletonList(buildAtsdPatternUrl(tableFilter));
+			return Collections.singletonList(buildAtsdPatternUrl(tableFilter, underscoreAsLiteral));
 		}
 	}
 
@@ -672,19 +673,19 @@ public class AtsdMeta extends MetaImpl {
 				&& WildcardsUtil.hasAtsdWildcards(atsdPattern);
 	}
 
-	private static MetricLocation buildAtsdPatternUrl(String sqlPattern) {
-		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(sqlPattern);
+	private static MetricLocation buildAtsdPatternUrl(String sqlPattern, boolean underscoreAsLiteral) {
+		final String atsdPattern = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(sqlPattern, underscoreAsLiteral);
 		if (!isWithWildcards(sqlPattern, atsdPattern)) { // no wildcards
 			return new MetricLocation(true, atsdPattern);
 		}
 		return new MetricLocation(false, "name like '" + atsdPattern + "'");
 	}
 
-	private static Collection<MetricLocation> buildPatternDisjunction(List<String> patterns) {
+	private static Collection<MetricLocation> buildPatternDisjunction(List<String> patterns, boolean underscoreAsLiteral) {
 		final Collection<String> preprocessedPatterns = new ArrayList<>(patterns.size());
 		boolean hasWildcard = false;
 		for (String pattern : patterns) {
-			final String preprocessed = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(pattern);
+			final String preprocessed = WildcardsUtil.replaceSqlWildcardsWithAtsdUseEscaping(pattern, underscoreAsLiteral);
 			preprocessedPatterns.add(preprocessed);
 			if (isWithWildcards(pattern, preprocessed)) {
 				hasWildcard = true;
@@ -749,10 +750,10 @@ public class AtsdMeta extends MetaImpl {
 		if (!metricMasks.isEmpty()) {
 			final String colNamePattern = columnNamePattern.s;
 			final List<MetadataColumnDefinition> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
-
-			List<Object> columnData = new ArrayList<>();
+			final List<Object> columnData = new ArrayList<>();
+			final boolean underscoreAsLiteral = atsdConnectionInfo.disableUnderscoreInColumns();
 			final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
-			final Map<String, AtsdType> tableNamesAndValueTypes = getAndFilterMetricsFromAtsd(metricMasks, atsdConnectionInfo, pattern);
+			final Map<String, AtsdType> tableNamesAndValueTypes = getAndFilterMetricsFromAtsd(metricMasks, pattern, underscoreAsLiteral);
 			if (tableNamesAndValueTypes.isEmpty() && !WildcardsUtil.hasWildcards(pattern)) {
 				tableNamesAndValueTypes.put(pattern, AtsdType.DEFAULT_VALUE_TYPE);
 			}

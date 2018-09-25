@@ -51,6 +51,8 @@ public final class DriverConstants {
 	public static final OnMissingMetricAction DEFAULT_ON_MISSING_METRIC_VALUE = OnMissingMetricAction.WARNING;
 	public static final String COMPATIBILITY_PARAM = "compatibility";
 	public static final String DEFAULT_COMPATIBILITY_VALUE = null;
+	public static final String DISABLE_UNDERSCORE_PARAM = "compatibility";
+	public static final boolean DEFAULT_DISABLE_UNDERSCORE_VALUE = true;
 
 	public static final String QUERY_ID_PARAM_NAME = "queryId";
 	public static final String Q_PARAM_NAME = "q";

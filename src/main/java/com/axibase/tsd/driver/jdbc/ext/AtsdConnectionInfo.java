@@ -108,6 +108,10 @@ public class AtsdConnectionInfo {
 		return getBooleanValue(timestamptz);
 	}
 
+	public boolean disableUnderscoreInColumns() {
+		return getBooleanValue(disableUnderscoreInColumns);
+	}
+
 	public OnMissingMetricAction missingMetric() {
 		final AtsdDriverConnectionProperties property = missingMetric;
 		final OnMissingMetricAction result = OnMissingMetricAction.fromString(info.getProperty(property.camelName()));
