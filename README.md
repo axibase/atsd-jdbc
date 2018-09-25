@@ -99,7 +99,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | `secure` | boolean | 1.3.1+ | `true` | Use HTTPS protocol to communicate with ATSD. |
 | `connectTimeout` | number | 1.2.7+ | 5 | Connection timeout, in seconds. |
 | `readTimeout` | number | 1.2.7+ | 0 | Read I/O timeout, in seconds. |
-| `strategy` | `file`, `memory`, `stream` | 1.0+ | `stream` | Resultset processing strategy. |
+| `strategy` | `file`, `memory`, `stream` | 1.0+ | `stream` | Result set processing strategy. |
 | `tables` | comma-separated list | 1.2.21+ | `%` | List of metric names or metric expressions returned as tables by the `DatabaseMetaData#getTables` method. |
 | `expandTags` | boolean | 1.2.21+ | `false` | Return series tags as separate columns in the `DatabaseMetaData#getColumns` method. |
 | `metaColumns` | boolean | 1.2.21+ | `false` | Add `metric.tags`, `entity.tags`, and `entity.groups` columns to the list of columns returned by the `DatabaseMetaData#getColumns` method. |
@@ -109,7 +109,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | `compatibility` | `odbc2` | 1.3.2+ | not set | Simulate behavior of ODBC2.0 drivers: substitute `bigint` datatype with `double`, return `11` as `timestamp` type code |
 | `disableUnderscoreInColumns` | boolean | 1.4.4+ | `true` | Treat underscore as literal character in `DatabaseMetaData.getColumns` queries |
 
-## Resultset Processing Strategy
+## Result Set Processing Strategy
 
 Choose the appropriate strategy based on available Java heap memory, disk space, and expected row count produced by a typical query.
 
