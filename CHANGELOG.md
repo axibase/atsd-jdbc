@@ -3,6 +3,7 @@
 ## 1.4.5
 
 * Implemented support for `atsd_entity` and `atsd_metric` tables in database metadata.
+* Fixed SQL error resolving if a piece of result set has already been fetched from ATSD.
 
 ## 1.4.4
 
@@ -12,7 +13,6 @@
 ## 1.4.3
 
 * Fixed timestamp column type determination in SQL queries with table alias.
-* Fixed SQL error resolving if a piece of result set was already fetched from ATSD
 
 ## 1.4.2
 
