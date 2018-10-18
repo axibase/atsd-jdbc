@@ -12,6 +12,7 @@
 ## 1.4.3
 
 * Fixed timestamp column type determination in SQL queries with table alias.
+* Fixed SQL error resolving if a piece of result set was already fetched from ATSD
 
 ## 1.4.2
 
