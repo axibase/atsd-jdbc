@@ -73,8 +73,7 @@ public class AtsdStatement extends AvaticaStatement {
 	public synchronized void cancel() throws SQLException {
 		if (!this.cancelFlag.get()) {
 			final AtsdConnection atsdConnection = (AtsdConnection) this.connection;
-			final AtsdMeta meta = (AtsdMeta) atsdConnection.getMeta();
-			meta.cancelStatement(this.handle);
+			atsdConnection.getMeta().cancelStatement(this.handle);
 		}
 
 		super.cancel();

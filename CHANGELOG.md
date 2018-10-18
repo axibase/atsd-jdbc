@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.4.5
+
+* Implemented support for `atsd_entity` and `atsd_metric` tables in database metadata.
+
+## 1.4.4
+
+* Added `disableUnderscoreInColumns` connection string parameter to control if `DatabaseMetadata` methods should 
+recognize underscore as wildcard character
+* Optimized metadata requests to `/api/v1/metrics/{metric}`
+
+## 1.4.3
+
+* Fixed timestamp column type determination in SQL queries with table alias
+
+## 1.4.2
+
+* Fixed multiline column names issue
+
+## 1.4.1
+
+* Eliminate timestamp parsing operations with new ATSD
+
 ## 1.4.0
 
 * Force double quotes for database identifiers (table and column names), single quotes for string literals.

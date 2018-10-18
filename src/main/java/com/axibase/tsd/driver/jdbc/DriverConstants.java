@@ -10,7 +10,7 @@ public final class DriverConstants {
 	public static final String DATABASE_PRODUCT_NAME = "Axibase";
 	public static final String DATABASE_PRODUCT_VERSION = "Axibase Time Series Database";
 	public static final String JDBC_DRIVER_NAME = "ATSD JDBC driver";
-	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.4.4";
+	public static final String JDBC_DRIVER_VERSION_DEFAULT = "1.4.5";
 	public static final int    DRIVER_VERSION_MAJOR_DEFAULT = 1;
 	public static final int    DRIVER_VERSION_MINOR_DEFAULT = 3;
 
@@ -66,6 +66,7 @@ public final class DriverConstants {
 	public static final int	MIN_SUPPORTED_ATSD_REVISION = 17285;
 	public static final int API_FIND_METRICS_STATISTICS_RENAME_REV = 19437;
 	public static final int API_METRIC_STATISTICS_RENAME_REV = 20295;
+	public static final int META_COLUMNS_REVISION = 20356;
 	public static final String REVISION_LINE = "Revision";
 
 	public static final String CONN_KEEP_ALIVE = "Keep-Alive";
@@ -77,7 +78,6 @@ public final class DriverConstants {
 	public static final String FORM_URLENCODED_TYPE = "application/x-www-form-urlencoded";
 	public static final String USER_AGENT = "ATSD JDBC Client/" + JDBC_DRIVER_VERSION_DEFAULT;
 
-	public static final String DEFAULT_TABLE_NAME = "atsd_series";
 	public static final String TEXT_TITLES = "text";
 
 	public static final String DATATYPE_PROPERTY = "datatype";

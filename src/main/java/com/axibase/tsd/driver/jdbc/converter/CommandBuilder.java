@@ -2,18 +2,15 @@ package com.axibase.tsd.driver.jdbc.converter;
 
 import com.axibase.tsd.driver.jdbc.util.CaseInsensitiveLinkedHashMap;
 import com.google.common.collect.Sets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.*;
 
 @Setter
 class CommandBuilder {
 
-    private static final long MAX_TIME = 4291747200000l; //2106-01-01 00:00:00.000
+    private static final long MAX_TIME = 4291747200000L; //2106-01-01 00:00:00.000
     private static final String ENTITY = "entity";
     private static final String METRIC = "metric";
     private static final String SERIES = "series";
@@ -200,7 +197,8 @@ class CommandBuilder {
 
     private static String handleName(String key) {
         if (key.indexOf('"') != -1) {
-            return '"' + key.replace("\"", "\"\"") + '"';
+            final String replaced = key.replace("\"", "\"\"");
+            return '"' + replaced + '"';
         } else if (key.indexOf('=') != -1 ) {
             return '"' + key + '"';
         } else {

@@ -31,6 +31,7 @@ public class NormalizeQueryTest {
                         "INSERT\nINTO\ntest_table\n(entity, datetime, value)\nVALUES\n('test_entity', '2017-01-01T00:00:00Z', 42.0)"},
                 {"--comment \n SELECT * FROM jvm_memory_used", "SELECT * FROM jvm_memory_used"},
                 {"--comment \n --comment \n --comment  \n  SELECT * FROM jvm_memory_used", "SELECT * FROM jvm_memory_used"},
+                {"--comment \nSELECT * FROM jvm_memory_used", "SELECT * FROM jvm_memory_used"},
                 {"--comment \n --comment \n --comment  \n  ", null},
         });
     }
