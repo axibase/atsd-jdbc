@@ -1,5 +1,6 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
+import com.axibase.tsd.driver.jdbc.enums.DefaultTable;
 import com.axibase.tsd.driver.jdbc.ext.AtsdMeta;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
@@ -24,7 +25,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.axibase.tsd.driver.jdbc.DriverConstants.DEFAULT_TABLE_NAME;
 import static com.axibase.tsd.driver.jdbc.util.AtsdColumn.*;
 
 public abstract class AtsdSqlConverter<T extends SqlCall> {
@@ -110,7 +110,8 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         logger.trace("[createCommands] columnNames: {}", columnNames);
         final List<Object> values = getColumnValues(parameterValues);
         logger.trace("[createCommands] values: {}", values);
-        List<String> result = DEFAULT_TABLE_NAME.equals(tableName) ? composeCommands(logger, columnNames, values, timestampTz)
+        List<String> result = DefaultTable.isDefaultTable(tableName) ?
+                composeCommands(logger, columnNames, values, timestampTz)
                 : composeCommands(logger, tableName, columnNames, values, timestampTz);
         commandCounts = new long[] {result.size()};
         return result;
@@ -127,7 +128,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         List<String> commands;
         commandCounts = new long[valueBatch.size()];
         int idx = 0;
-        if (DEFAULT_TABLE_NAME.equals(tableName)) {
+        if (DefaultTable.isDefaultTable(tableName)) {
             for (List<Object> values : valueBatch) {
                 commands = composeCommands(logger, columnNames, values, timestampTz);
                 commandCounts[idx++] = commands.size();
@@ -145,11 +146,7 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
 
     private static List<String> composeCommands(LoggingFacade logger, final String metricName, final List<String> columnNames, final List<Object> values,
                                                 boolean timestampTz) throws SQLException {
-        if (columnNames.size() != values.size()) {
-            throw new IndexOutOfBoundsException(
-                    String.format("Number of values [%d] does not match to number of columns [%d]",
-                            values.size(), columnNames.size()));
-        }
+        checkColumnAndValuesSizeMatch(columnNames, values);
         final CommandBuilder commandBuilder = new CommandBuilder();
         commandBuilder.setMetricName(metricName);
         String columnName;
@@ -266,13 +263,17 @@ public abstract class AtsdSqlConverter<T extends SqlCall> {
         return commands;
     }
 
-    private static List<String> composeCommands(LoggingFacade logger, final List<String> columnNames, final List<Object> values, boolean timestampTz)
-            throws SQLDataException, SQLFeatureNotSupportedException {
+    private static void checkColumnAndValuesSizeMatch(final List<String> columnNames, final List<Object> values) {
         if (columnNames.size() != values.size()) {
             throw new IndexOutOfBoundsException(
                     String.format("Number of values [%d] does not match to number of columns [%d]",
                             values.size(), columnNames.size()));
         }
+    }
+
+    private static List<String> composeCommands(LoggingFacade logger, final List<String> columnNames, final List<Object> values, boolean timestampTz)
+            throws SQLDataException, SQLFeatureNotSupportedException {
+        checkColumnAndValuesSizeMatch(columnNames, values);
         final CommandBuilder commandBuilder = new CommandBuilder();
         String columnName;
         Object value;

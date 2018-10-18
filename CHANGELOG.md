@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.4.5
+
+* Implemented support for `atsd_entity` and `atsd_metric` tables in database metadata.
+
+## 1.4.4
+
+* Added `disableUnderscoreInColumns` connection string parameter to control if `DatabaseMetadata` methods must recognize underscore as wildcard character.
+* Optimized metadata requests to `/api/v1/metrics/{metric}`.
+
+## 1.4.3
+
+* Fixed timestamp column type determination in SQL queries with table alias.
+
+## 1.4.2
+
+* Fixed column names retrieving from escaped CSV values.
+
+## 1.4.1
+
+* Eliminate timestamp parsing operations with new ATSD.
+
 ## 1.4.0
 
 * Force double quotes for database identifiers (table and column names), single quotes for string literals.
@@ -51,7 +72,7 @@
 
 * Humanized errors representation.
 * Fixed skipping columns with single NULL values.
-* Fixed a problem with colliding Jackson and commons-codecs dependencies in the classpath.
+* Fixed a problem with colliding `Jackson` and `commons-codecs` dependencies in the classpath.
 
 ## 1.2.18
 

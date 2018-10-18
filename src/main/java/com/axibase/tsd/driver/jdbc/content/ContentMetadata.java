@@ -35,10 +35,7 @@ import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonToken;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.*;
 
@@ -112,7 +109,7 @@ public class ContentMetadata {
 		final String name = (String) property.get(NAME_PROPERTY);
 		final String title = (String) property.get(TITLE_PROPERTY);
 		final String table = (String) property.get(TABLE_PROPERTY);
-		final String datatype = property.get(DATATYPE_PROPERTY).toString(); // may be represented as a json object (hashmap)
+		final String datatype = Objects.toString(property.get(DATATYPE_PROPERTY), ""); // may be represented as a json object (hashmap)
 		final String propertyUrl = (String) property.get(PROPERTY_URL);
 		final AtsdType atsdType = EnumUtil.getAtsdTypeWithPropertyUrlHint(datatype, propertyUrl);
 		final boolean nullable = atsdType == AtsdType.JAVA_OBJECT_TYPE || (atsdType == AtsdType.STRING_DATA_TYPE
@@ -204,12 +201,12 @@ public class ContentMetadata {
 
 		public ColumnMetaData build() {
 			final JsonConvertedType jsonConvertedType = JsonTypeResolver.resolve(name);
-			final AtsdType atsdType = this.atsdType.getCompatibleType(odbcCompatible);
-			final ColumnMetaData.AvaticaType internalType = atsdType.getAvaticaType(false);
-			final ColumnMetaData.AvaticaType exposedType = atsdType.getAvaticaType(odbcCompatible);
+			final AtsdType serverType = this.atsdType.getCompatibleType(odbcCompatible);
+			final ColumnMetaData.AvaticaType internalType = serverType.getAvaticaType(false);
+			final ColumnMetaData.AvaticaType exposedType = serverType.getAvaticaType(odbcCompatible);
 			return new AtsdColumnMetaData(columnIndex, nullable, label,
 					name, getValueNotNull(schema), table, getValueNotNull(catalog),
-					atsdType, internalType, exposedType, assignColumnNames, jsonConvertedType);
+					serverType, internalType, exposedType, assignColumnNames, jsonConvertedType);
 		}
 
 		private String getValueNotNull(String value) {
