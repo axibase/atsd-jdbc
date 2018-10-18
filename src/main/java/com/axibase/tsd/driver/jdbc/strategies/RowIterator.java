@@ -153,10 +153,10 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		return buffer.toString();
 	}
 
-	private void fillCommentSectionWithParsedComments() {
+	private boolean fillCommentSectionWithParsedComments() {
 		final Map<Long, String> commentsMap = csvParser.getContext().comments();
 		if (commentsMap.isEmpty()) {
-			return;
+			return false;
 		}
 		StringBuilder buffer = new StringBuilder();
 		for (String commentRow : commentsMap.values()) {
@@ -165,6 +165,7 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 		buffer.setLength(buffer.length() - 1);
 		this.commentSection = buffer.toString();
 		commentsMap.clear();
+		return true;
 	}
 
 	@Override
@@ -190,6 +191,9 @@ public class RowIterator implements Iterator<Object[]>, AutoCloseable {
 	private Object[] parseValues(String[] values) {
 		final int length = columnTypes.length;
 		if (columnTypes.length != values.length) {
+			if (fillCommentSectionWithParsedComments()) {
+				return processor.getParsed();
+			}
 			throw new AtsdRuntimeException("Parsed number of columns doesn't match to header on row=" + this.rowContext.getLine());
 		}
 		Object[] parsed = new Object[length];
