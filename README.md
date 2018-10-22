@@ -135,7 +135,7 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 
 ## Debugging
 
-* Download a `*-DEBUG-DEPS.jar` driver file that contains tracing code such as `atsd-jdbc-1.4.4-DEBUG-DEPS.jar`.
+* Download a `*-DEBUG-DEPS.jar` driver file that contains tracing code such as `atsd-jdbc-1.4.5-DEBUG-DEPS.jar`.
 * Replace the current `atsd-jdbc-*.jar` file in the `./lib` directory with the downloaded JAR file.
 * Locate the logging properties file, for example `log4j2.properties` in case of **Apache Log4j 2**.
 * Define a new logger for `com.axibase` classes at the `DEBUG` level, for example:
@@ -158,7 +158,7 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 * Review the `atsd-jdbc.log` file for `driver.jdbc.AtsdDriver` messages.
 
 ```ls
-DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createDriverVersion] 1.4.4-SNAPSHOT
+DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createDriverVersion] 1.4.5-SNAPSHOT
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [acceptsURL] jdbc:atsd://atsd_hostname:8443
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [connect] jdbc:atsd://atsd_hostname:8443
 DEBUG 2018-09-20T09:19:58,650+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createMeta] d6c9793b-63c6-4794-af4b-bee8414d947d
