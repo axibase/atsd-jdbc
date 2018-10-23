@@ -4,6 +4,7 @@
 
 * Implemented support for short names in `atsd_metric` and `atsd_entity` tables.
 * Added `creationTime` column in `atsd_metric` and `atsd_entity` tables.
+* Fixed column data types for meta tables
 
 ## 1.4.5
 
