@@ -68,6 +68,7 @@ public final class DriverConstants {
 	public static final int API_METRIC_STATISTICS_RENAME_REV = 20295;
 	public static final int META_COLUMNS_REVISION = 20356;
 	public static final int META_COLUMNS_SHORT_REVISION = 20377;
+	public static final int META_COLUMNS_CREATION_TIME_REVISION = 20367;
 	public static final String REVISION_LINE = "Revision";
 
 	public static final String CONN_KEEP_ALIVE = "Keep-Alive";

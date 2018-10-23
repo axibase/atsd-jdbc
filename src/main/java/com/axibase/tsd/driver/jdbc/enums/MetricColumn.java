@@ -3,11 +3,13 @@ package com.axibase.tsd.driver.jdbc.enums;
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
 import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
 import lombok.Getter;
+import org.apache.commons.lang3.ArrayUtils;
 
 import static com.axibase.tsd.driver.jdbc.enums.AtsdType.*;
 
 @Getter
 public enum MetricColumn implements MetadataColumnDefinition {
+    CREATION_TIME(AtsdColumn.METRIC_CREATION_TIME, BIGINT_DATA_TYPE),
     DATA_TYPE(AtsdColumn.METRIC_DATA_TYPE, STRING_DATA_TYPE),
     DESCRIPTION(AtsdColumn.METRIC_DESCRIPTION, STRING_DATA_TYPE),
     ENABLED(AtsdColumn.METRIC_ENABLED, BOOLEAN_DATA_TYPE),
@@ -51,6 +53,11 @@ public enum MetricColumn implements MetadataColumnDefinition {
     @Override
     public String getShortColumnNamePrefix() {
         return columnNamePrefix.substring(PREFIX_LENGTH);
+    }
+
+    public static MetricColumn[] values(boolean withCreationTime) {
+        final MetricColumn[] values = MetricColumn.values();
+        return withCreationTime ? values : ArrayUtils.removeElements(values, CREATION_TIME);
     }
 
 }

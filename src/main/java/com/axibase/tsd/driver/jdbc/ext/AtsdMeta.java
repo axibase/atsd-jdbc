@@ -555,7 +555,7 @@ public class AtsdMeta extends MetaImpl {
 				table, "TABLE", remark);
 	}
 
-	private String generateTableRemark(String table) {
+	private String generateTableRemark(String table, boolean addCreationTime) {
 		StringBuilder buffer = new StringBuilder("SELECT");
         for (DefaultColumn column : DefaultColumn.values()) {
             if (column.ordinal() != 0) {
@@ -564,8 +564,8 @@ public class AtsdMeta extends MetaImpl {
             buffer.append(' ').append(column.getColumnNamePrefix());
         }
 		if (atsdConnectionInfo.metaColumns()) {
-		    appendMetaColumns(buffer, EntityColumn.values());
-		    appendMetaColumns(buffer, MetricColumn.values());
+		    appendMetaColumns(buffer, EntityColumn.values(addCreationTime));
+		    appendMetaColumns(buffer, MetricColumn.values(addCreationTime));
 		}
 		return buffer.append(" FROM \"").append(table).append("\" LIMIT 1").toString();
 	}
@@ -582,7 +582,11 @@ public class AtsdMeta extends MetaImpl {
     }
 
     private boolean useShortColumnNamesInMetaTables() {
-		return getAtsdConnection().getMetaData().getDatabaseMajorVersion() >= META_COLUMNS_SHORT_REVISION;
+		return getAtsdRevision() >= META_COLUMNS_SHORT_REVISION;
+	}
+
+	private boolean shouldAddCreationTimeMetaColumns() {
+		return getAtsdRevision() >= META_COLUMNS_CREATION_TIME_REVISION;
 	}
 
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
@@ -607,8 +611,9 @@ public class AtsdMeta extends MetaImpl {
             }
         }
 
+        final boolean addCreationTime = shouldAddCreationTimeMetaColumns();
         for (String metricName : metricNamesToTypes.keySet()) {
-            metricList.add(generateMetaTable(metricName, generateTableRemark(metricName)));
+            metricList.add(generateMetaTable(metricName, generateTableRemark(metricName, addCreationTime)));
         }
 
 		return metricList;
@@ -763,7 +768,8 @@ public class AtsdMeta extends MetaImpl {
         final List<String> metricMasks = atsdConnectionInfo.tables();
 		if (!metricMasks.isEmpty()) {
 			final String colNamePattern = columnNamePattern.s;
-			final List<MetadataColumnDefinition> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns());
+			final boolean addCreationTime = shouldAddCreationTimeMetaColumns();
+			final List<MetadataColumnDefinition> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns(), addCreationTime);
 			final List<Object> columnData = new ArrayList<>();
 			final boolean underscoreAsLiteral = atsdConnectionInfo.disableUnderscoreInColumns();
 			final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
@@ -786,9 +792,9 @@ public class AtsdMeta extends MetaImpl {
 				final AtsdType metricValueType = entry.getValue();
 				final List<MetadataColumnDefinition> columnDefinitions;
 				if (DefaultTable.ATSD_METRIC.tableName.equals(tableName)) {
-					columnDefinitions = filterMetaTablesColumns(colNamePattern, MetricColumn.values(), useShortNames);
+					columnDefinitions = filterMetaTablesColumns(colNamePattern, MetricColumn.values(addCreationTime), useShortNames);
 				} else if (DefaultTable.ATSD_ENTITY.tableName.equals(tableName)) {
-					columnDefinitions = filterMetaTablesColumns(colNamePattern, EntityColumn.values(), useShortNames);
+					columnDefinitions = filterMetaTablesColumns(colNamePattern, EntityColumn.values(addCreationTime), useShortNames);
 				} else {
 					columnDefinitions = columns;
 				}
@@ -852,16 +858,16 @@ public class AtsdMeta extends MetaImpl {
                 || pattern.startsWith(MetricColumn.TAGS.getColumnNamePrefix());
 	}
 
-	private static List<MetadataColumnDefinition> filterColumns(String columnPattern, boolean showMetaColumns) {
+	private static List<MetadataColumnDefinition> filterColumns(String columnPattern, boolean showMetaColumns, boolean addCreationTime) {
 		List<MetadataColumnDefinition> result = new ArrayList<>();
 		for (DefaultColumn column : DefaultColumn.values()) {
 			filterColumn(columnPattern, column.getColumnNamePrefix(), column, result);
 		}
 		if (showMetaColumns) {
-			for (EntityColumn column : EntityColumn.values()) {
+			for (EntityColumn column : EntityColumn.values(addCreationTime)) {
 				filterColumn(columnPattern, column.getColumnNamePrefix(), column, result);
 			}
-			for (MetricColumn column : MetricColumn.values()) {
+			for (MetricColumn column : MetricColumn.values(addCreationTime)) {
 				filterColumn(columnPattern, column.getColumnNamePrefix(), column, result);
 			}
 		}
