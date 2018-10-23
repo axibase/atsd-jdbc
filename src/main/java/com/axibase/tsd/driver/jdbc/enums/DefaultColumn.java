@@ -57,4 +57,9 @@ public enum DefaultColumn implements MetadataColumnDefinition {
 		return type;
 	}
 
+	@Override
+	public String getShortColumnNamePrefix() {
+		return columnNamePrefix;
+	}
+
 }

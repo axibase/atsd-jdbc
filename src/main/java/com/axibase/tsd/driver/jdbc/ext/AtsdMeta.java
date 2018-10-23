@@ -570,20 +570,30 @@ public class AtsdMeta extends MetaImpl {
 		return buffer.append(" FROM \"").append(table).append("\" LIMIT 1").toString();
 	}
 
+	/**
+	 * Append metric and entity metadata columns to series requests. This method must not be used while processing meta tables.
+	 * @param buffer StringBuilder to append to
+	 * @param values columns to append
+	 */
 	private static void appendMetaColumns(StringBuilder buffer, MetadataColumnDefinition[] values) {
         for (MetadataColumnDefinition column : values) {
             buffer.append(", ").append(column.getColumnNamePrefix());
         }
     }
 
+    private boolean useShortColumnNamesInMetaTables() {
+		return getAtsdConnection().getMetaData().getDatabaseMajorVersion() >= META_COLUMNS_SHORT_REVISION;
+	}
+
 	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
 		final List<Object> metricList = new ArrayList<>();
 		final List<String> metricMasks = connectionInfo.tables();
+		final boolean metadataColumnsShort = useShortColumnNamesInMetaTables();
 		for (DefaultTable defaultTable : DefaultTable.values()) {
 			for (String metricMask : metricMasks) {
 				if (WildcardsUtil.wildcardMatch(defaultTable.tableName, metricMask)
 						&& WildcardsUtil.wildcardMatch(defaultTable.tableName, pattern)) {
-					metricList.add(generateMetaTable(defaultTable.tableName, defaultTable.remark));
+					metricList.add(generateMetaTable(defaultTable.tableName, defaultTable.getRemark(metadataColumnsShort)));
 				}
 			}
 		}
@@ -770,20 +780,21 @@ public class AtsdMeta extends MetaImpl {
 				}
 			}
 			final boolean odbcCompatible = atsdConnectionInfo.odbc2Compatibility();
+			final boolean useShortNames = useShortColumnNamesInMetaTables();
 			for (Map.Entry<String, AtsdType> entry : tableNamesAndValueTypes.entrySet()) {
 				final String tableName = entry.getKey();
 				final AtsdType metricValueType = entry.getValue();
 				final List<MetadataColumnDefinition> columnDefinitions;
 				if (DefaultTable.ATSD_METRIC.tableName.equals(tableName)) {
-					columnDefinitions = filterMetaTablesColumns(colNamePattern, MetricColumn.values());
+					columnDefinitions = filterMetaTablesColumns(colNamePattern, MetricColumn.values(), useShortNames);
 				} else if (DefaultTable.ATSD_ENTITY.tableName.equals(tableName)) {
-					columnDefinitions = filterMetaTablesColumns(colNamePattern, EntityColumn.values());
+					columnDefinitions = filterMetaTablesColumns(colNamePattern, EntityColumn.values(), useShortNames);
 				} else {
 					columnDefinitions = columns;
 				}
 				int position = 1;
 				for (MetadataColumnDefinition column : columnDefinitions) {
-					columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible));
+					columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible, useShortNames));
 					++position;
 				}
 				appendFilteredTagsColumns(tableName, colNamePattern, columnData, odbcCompatible, metricValueType);
@@ -798,20 +809,22 @@ public class AtsdMeta extends MetaImpl {
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaColumn.class);
 	}
 
-	private void appendFilteredTagsColumns(String tableName, String colNamePattern, List<Object> columnData, boolean odbcCompatible, AtsdType metricValueType) {
+	private void appendFilteredTagsColumns(String tableName, String colNamePattern, List<Object> columnData,
+										   boolean odbcCompatible, AtsdType metricValueType) {
         if (DefaultTable.isDefaultTable(tableName) || !maybeTagColumnPattern(colNamePattern)) {
             return;
         }
+        final boolean useShortNames = false; // don't use in non-default tables
         final Set<String> tags = getTags(tableName);
         int position = columnData.size() + 1;
         if (tags.isEmpty() && StringUtils.startsWith(colNamePattern, TagColumn.PREFIX) && !WildcardsUtil.hasWildcards(colNamePattern)) {
             final TagColumn column = new TagColumn(StringUtils.substringAfter(colNamePattern, TagColumn.PREFIX));
-            columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible));
+            columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible, useShortNames));
         } else {
             for (String tag : tags) {
                 final TagColumn column = new TagColumn(tag);
                 if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), colNamePattern)) {
-                    columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible));
+                    columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible, useShortNames));
                     ++position;
                 }
             }
@@ -842,29 +855,31 @@ public class AtsdMeta extends MetaImpl {
 	private static List<MetadataColumnDefinition> filterColumns(String columnPattern, boolean showMetaColumns) {
 		List<MetadataColumnDefinition> result = new ArrayList<>();
 		for (DefaultColumn column : DefaultColumn.values()) {
-			filterColumn(columnPattern, column, result);
+			filterColumn(columnPattern, column.getColumnNamePrefix(), column, result);
 		}
 		if (showMetaColumns) {
 			for (EntityColumn column : EntityColumn.values()) {
-				filterColumn(columnPattern, column, result);
+				filterColumn(columnPattern, column.getColumnNamePrefix(), column, result);
 			}
 			for (MetricColumn column : MetricColumn.values()) {
-				filterColumn(columnPattern, column, result);
+				filterColumn(columnPattern, column.getColumnNamePrefix(), column, result);
 			}
 		}
 		return result;
 	}
 
-	private static List<MetadataColumnDefinition> filterMetaTablesColumns(String columnPattern, MetadataColumnDefinition[] unfiltered) {
+	private static List<MetadataColumnDefinition> filterMetaTablesColumns(String columnPattern, MetadataColumnDefinition[] unfiltered, boolean useShortNames) {
 		List<MetadataColumnDefinition> result = new ArrayList<>();
 		for (MetadataColumnDefinition columnDefinition : unfiltered) {
-			filterColumn(columnPattern, columnDefinition, result);
+			final String columnNamePrefix = useShortNames ? columnDefinition.getShortColumnNamePrefix() : columnDefinition.getColumnNamePrefix();
+			filterColumn(columnPattern, columnNamePrefix, columnDefinition, result);
 		}
 		return result;
 	}
 
-	private static void filterColumn(String columnPattern, MetadataColumnDefinition column, final List<MetadataColumnDefinition> columns) {
-		if (WildcardsUtil.wildcardMatch(column.getColumnNamePrefix(), columnPattern)) {
+	private static void filterColumn(String columnPattern, String columnNamePrefix, MetadataColumnDefinition column,
+									 final List<MetadataColumnDefinition> columns) {
+		if (WildcardsUtil.wildcardMatch(columnNamePrefix, columnPattern)) {
 			columns.add(column);
 		}
 	}
@@ -896,14 +911,15 @@ public class AtsdMeta extends MetaImpl {
 		return baseMetricUrl + "/" + encodedMetric + "/series";
 	}
 
-	private AtsdMetaResultSets.AtsdMetaColumn createColumnMetaData(MetadataColumnDefinition column, String table, AtsdType valueType, int ordinal, boolean odbcCompatible) {
+	private AtsdMetaResultSets.AtsdMetaColumn createColumnMetaData(MetadataColumnDefinition column, String table, AtsdType valueType,
+																   int ordinal, boolean odbcCompatible, boolean useShortNames) {
 		final AtsdType columnType = column.getType(valueType).getCompatibleType(odbcCompatible);
 		return new AtsdMetaResultSets.AtsdMetaColumn(
 				odbcCompatible,
 				atsdConnectionInfo.catalog(),
 				atsdConnectionInfo.schema(),
 				table,
-				column.getColumnNamePrefix(),
+				useShortNames ? column.getShortColumnNamePrefix() : column.getColumnNamePrefix(),
 				columnType,
 				column.getNullable(),
 				ordinal,

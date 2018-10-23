@@ -8,7 +8,6 @@ import static com.axibase.tsd.driver.jdbc.enums.AtsdType.*;
 
 @Getter
 public enum MetricColumn implements MetadataColumnDefinition {
-
     DATA_TYPE(AtsdColumn.METRIC_DATA_TYPE, STRING_DATA_TYPE),
     DESCRIPTION(AtsdColumn.METRIC_DESCRIPTION, STRING_DATA_TYPE),
     ENABLED(AtsdColumn.METRIC_ENABLED, BOOLEAN_DATA_TYPE),
@@ -37,6 +36,8 @@ public enum MetricColumn implements MetadataColumnDefinition {
         this.type = type;
     }
 
+    private static final int PREFIX_LENGTH = "metric.".length();
+
     @Override
     public String getNullableAsString() {
         return NULLABLE_AS_STRING[nullable];
@@ -45,6 +46,11 @@ public enum MetricColumn implements MetadataColumnDefinition {
     @Override
     public AtsdType getType(AtsdType metricType) {
         return type;
+    }
+
+    @Override
+    public String getShortColumnNamePrefix() {
+        return columnNamePrefix.substring(PREFIX_LENGTH);
     }
 
 }
