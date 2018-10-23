@@ -178,7 +178,7 @@ public class AtsdMeta extends MetaImpl {
 			}
 			return result;
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
-			log.error("[execute] error", e.getMessage());
+			log.error("[execute] error {}", e.getMessage());
 			throw e;
 		} catch (final RuntimeException e) {
 			log.error("[execute] error", e);
@@ -799,8 +799,9 @@ public class AtsdMeta extends MetaImpl {
 					columnDefinitions = columns;
 				}
 				int position = 1;
+				final boolean cutMetaPrefix = useShortNames && columnDefinitions != columns;
 				for (MetadataColumnDefinition column : columnDefinitions) {
-					columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible, useShortNames));
+					columnData.add(createColumnMetaData(column, tableName, metricValueType, position, odbcCompatible, cutMetaPrefix));
 					++position;
 				}
 				appendFilteredTagsColumns(tableName, colNamePattern, columnData, odbcCompatible, metricValueType);
