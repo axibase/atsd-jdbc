@@ -3,8 +3,10 @@ package com.axibase.tsd.driver.jdbc.ext;
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import lombok.experimental.UtilityClass;
 import org.apache.calcite.avatica.MetaImpl;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Types;
+import java.util.Comparator;
 
 @UtilityClass
 public class AtsdMetaResultSets {
@@ -159,5 +161,48 @@ public class AtsdMetaResultSets {
 	private static int cast(boolean value) {
 		return value ? 1 : 0;
 	}
+
+	/**
+	 * Comparator used in DatabaseMetadata.getTypeInfo method. Records are sorted by DATA_TYPE and then by how
+	 * closely the data type maps to the corresponding JDBC SQL type.
+	 */
+	public static final Comparator<AtsdMetaTypeInfo> JDBC_TYPE_COMPARATOR = new Comparator<AtsdMetaTypeInfo>() {
+		@Override
+		public int compare(AtsdMetaTypeInfo left, AtsdMetaTypeInfo right) {
+			int result = Integer.compare(left.dataType, right.dataType);
+			if (result == 0) {
+				result = Boolean.compare(left.dataType == left.sqlDataType, right.dataType == right.sqlDataType);
+			}
+			return result;
+		}
+	};
+
+	/**
+	 * Comparator used in DatabaseMetadata.getTables method. Records are sorted by:
+	 * TABLE_TYPE, TABLE_CAT, TABLE_SCHEM, TABLE_NAME.
+	 * As TABLE_TYPE, TABLE_CAT, TABLE_SCHEM are always same, only TABLE_NAME is used as sorting key
+	 */
+	public static final Comparator<AtsdMetaTable> JDBC_TABLE_COMPARATOR = new Comparator<AtsdMetaTable>() {
+		@Override
+		public int compare(AtsdMetaTable left, AtsdMetaTable right) {
+			return StringUtils.compare(left.tableName, right.tableName);
+		}
+	};
+
+	/**
+	 * Comparator used in DatabaseMetadata.getColumns method. Records are sorted by:
+	 * TABLE_CAT, TABLE_SCHEM, TABLE_NAME, and ORDINAL_POSITION.
+	 * As TABLE_CAT, TABLE_SCHEM are always same, only TABLE_NAME and ORDINAL_POSITION are used as sorting key
+	 */
+	public static final Comparator<AtsdMetaColumn> JDBC_COLUMN_COMPARATOR = new Comparator<AtsdMetaColumn>() {
+		@Override
+		public int compare(AtsdMetaColumn left, AtsdMetaColumn right) {
+			int result = StringUtils.compare(left.tableName, right.tableName);
+			if (result == 0) {
+				result = Integer.compare(left.ordinalPosition, right.ordinalPosition);
+			}
+			return result;
+		}
+	};
 
 }
