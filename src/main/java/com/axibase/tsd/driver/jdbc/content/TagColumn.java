@@ -38,6 +38,11 @@ public class TagColumn implements MetadataColumnDefinition {
 	}
 
 	@Override
+	public String getShortColumnNamePrefix() {
+		return getColumnNamePrefix();
+	}
+
+	@Override
 	public int getNullable() {
 		return 1;
 	}

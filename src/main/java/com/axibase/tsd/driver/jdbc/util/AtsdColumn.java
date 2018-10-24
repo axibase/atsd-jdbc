@@ -13,6 +13,7 @@ public class AtsdColumn {
     public static final String TIME = "time";
     public static final String VALUE = "value";
 
+    public static final String ENTITY_CREATION_TIME = "entity.creationTime";
     public static final String ENTITY_ENABLED = "entity.enabled";
     public static final String ENTITY_GROUPS = "entity.groups";
     public static final String ENTITY_LABEL = "entity.label";
@@ -20,6 +21,7 @@ public class AtsdColumn {
     public static final String ENTITY_TAGS = "entity.tags";
     public static final String ENTITY_TIME_ZONE = "entity.timeZone";
 
+    public static final String METRIC_CREATION_TIME = "metric.creationTime";
     public static final String METRIC_DATA_TYPE = "metric.dataType";
     public static final String METRIC_DESCRIPTION = "metric.description";
     public static final String METRIC_ENABLED = "metric.enabled";

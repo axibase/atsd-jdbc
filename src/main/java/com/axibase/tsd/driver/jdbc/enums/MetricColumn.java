@@ -3,12 +3,13 @@ package com.axibase.tsd.driver.jdbc.enums;
 import com.axibase.tsd.driver.jdbc.intf.MetadataColumnDefinition;
 import com.axibase.tsd.driver.jdbc.util.AtsdColumn;
 import lombok.Getter;
+import org.apache.commons.lang3.ArrayUtils;
 
 import static com.axibase.tsd.driver.jdbc.enums.AtsdType.*;
 
 @Getter
 public enum MetricColumn implements MetadataColumnDefinition {
-
+    CREATION_TIME(AtsdColumn.METRIC_CREATION_TIME, BIGINT_DATA_TYPE),
     DATA_TYPE(AtsdColumn.METRIC_DATA_TYPE, STRING_DATA_TYPE),
     DESCRIPTION(AtsdColumn.METRIC_DESCRIPTION, STRING_DATA_TYPE),
     ENABLED(AtsdColumn.METRIC_ENABLED, BOOLEAN_DATA_TYPE),
@@ -16,9 +17,9 @@ public enum MetricColumn implements MetadataColumnDefinition {
     INTERPOLATE(AtsdColumn.METRIC_INTERPOLATE, STRING_DATA_TYPE),
     INVALID_VALUE_ACTION(AtsdColumn.METRIC_INVALID_VALUE_ACTION, STRING_DATA_TYPE),
     LABEL(AtsdColumn.METRIC_LABEL, STRING_DATA_TYPE),
-    LAST_INSERT_TIME(AtsdColumn.METRIC_LAST_INSERT_TIME, STRING_DATA_TYPE),
-    MAX_VALUE(AtsdColumn.METRIC_MAX_VALUE, FLOAT_DATA_TYPE),
-    MIN_VALUE(AtsdColumn.METRIC_MIN_VALUE, FLOAT_DATA_TYPE),
+    LAST_INSERT_TIME(AtsdColumn.METRIC_LAST_INSERT_TIME, BIGINT_DATA_TYPE),
+    MAX_VALUE(AtsdColumn.METRIC_MAX_VALUE, DOUBLE_DATA_TYPE),
+    MIN_VALUE(AtsdColumn.METRIC_MIN_VALUE, DOUBLE_DATA_TYPE),
     NAME(AtsdColumn.METRIC_NAME, STRING_DATA_TYPE),
     PERSISTENT(AtsdColumn.METRIC_PERSISTENT, BOOLEAN_DATA_TYPE),
     RETENTION_INTERVAL_DAYS(AtsdColumn.METRIC_RETENTION_INTERVAL_DAYS, INTEGER_DATA_TYPE),
@@ -37,6 +38,8 @@ public enum MetricColumn implements MetadataColumnDefinition {
         this.type = type;
     }
 
+    private static final int PREFIX_LENGTH = "metric.".length();
+
     @Override
     public String getNullableAsString() {
         return NULLABLE_AS_STRING[nullable];
@@ -45,6 +48,16 @@ public enum MetricColumn implements MetadataColumnDefinition {
     @Override
     public AtsdType getType(AtsdType metricType) {
         return type;
+    }
+
+    @Override
+    public String getShortColumnNamePrefix() {
+        return columnNamePrefix.substring(PREFIX_LENGTH);
+    }
+
+    public static MetricColumn[] values(boolean withCreationTime) {
+        final MetricColumn[] values = MetricColumn.values();
+        return withCreationTime ? values : ArrayUtils.removeElements(values, CREATION_TIME);
     }
 
 }

@@ -23,6 +23,8 @@ public interface MetadataColumnDefinition {
 
 	String getColumnNamePrefix();
 
+	String getShortColumnNamePrefix();
+
 	int getNullable();
 
 	String getNullableAsString();
