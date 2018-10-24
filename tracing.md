@@ -1,12 +1,12 @@
 # Tracing and Logging
 
-The ATSD JDBC driver uses the [SLF4J](https://www.slf4j.org/) facade for its internal logging which provides support for pluggable logging implementations. The default configuration redirects all logging messages to the NO-OP (non-logging) appender.
+The ATSD JDBC driver uses the [`SLF4J`](https://www.slf4j.org/) facade for its internal logging which provides support for pluggable logging implementations. The default configuration redirects all logging messages to the NO-OP (non-logging) appender.
 
 ## Downloads
 
 You can use any logging library supported by SLF4J. The examples below are based on log4j.
 
-Download the [log4j library](http://central.maven.org/maven2/log4j/log4j/1.2.17/log4j-1.2.17.jar) and [slf4j-log4j binding](http://central.maven.org/maven2/org/slf4j/slf4j-log4j12/1.7.25/slf4j-log4j12-1.7.25.jar).
+Download the [`log4j` library](http://central.maven.org/maven2/log4j/log4j/1.2.17/log4j-1.2.17.jar) and [`slf4j-log4j` binding](http://central.maven.org/maven2/org/slf4j/slf4j-log4j12/1.7.25/slf4j-log4j12-1.7.25.jar).
 
 ### Enabling logging for applications with enabled SLF4J logging
 
@@ -31,11 +31,11 @@ log4j.logger.com.axibase.tsd.driver.jdbc=TRACE, file
 
 ### Enabling logging for applications without enabled SLF4J logging
 
-Some tools either do not use SLF4J or execute the driver's code in an isolated process. To enable logging in this case, you need to provide a logging framework library jar and [slf4j bindings](https://www.slf4j.org/manual.html#swapping).
+Some tools either do not use SLF4J or execute the driver's code in an isolated process. To enable logging in this case, you need to provide a logging framework library jar and [`slf4j` bindings](https://www.slf4j.org/manual.html#swapping).
 
 Enable logging for the [DataGrip](https://www.jetbrains.com/datagrip/) tool as an example.
 
-* Ensure that the ATSD JDBC driver, necessary logging dependencies, and logging configuration files are located in the /opt/atsd_jdbc directory.
+* Ensure that the ATSD JDBC driver, necessary logging dependencies, and logging configuration files are located in the `/opt/atsd_jdbc` directory.
 
 * Create a ATSD JDBC driver configuration in DataGrip.
 
