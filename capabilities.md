@@ -116,7 +116,7 @@
 | Supports Subqueries In Comparisons |  `false`  |
 | Supports Subqueries In Exists |  `false`  |
 | Supports Subqueries In Ins |  `false`  |
-| Supports Subqueries In Quantifieds |  `false`  |
+| Supports Subqueries In Quantifiers |  `false`  |
 | Supports Table Correlation Names |  `false`  |
 | Supports Transactions |  `false`  |
 | Supports Union |  `false`  |
