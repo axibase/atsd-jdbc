@@ -298,7 +298,7 @@ public class AtsdMeta extends MetaImpl {
 	@SneakyThrows({SQLDataException.class, SQLFeatureNotSupportedException.class})
 	public ExecuteResult prepareAndExecute(StatementHandle statementHandle, String query, long maxRowCount,
 										   int maxRowsInFrame, PrepareCallback callback) {
-		final long limit = maxRowCount < 0 ? 0 : maxRowCount;
+		final long limit = Math.max(0, maxRowCount);
 		log.trace("[prepareAndExecute] handle: {} maxRowCount: {} query: {}", statementHandle, limit, query);
 		try {
 			final AvaticaStatement statement = (AvaticaStatement) callback.getMonitor();
@@ -325,7 +325,7 @@ public class AtsdMeta extends MetaImpl {
 			callback.execute();
 			return result;
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
-			log.error("[prepareAndExecute] error", e.getMessage());
+			log.error("[prepareAndExecute] error {}", e.getMessage());
 			throw e;
 		} catch (final AtsdRuntimeException e) {
 			log.error("[prepareAndExecute] error", e);
@@ -361,7 +361,7 @@ public class AtsdMeta extends MetaImpl {
 			}
 			return new ExecuteBatchResult(updateCounts);
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
-			log.error("[prepareAndExecuteBatch] error", e.getMessage());
+			log.error("[prepareAndExecuteBatch] error {}", e.getMessage());
 			throw e;
 		} catch (final RuntimeException e) {
             log.error("[prepareAndExecuteBatch] error", e);
@@ -394,7 +394,7 @@ public class AtsdMeta extends MetaImpl {
 			long[] updateCounts = updateCount == 0 ? new long[parameterValueBatch.size()] : converter.getCommandCounts();
 			return new ExecuteBatchResult(updateCounts);
 		} catch (SQLDataException | SQLFeatureNotSupportedException e) {
-			log.error("[executeBatch] error", e.getMessage());
+			log.error("[executeBatch] error {}", e.getMessage());
 			throw e;
 		} catch (final RuntimeException e) {
 			log.error("[executeBatch] error", e);
@@ -584,6 +584,7 @@ public class AtsdMeta extends MetaImpl {
 	private boolean shouldAddCreationTimeMetaColumns() {
 		return getAtsdRevision() >= META_COLUMNS_CREATION_TIME_REVISION;
 	}
+
 
 	private List<AtsdMetaResultSets.AtsdMetaTable> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
 		final List<AtsdMetaResultSets.AtsdMetaTable> metricList = new ArrayList<>();
