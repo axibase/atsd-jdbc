@@ -161,7 +161,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		}
 	}
 
-	private InputStream executeRequest(String method, int queryTimeoutMillis, String url) throws AtsdException, IOException, GeneralSecurityException {
+	private InputStream executeRequest(String method, int queryTimeoutMillis, String url) throws AtsdException, IOException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[request] {} {}", method, url);
 		}
@@ -185,22 +185,30 @@ public class SdkProtocolImpl implements IContentProtocol {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Response code: {}", code);
 			}
-			if (code == HttpURLConnection.HTTP_UNAUTHORIZED) {
-				throw new AtsdException("Wrong credentials provided");
-			}
 			body = conn.getErrorStream();
 			if (code != HttpURLConnection.HTTP_BAD_REQUEST) {
-				try {
-					final String error = JsonMappingUtil.deserializeErrorObject(body);
-					throw new AtsdRuntimeException(error);
-				} catch (IOException e) {
-					throw new AtsdRuntimeException("HTTP code " + code);
-				}
+				throwException(body, code);
 			}
 		} else {
 			body = conn.getInputStream();
 		}
 		return gzipped ? new GZIPInputStream(body) : body;
+	}
+
+	private void throwException(InputStream inputStream, int responseCode) throws AtsdException {
+		String errorMessage;
+		try {
+			errorMessage = JsonMappingUtil.deserializeErrorObject(inputStream);
+			if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED && errorMessage != null) {
+				final int length = errorMessage.length();
+				final String authorizationErrorCode = errorMessage.substring(length - 2, length);
+				final String resolvedMessage = resolveAuthenticationErrorMessageFromCode(authorizationErrorCode);
+				throw new AtsdException("Authentication failed: " + resolvedMessage);
+			}
+		} catch (IOException e) {
+			errorMessage = "HTTP code " + responseCode;
+		}
+		throw new AtsdRuntimeException(errorMessage);
 	}
 
 	private void setBaseProperties(String method, int queryTimeoutMillis) throws IOException {
@@ -268,6 +276,27 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private void setAdditionalRequestHeaders(Map<String, String> headers) {
 		for (Map.Entry<String, String> header : headers.entrySet()) {
 			conn.setRequestProperty(header.getKey(), header.getValue());
+		}
+	}
+
+	private String resolveAuthenticationErrorMessageFromCode(String code) {
+		switch (code) {
+			case "01": return "General Server Error";
+			case "02": return "Username Not Found";
+			case "03": return "Bad Credentials";
+			case "04": return "Disabled LDAP Service";
+			case "05": return "Corrupted Configuration";
+			case "06": return "MS Active Directory";
+			case "07": return "Account Disabled";
+			case "08": return "Account Expired";
+			case "09": return "Account Locked";
+			case "10": return "Logon Not Permitted At Time";
+			case "11": return "Logon Not Permitted At Workstation";
+			case "12": return "Password Expired";
+			case "13": return "Password Reset Required";
+			case "14": return "Wrong IP Address";
+			case "15": return "Access Denied";
+			default: return "Wrong credentials provided";
 		}
 	}
 

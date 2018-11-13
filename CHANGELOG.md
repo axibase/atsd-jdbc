@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.7
+
+* Provide more details in case of authentication failure.
+
 ## 1.4.6
 
 * Implemented support for short names in `atsd_metric` and `atsd_entity` tables.
