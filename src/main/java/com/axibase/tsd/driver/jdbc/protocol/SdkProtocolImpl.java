@@ -192,7 +192,7 @@ public class SdkProtocolImpl implements IContentProtocol {
                 bodyAsBytes = IOUtils.inputStreamToByteArray(inputStream);
                 bodyAsString = new String(bodyAsBytes);
                 logger.debug("Response code: {}, error: {}", responseCode, bodyAsString);
-                if (!StringUtils.startsWith(errorMessage, "#")) {
+                if (!StringUtils.startsWith(bodyAsString, "#")) {
                     errorMessage = JsonMappingUtil.deserializeErrorObject(bodyAsString);
                     if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED && errorMessage != null) {
                         final int length = errorMessage.length();
@@ -203,7 +203,7 @@ public class SdkProtocolImpl implements IContentProtocol {
                 }
             }
 		} catch (IOException e) {
-			// do nothing
+			errorMessage = "HTTP code " + responseCode + ": " + bodyAsString;
 		}
 		if (responseCode != HttpURLConnection.HTTP_BAD_REQUEST || !StringUtils.startsWith(bodyAsString, "#")) { // code 400 is processed later
 			throw new AtsdRuntimeException(errorMessage);
