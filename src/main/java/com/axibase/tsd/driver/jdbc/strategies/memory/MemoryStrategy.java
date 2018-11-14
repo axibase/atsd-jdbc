@@ -17,15 +17,15 @@ package com.axibase.tsd.driver.jdbc.strategies.memory;
 import com.axibase.tsd.driver.jdbc.content.StatementContext;
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
-import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.strategies.AbstractStrategy;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import static com.axibase.tsd.driver.jdbc.util.IOUtils.inputStreamToByteArray;
 
 public class MemoryStrategy extends AbstractStrategy {
-	private static final LoggingFacade logger = LoggingFacade.getLogger(MemoryStrategy.class);
-	private static final int BUFFER_SIZE = 16 * 1024;
-
 	public MemoryStrategy(StatementContext context, OnMissingMetricAction action) {
 		super(context, Strategy.MEMORY, action);
 	}
@@ -34,17 +34,5 @@ public class MemoryStrategy extends AbstractStrategy {
 	public void store(InputStream inputStream) throws IOException {
 		super.store(new ByteArrayInputStream(inputStreamToByteArray(inputStream)));
 		inputStream.close();
-	}
-
-	private static byte[] inputStreamToByteArray(InputStream inputStream) throws IOException {
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		final int length = BUFFER_SIZE;
-		byte[] buffer = new byte[length];
-		int read;
-		while ((read = inputStream.read(buffer, 0, length)) != -1) {
-			byteArrayOutputStream.write(buffer, 0, read);
-		}
-		byteArrayOutputStream.flush();
-		return byteArrayOutputStream.toByteArray();
 	}
 }

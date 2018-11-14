@@ -51,8 +51,8 @@ public class JsonMappingUtil {
 		return READER.forType(QueryDescription[].class).readValue(jsonIs);
 	}
 
-	public static String deserializeErrorObject(InputStream inputStream) throws IOException {
-		final GeneralError errorObject = READER.forType(GeneralError.class).readValue(inputStream);
+	public static String deserializeErrorObject(String errorJson) throws IOException {
+		final GeneralError errorObject = READER.forType(GeneralError.class).readValue(errorJson);
 		return errorObject == null ? null : errorObject.getError();
 	}
 
