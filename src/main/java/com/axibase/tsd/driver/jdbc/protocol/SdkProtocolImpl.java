@@ -24,6 +24,7 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
 import com.axibase.tsd.driver.jdbc.intf.IContentProtocol;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.util.IOUtils;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import lombok.SneakyThrows;
 import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
@@ -31,14 +32,12 @@ import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.calcite.avatica.org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.calcite.avatica.org.apache.http.entity.ContentType;
 import org.apache.calcite.runtime.TrustAllSslSocketFactory;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URL;
@@ -161,7 +160,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		}
 	}
 
-	private InputStream executeRequest(String method, int queryTimeoutMillis, String url) throws AtsdException, IOException, GeneralSecurityException {
+	private InputStream executeRequest(String method, int queryTimeoutMillis, String url) throws AtsdException, IOException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("[request] {} {}", method, url);
 		}
@@ -180,27 +179,36 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 		final boolean gzipped = COMPRESSION_ENCODING.equals(conn.getContentEncoding());
 		final int code = conn.getResponseCode();
-		InputStream body;
-		if (code != HttpsURLConnection.HTTP_OK) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Response code: {}", code);
-			}
-			if (code == HttpURLConnection.HTTP_UNAUTHORIZED) {
-				throw new AtsdException("Wrong credentials provided");
-			}
-			body = conn.getErrorStream();
-			if (code != HttpURLConnection.HTTP_BAD_REQUEST) {
-				try {
-					final String error = JsonMappingUtil.deserializeErrorObject(body);
-					throw new AtsdRuntimeException(error);
-				} catch (IOException e) {
-					throw new AtsdRuntimeException("HTTP code " + code);
-				}
-			}
-		} else {
-			body = conn.getInputStream();
-		}
+		final InputStream body = code == HttpsURLConnection.HTTP_OK ? conn.getInputStream() : handleErrorCode(conn.getErrorStream(), code);
 		return gzipped ? new GZIPInputStream(body) : body;
+	}
+
+	private InputStream handleErrorCode(InputStream inputStream, int responseCode) throws AtsdException {
+		byte[] bodyAsBytes = ArrayUtils.EMPTY_BYTE_ARRAY;
+		String bodyAsString = "";
+		String errorMessage = "HTTP code " + responseCode;
+		try {
+		    if (inputStream != null) {
+                bodyAsBytes = IOUtils.inputStreamToByteArray(inputStream);
+                bodyAsString = new String(bodyAsBytes);
+                logger.debug("Response code: {}, error: {}", responseCode, bodyAsString);
+                if (!StringUtils.startsWith(bodyAsString, "#")) {
+                    errorMessage = JsonMappingUtil.deserializeErrorObject(bodyAsString);
+                    if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED && errorMessage != null) {
+                        final int length = errorMessage.length();
+                        final String authorizationErrorCode = errorMessage.substring(length - 2, length);
+                        final String resolvedMessage = resolveAuthenticationErrorMessageFromCode(authorizationErrorCode);
+                        throw new AtsdException("Authentication failed: " + resolvedMessage);
+                    }
+                }
+            }
+		} catch (IOException e) {
+			errorMessage = "HTTP code " + responseCode + ": " + bodyAsString;
+		}
+		if (responseCode != HttpURLConnection.HTTP_BAD_REQUEST || !StringUtils.startsWith(bodyAsString, "#")) { // code 400 is processed later
+			throw new AtsdRuntimeException(errorMessage);
+		}
+		return new ByteArrayInputStream(bodyAsBytes);
 	}
 
 	private void setBaseProperties(String method, int queryTimeoutMillis) throws IOException {
@@ -225,7 +233,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (method.equals(POST_METHOD)) {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
-			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postContent.length());
 			conn.setChunkedStreamingMode(CHUNK_LENGTH);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {
@@ -268,6 +275,27 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private void setAdditionalRequestHeaders(Map<String, String> headers) {
 		for (Map.Entry<String, String> header : headers.entrySet()) {
 			conn.setRequestProperty(header.getKey(), header.getValue());
+		}
+	}
+
+	private String resolveAuthenticationErrorMessageFromCode(String code) {
+		switch (code) {
+			// skip 01
+			case "02": return "Username Not Found";
+			case "03": return "Bad Credentials";
+			case "04": return "Disabled LDAP Service";
+			case "05": return "Corrupted Configuration";
+			case "06": return "MS Active Directory";
+			case "07": return "Account Disabled";
+			case "08": return "Account Expired";
+			case "09": return "Account Locked";
+			case "10": return "Logon Not Permitted At Time";
+			case "11": return "Logon Not Permitted At Workstation";
+			case "12": return "Password Expired";
+			case "13": return "Password Reset Required";
+			case "14": return "Wrong IP Address";
+			case "15": return "Access Denied";
+			default: return "Wrong credentials provided";
 		}
 	}
 

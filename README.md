@@ -90,6 +90,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | 16643 | 1.3.2  |
 | 16855 | 1.3.3  |
 | 17285 | 1.4.0  |
+| 20443 | 1.4.7 |
 
 ## JDBC Connection Properties Supported by Driver
 
