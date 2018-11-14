@@ -71,7 +71,8 @@ public class ContentDescription {
 			this.postContent = Q_PARAM_NAME + '=' + encodedQuery;
         } else {
 			final String encodedQuery = getEncodedQuery();
-			this.postContent = QUERY_ID_PARAM_NAME + '=' + queryId + '&' +
+			this.postContent = DATETIME_AS_NUMBER_PARAM_NAME + "=true&" +
+					QUERY_ID_PARAM_NAME + '=' + queryId + '&' +
                     Q_PARAM_NAME + '=' + encodedQuery + '&' +
                     FORMAT_PARAM_NAME + '=' + FORMAT_PARAM_VALUE + '&' +
                     METADATA_FORMAT_PARAM_NAME + '=' + metadataFormat + '&' +

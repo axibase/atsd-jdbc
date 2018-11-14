@@ -62,6 +62,7 @@ public final class DriverConstants {
 	public static final String FORMAT_PARAM_VALUE = "csv";
 	public static final String METADATA_FORMAT_PARAM_NAME = "metadataFormat";
 	public static final String LIMIT_PARAM_NAME = "limit";
+	public static final String DATETIME_AS_NUMBER_PARAM_NAME = "datetimeAsNumber";
 
 	public static final int	MIN_SUPPORTED_ATSD_REVISION = 17285;
 	public static final int API_FIND_METRICS_STATISTICS_RENAME_REV = 19437;
