@@ -188,18 +188,20 @@ public class SdkProtocolImpl implements IContentProtocol {
 		String bodyAsString = "";
 		String errorMessage = "HTTP code " + responseCode;
 		try {
-			bodyAsBytes = IOUtils.inputStreamToByteArray(inputStream);
-			bodyAsString = new String(bodyAsBytes);
-			logger.debug("Response code: {}, error: {}", responseCode, bodyAsString);
-			if (!StringUtils.startsWith(errorMessage, "#")) {
-				errorMessage = JsonMappingUtil.deserializeErrorObject(bodyAsString);
-				if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED && errorMessage != null) {
-					final int length = errorMessage.length();
-					final String authorizationErrorCode = errorMessage.substring(length - 2, length);
-					final String resolvedMessage = resolveAuthenticationErrorMessageFromCode(authorizationErrorCode);
-					throw new AtsdException("Authentication failed: " + resolvedMessage);
-				}
-			}
+		    if (inputStream != null) {
+                bodyAsBytes = IOUtils.inputStreamToByteArray(inputStream);
+                bodyAsString = new String(bodyAsBytes);
+                logger.debug("Response code: {}, error: {}", responseCode, bodyAsString);
+                if (!StringUtils.startsWith(errorMessage, "#")) {
+                    errorMessage = JsonMappingUtil.deserializeErrorObject(bodyAsString);
+                    if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED && errorMessage != null) {
+                        final int length = errorMessage.length();
+                        final String authorizationErrorCode = errorMessage.substring(length - 2, length);
+                        final String resolvedMessage = resolveAuthenticationErrorMessageFromCode(authorizationErrorCode);
+                        throw new AtsdException("Authentication failed: " + resolvedMessage);
+                    }
+                }
+            }
 		} catch (IOException e) {
 			// do nothing
 		}
@@ -231,7 +233,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 		if (method.equals(POST_METHOD)) {
 			final String postContent = contentDescription.getPostContent();
 			conn.setRequestProperty(HttpHeaders.ACCEPT_ENCODING, COMPRESSION_ENCODING);
-			conn.setRequestProperty(HttpHeaders.CONTENT_LENGTH, "" + postContent.length());
 			conn.setChunkedStreamingMode(CHUNK_LENGTH);
 			conn.setDoOutput(true);
 			if (logger.isDebugEnabled()) {
