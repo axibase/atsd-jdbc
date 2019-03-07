@@ -45,7 +45,7 @@
 		<powermock.version>1.7.0</powermock.version>
 		<jackson.version>2.8.5</jackson.version>
 		<univocity.parsers.version>2.7.0</univocity.parsers.version>
-		<lombok.version>1.16.18</lombok.version>
+		<lombok.version>1.18.6</lombok.version>
 		<maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
 		<maven-compiler-plugin.version>3.6.2</maven-compiler-plugin.version>
 		<maven-dependency-plugin.version>3.0.1</maven-dependency-plugin.version>
