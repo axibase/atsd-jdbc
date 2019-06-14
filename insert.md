@@ -56,8 +56,8 @@ The `INSERT` and `UPDATE` statements can reference only the following predefined
 ------|------|------
 `entity`         | `varchar` | Required
 `metric`         | `varchar` | Required (1)
-`datetime`       | `timestamp` | Required (2)
-`time`           | `bigint` | Required (2)
+`datetime`       | `timestamp` | (2)
+`time`           | `bigint` | (2)
 `text`           | `varchar` | Required (3)
 `value`          | `decimal` | Required (3)
 `tags.{name}`    | `varchar` | Series tag with name `{name}`
@@ -104,7 +104,7 @@ The `INSERT` and `UPDATE` statements can reference only the following predefined
 **Notes**:
 
 * (1) The required metric name is specified as the table name.
-* (2) Either the `time` or `datetime` column must be included in the statement.
+* (2) Either the `time` or `datetime` column can be included in the statement.
 * (3) Either the `text` or `value` column must be included in the statement.
 * (4) The `tags` column can contain multiple series, metric, and entity tags serialized as `key1=value1` pairs separated by a semicolon.
 
