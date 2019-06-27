@@ -41,7 +41,6 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.net.URL;
-import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -67,13 +66,13 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
-	public InputStream readInfo() throws AtsdException, GeneralSecurityException, IOException {
+	public InputStream readInfo() throws AtsdException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
 		return executeRequest(GET_METHOD, 0, contentDescription.getEndpoint());
 	}
 
 	@Override
-	public InputStream readContent(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
+	public InputStream readContent(int timeoutMillis) throws AtsdException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
 		contentDescription.initDataFetchingContent();
 		InputStream inputStream = null;
@@ -104,7 +103,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
-	public void cancelQuery() throws AtsdException, GeneralSecurityException, IOException {
+	public void cancelQuery() throws AtsdException, IOException {
         contentDescription.addRequestHeadersForDataFetching();
         String cancelEndpoint = Location.CANCEL_ENDPOINT.getUrl(contentDescription.getInfo()) + '?' + QUERY_ID_PARAM_NAME + '=' + queryId;
 		InputStream result = executeRequest(GET_METHOD, 0, cancelEndpoint);
@@ -123,7 +122,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
-	public long writeContent(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
+	public long writeContent(int timeoutMillis) throws AtsdException, IOException {
 		contentDescription.addRequestHeader(HttpHeaders.ACCEPT, PLAIN_AND_JSON_MIME_TYPE);
 		contentDescription.addRequestHeader(HttpHeaders.CONTENT_TYPE, ContentType.TEXT_PLAIN.getMimeType());
 		long writeCount = 0;
@@ -151,7 +150,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		if (logger.isTraceEnabled()) {
 			logger.trace("[SdkProtocolImpl#close]");
 		}

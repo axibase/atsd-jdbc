@@ -13,12 +13,16 @@ public class AtsdConnectionTest {
 
 	private AtsdConnection connection;
 
-	@Before
-	public void before() {
+	public static AtsdConnection createTestConnection() {
 		final Properties info = new Properties();
 		info.setProperty("url", "test:8443");
 		final AtsdVersion atsdVersion = new AtsdVersion(20000, "Community Edition");
-		connection = new AtsdConnection(new AtsdDriver(), new AtsdFactory(atsdVersion), "atsd:jdbc://test:8443", info);
+		return new AtsdConnection(new AtsdDriver(), new AtsdFactory(atsdVersion), "atsd:jdbc://test:8443", info);
+	}
+
+	@Before
+	public void before() {
+		connection = createTestConnection();
 	}
 
 	@After
