@@ -6,7 +6,10 @@ import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.StrTokenizer;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Properties;
 
 import static com.axibase.tsd.driver.jdbc.DriverConstants.CONNECTION_STRING_PARAM_SEPARATOR;
 import static com.axibase.tsd.driver.jdbc.enums.AtsdDriverConnectionProperties.*;
@@ -159,13 +162,11 @@ public class AtsdConnectionInfo {
 	}
 
 	private static final class HostAndCatalog {
-		private final char CATALOG_SEPARATOR = '/';
-
 		private final String host;
 		private final String catalog;
 
 		private HostAndCatalog(String urlPrefix) {
-			final int catalogSeparatorIndex = urlPrefix.indexOf(CATALOG_SEPARATOR);
+			final int catalogSeparatorIndex = urlPrefix.indexOf('/');
 			if (catalogSeparatorIndex < 0) {
 				this.host = urlPrefix;
 				this.catalog = null;

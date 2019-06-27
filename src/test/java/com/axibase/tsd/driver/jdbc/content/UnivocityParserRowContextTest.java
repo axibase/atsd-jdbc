@@ -8,7 +8,6 @@ import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.api.mockito.PowerMockito;
 
 import java.io.StringReader;
 import java.util.List;
@@ -30,7 +29,7 @@ public class UnivocityParserRowContextTest {
 	public void init() {
 		parser = new CsvParser(settings);
 		parser.beginParsing(new StringReader(CSV));
-		rowContext = PowerMockito.spy(new UnivocityParserRowContext(parser.getContext(), metadata.size()));
+		rowContext = new UnivocityParserRowContext(parser.getContext(), metadata.size());
 		parser.parseNext();
 	}
 

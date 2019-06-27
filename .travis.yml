@@ -15,7 +15,7 @@ script:
 jdk:
   - openjdk7
   - openjdk8
-  - oraclejdk8
+  - openjdk11
 dist: trusty
 env:
   global:
