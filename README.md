@@ -553,9 +553,9 @@ Catalog: null
 
 We recommend the [Spring Data JDBC](https://github.com/nurkiewicz/spring-data-jdbc-repository) library to integrate ATSD JDBC driver with Spring.
 
-See an example [here](https://github.com/axibase/atsd-jdbc-test/tree/master/src/main/java/com/axibase/tsd/driver/jdbc/spring).
+See an example [here](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring).
 
-[config file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/AtsdRepositoryConfig.java) gist:
+[config file](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring/AtsdRepositoryConfig.java) gist:
 
 ```java
 @Configuration
@@ -584,7 +584,7 @@ public class AtsdRepositoryConfig {
 }
 ```
 
-[repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueFloatRepository.java) gist:
+[repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueFloatRepository.java) gist:
 
 ```java
 @Repository
@@ -604,7 +604,7 @@ public class EntityValueFloatRepository extends JdbcRepository<EntityValueFloat,
 }
 ```
 
-Usage example with [Spring Boot](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/SampleDriverApplication.java):
+Usage example with [Spring Boot](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring/SampleDriverApplication.java):
 
 ```java
 @Resource
