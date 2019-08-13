@@ -521,30 +521,26 @@ public class AtsdMeta extends MetaImpl {
 				tableNamePattern, typeList);
 		if (typeList == null || typeList.contains("TABLE")) {
 			final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
-			final List<Object> tables = receiveTables(atsdConnectionInfo, pattern);
+			final List<AtsdMetaResultSets.AtsdMetaTable> tables = receiveTables(atsdConnectionInfo, pattern);
 
 			if(log.isDebugEnabled()) {
 				log.debug("[getTables] count: {}", tables.size());
 				log.debug("[getTables] tables: {}", buildTablesStringForDebug(tables));
 			}
-
+            Collections.sort(tables, AtsdMetaResultSets.JDBC_TABLE_COMPARATOR);
 			return getResultSet(tables, AtsdMetaResultSets.AtsdMetaTable.class);
 		}
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaTable.class);
 	}
 
-	private static String buildTablesStringForDebug(List<Object> tables) {
-		StringBuilder buffer = new StringBuilder();
-		buffer.append('[');
-		AtsdMetaResultSets.AtsdMetaTable metaTable;
-		final int maxTablesShow = 20;
-		final int limit = tables.size() > maxTablesShow ? maxTablesShow : tables.size();
-		for (int i = 0;i < limit; i++) {
-			metaTable = (AtsdMetaResultSets.AtsdMetaTable) tables.get(i);
+	private static String buildTablesStringForDebug(List<AtsdMetaResultSets.AtsdMetaTable> tables) {
+		final StringBuilder buffer = new StringBuilder().append('[');
+		final int limit = Math.min(tables.size(), 20);
+		for (int i = 0; i < limit; i++) {
 			if(buffer.length() > 1) {
 				buffer.append(',');
 			}
-			buffer.append(metaTable.tableName);
+			buffer.append(tables.get(i).tableName);
 		}
 		buffer.append(']');
 		return buffer.toString();
@@ -589,8 +585,9 @@ public class AtsdMeta extends MetaImpl {
 		return getAtsdRevision() >= META_COLUMNS_CREATION_TIME_REVISION;
 	}
 
-	private List<Object> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
-		final List<Object> metricList = new ArrayList<>();
+
+	private List<AtsdMetaResultSets.AtsdMetaTable> receiveTables(AtsdConnectionInfo connectionInfo, String pattern) {
+		final List<AtsdMetaResultSets.AtsdMetaTable> metricList = new ArrayList<>();
 		final List<String> metricMasks = connectionInfo.tables();
 		final boolean metadataColumnsShort = useShortColumnNamesInMetaTables();
 		for (DefaultTable defaultTable : DefaultTable.values()) {
@@ -721,16 +718,16 @@ public class AtsdMeta extends MetaImpl {
 	public MetaResultSet getCatalogs(ConnectionHandle ch) {
         log.debug("[getCatalogs] connection: {}", ch.id);
         final String catalog = atsdConnectionInfo.catalog();
-		final Iterable<Object> iterable = catalog == null ? Collections.emptyList() :
-				Collections.<Object>singletonList(new MetaCatalog(catalog));
+		final Iterable<MetaCatalog> iterable = catalog == null ? Collections.<MetaCatalog>emptyList() :
+				Collections.singletonList(new MetaCatalog(catalog));
 		return getResultSet(iterable, MetaCatalog.class);
 	}
 
 	@Override
 	public MetaResultSet getTableTypes(ConnectionHandle ch) {
 		log.debug("[getTableTypes] connection: {}", ch.id);
-		final Iterable<Object> iterable = Arrays.<Object>asList(
-				new MetaTableType("TABLE"), new MetaTableType("VIEW"), new MetaTableType("SYSTEM"));
+		final Iterable<MetaTableType> iterable = Arrays.asList(
+                new MetaTableType("SYSTEM"), new MetaTableType("TABLE"), new MetaTableType("VIEW"));
 		return getResultSet(iterable, MetaTableType.class);
 	}
 
@@ -738,11 +735,12 @@ public class AtsdMeta extends MetaImpl {
 	public MetaResultSet getTypeInfo(ConnectionHandle ch) {
 		log.debug("[getTypeInfo] connection: {}", ch.id);
 		AtsdType[] atsdTypes = AtsdType.values();
-		final List<Object> list = new ArrayList<>(atsdTypes.length);
+		final List<AtsdMetaResultSets.AtsdMetaTypeInfo> typeList = new ArrayList<>(atsdTypes.length);
 		for (AtsdType type : atsdTypes) {
-			list.add(getTypeInfo(type));
+			typeList.add(getTypeInfo(type));
 		}
-		return getResultSet(list, AtsdMetaResultSets.AtsdMetaTypeInfo.class);
+		Collections.sort(typeList, AtsdMetaResultSets.JDBC_TYPE_COMPARATOR);
+		return getResultSet(typeList, AtsdMetaResultSets.AtsdMetaTypeInfo.class);
 	}
 
 	private List<String> includedMetaTables(List<String> metricMasks, String tablePattern) {
@@ -770,7 +768,7 @@ public class AtsdMeta extends MetaImpl {
 			final String colNamePattern = columnNamePattern.s;
 			final boolean addCreationTime = shouldAddCreationTimeMetaColumns();
 			final List<MetadataColumnDefinition> columns = filterColumns(colNamePattern, atsdConnectionInfo.metaColumns(), addCreationTime);
-			final List<Object> columnData = new ArrayList<>();
+			final List<AtsdMetaResultSets.AtsdMetaColumn> columnData = new ArrayList<>();
 			final boolean underscoreAsLiteral = atsdConnectionInfo.disableUnderscoreInColumns();
 			final String pattern = StringUtils.isBlank(schemaPattern.s) ? tableNamePattern.s : schemaPattern.s + '.' + tableNamePattern.s;
 			final Map<String, AtsdType> tableNamesAndValueTypes = getAndFilterMetricsFromAtsd(metricMasks, pattern, underscoreAsLiteral);
@@ -811,12 +809,13 @@ public class AtsdMeta extends MetaImpl {
 				log.debug("[getColumns] count: {}", columnData.size());
 				log.debug("[getColumns] columns: {}", buildColumnsStringForDebug(columnData));
 			}
+			Collections.sort(columnData, AtsdMetaResultSets.JDBC_COLUMN_COMPARATOR);
 			return getResultSet(columnData, AtsdMetaResultSets.AtsdMetaColumn.class);
 		}
 		return createEmptyResultSet(AtsdMetaResultSets.AtsdMetaColumn.class);
 	}
 
-	private void appendFilteredTagsColumns(String tableName, String colNamePattern, List<Object> columnData,
+	private void appendFilteredTagsColumns(String tableName, String colNamePattern, List<? super AtsdMetaResultSets.AtsdMetaColumn> columnData,
 										   boolean odbcCompatible, AtsdType metricValueType) {
         if (DefaultTable.isDefaultTable(tableName) || !maybeTagColumnPattern(colNamePattern)) {
             return;
@@ -838,7 +837,7 @@ public class AtsdMeta extends MetaImpl {
         }
     }
 
-	private static String buildColumnsStringForDebug(List<Object> columnData) {
+	private static String buildColumnsStringForDebug(List<? super AtsdMetaResultSets.AtsdMetaColumn> columnData) {
 		StringBuilder buffer = new StringBuilder();
 		buffer.append('[');
 		AtsdMetaResultSets.AtsdMetaColumn metaColumn;
@@ -934,7 +933,7 @@ public class AtsdMeta extends MetaImpl {
 		);
 	}
 
-	private MetaResultSet getResultSet(Iterable<Object> iterable, Class<?> clazz) {
+	private <T> MetaResultSet getResultSet(Iterable<? super T> iterable, Class<T> clazz) {
 		final Field[] fields = clazz.getDeclaredFields();
 		final int length = fields.length;
 		final List<ColumnMetaData> columns = new ArrayList<>(length);
@@ -950,8 +949,10 @@ public class AtsdMeta extends MetaImpl {
 		if (log.isTraceEnabled()) {
 			log.trace("[createResultSet] clazzName: {} fieldNames: {}", clazz.getSimpleName(), fieldNames);
 		}
+		@SuppressWarnings("unchecked")
+		final List<Object> iterableOfObjects = (List<Object>) iterable;
 		return createResultSet(Collections.<String, Object>emptyMap(), columns,
-				CursorFactory.record(clazz, Arrays.asList(fields), fieldNames), new Frame(0, true, iterable));
+				CursorFactory.record(clazz, Arrays.asList(fields), fieldNames), new Frame(0, true, iterableOfObjects));
 	}
 
 	private IDataProvider createDataProvider(StatementHandle statementHandle, String sql, StatementType statementType, boolean encodeTags) throws UnsupportedEncodingException {

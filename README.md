@@ -531,20 +531,20 @@ Driver Version:     1.4.7
 
 TypeInfo:
     Name:bigint         CS: false     Type: -5    Precision: 19
-    Name:boolean        CS: false     Type: 16    Precision: 1
     Name:decimal        CS: false     Type: 3     Precision: 0
-    Name:double         CS: false     Type: 8     Precision: 15
-    Name:float          CS: false     Type: 7     Precision: 7
     Name:integer        CS: false     Type: 4     Precision: 10
-    Name:java_object    CS: false     Type: 2000  Precision: 2147483647
     Name:smallint       CS: false     Type: 5     Precision: 5
+    Name:float          CS: false     Type: 7     Precision: 7
+    Name:double         CS: false     Type: 8     Precision: 15
     Name:varchar        CS: true      Type: 12    Precision: 131072
+    Name:boolean        CS: false     Type: 16    Precision: 1
     Name:timestamp      CS: false     Type: 93    Precision: 23
+    Name:java_object    CS: false     Type: 2000  Precision: 2147483647
 
 TableTypes:
+    SYSTEM
     TABLE
     VIEW
-    SYSTEM
 
 Catalog: null
 ```
