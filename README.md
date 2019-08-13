@@ -90,6 +90,7 @@ For example, database revision number 16200 supports driver versions between 1.2
 | 16643 | 1.3.2  |
 | 16855 | 1.3.3  |
 | 17285 | 1.4.0  |
+| 20443 | 1.4.7 |
 
 ## JDBC Connection Properties Supported by Driver
 
@@ -131,11 +132,11 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 * Compiled drivers are listed on the [Releases](https://github.com/axibase/atsd-jdbc/releases/) page.
 * `atsd-jdbc-*.jar` files are built without dependencies.
 * `atsd-jdbc-*-DEPS.jar` files contain dependencies.
-* The latest jar file with dependencies is [`atsd-jdbc-1.4.6-DEPS.jar`](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.4.6/atsd-jdbc-1.4.6-DEPS.jar).
+* The latest jar file with dependencies is [`atsd-jdbc-1.4.7-DEPS.jar`](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.4.7/atsd-jdbc-1.4.7-DEPS.jar).
 
 ## Debugging
 
-* Download a `*-DEBUG-DEPS.jar` driver file that contains tracing code such as `atsd-jdbc-1.4.6-DEBUG-DEPS.jar`.
+* Download a `*-DEBUG-DEPS.jar` driver file that contains tracing code such as `atsd-jdbc-1.4.7-DEBUG-DEPS.jar`.
 * Replace the current `atsd-jdbc-*.jar` file in the `./lib` directory with the downloaded JAR file.
 * Locate the logging properties file, for example `log4j2.properties` in case of **Apache Log4j 2**.
 * Define a new logger for `com.axibase` classes at the `DEBUG` level, for example:
@@ -158,7 +159,7 @@ Choose the appropriate strategy based on available Java heap memory, disk space,
 * Review the `atsd-jdbc.log` file for `driver.jdbc.AtsdDriver` messages.
 
 ```ls
-DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createDriverVersion] 1.4.6-DEBUG
+DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createDriverVersion] 1.4.7-DEBUG
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [acceptsURL] jdbc:atsd://atsd_hostname:8443
 DEBUG 2018-09-20T09:19:58,525+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [connect] jdbc:atsd://atsd_hostname:8443
 DEBUG 2018-09-20T09:19:58,650+0000 [adm, #0, #14] driver.jdbc.AtsdDriver: [createMeta] d6c9793b-63c6-4794-af4b-bee8414d947d
@@ -170,18 +171,18 @@ DEBUG 2018-09-20T09:19:58,978+0000 [adm, #0, #14] jdbc.ext.AtsdDatabaseMetaData:
 
 ### Classpath
 
-Download the [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.4.6/atsd-jdbc-1.4.6-DEPS.jar) with dependencies and add it to the classpath of your application.
+Download the [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.4.7/atsd-jdbc-1.4.7-DEPS.jar) with dependencies and add it to the classpath of your application.
 
 * Unix:
 
 ```sh
-java -cp "atsd-jdbc-1.4.6-DEPS.jar:lib/*" your.package.MainClass
+java -cp "atsd-jdbc-1.4.7-DEPS.jar:lib/*" your.package.MainClass
 ```
 
 * Windows:
 
 ```sh
-java -cp "atsd-jdbc-1.4.6-DEPS.jar;lib/*" your.package.MainClass
+java -cp "atsd-jdbc-1.4.7-DEPS.jar;lib/*" your.package.MainClass
 ```
 
 ### Apache Maven
@@ -192,7 +193,7 @@ Add `atsd-jdbc` dependency to `pom.xml` in your project.
 <dependency>
     <groupId>com.axibase</groupId>
     <artifactId>atsd-jdbc</artifactId>
-    <version>1.4.6</version>
+    <version>1.4.7</version>
 </dependency>
 ```
 
@@ -206,7 +207,7 @@ $ mvn clean package -DskipTests=true
 
 ### Database Tools
 
-Download the [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.4.6/atsd-jdbc-1.4.6-DEPS.jar) with dependencies and import it into your database client tool.
+Download the [jar file](https://github.com/axibase/atsd-jdbc/releases/download/RELEASE-1.4.7/atsd-jdbc-1.4.7-DEPS.jar) with dependencies and import it into your database client tool.
 
 Follow the instructions to create a custom JDBC driver based on the ATSD jar file.
 
@@ -526,7 +527,7 @@ Results:
 Product Name:       Axibase
 Product Version:    Axibase Time Series Database, <ATSD_EDITION>, Revision: <ATSD_REVISION_NUMBER>
 Driver Name:        ATSD JDBC driver
-Driver Version:     1.4.6
+Driver Version:     1.4.7
 
 TypeInfo:
     Name:bigint         CS: false     Type: -5    Precision: 19
@@ -552,9 +553,9 @@ Catalog: null
 
 We recommend the [Spring Data JDBC](https://github.com/nurkiewicz/spring-data-jdbc-repository) library to integrate ATSD JDBC driver with Spring.
 
-See an example [here](https://github.com/axibase/atsd-jdbc-test/tree/master/src/main/java/com/axibase/tsd/driver/jdbc/spring).
+See an example [here](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring).
 
-[config file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/AtsdRepositoryConfig.java) gist:
+[config file](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring/AtsdRepositoryConfig.java) gist:
 
 ```java
 @Configuration
@@ -583,7 +584,7 @@ public class AtsdRepositoryConfig {
 }
 ```
 
-[repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueFloatRepository.java) gist:
+[repository file](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring/EntityValueFloatRepository.java) gist:
 
 ```java
 @Repository
@@ -603,7 +604,7 @@ public class EntityValueFloatRepository extends JdbcRepository<EntityValueFloat,
 }
 ```
 
-Usage example with [Spring Boot](https://github.com/axibase/atsd-jdbc-test/blob/master/src/main/java/com/axibase/tsd/driver/jdbc/spring/SampleDriverApplication.java):
+Usage example with [Spring Boot](https://github.com/axibase/atsd-jdbc-test/blob/master/atsd-jdbc-integration-spring-boot-1/src/main/java/com/axibase/tsd/driver/jdbc/spring/SampleDriverApplication.java):
 
 ```java
 @Resource
