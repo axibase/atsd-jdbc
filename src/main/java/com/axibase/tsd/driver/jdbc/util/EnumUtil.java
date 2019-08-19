@@ -1,29 +1,22 @@
 package com.axibase.tsd.driver.jdbc.util;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
-import com.axibase.tsd.driver.jdbc.enums.ReservedWordsSQL2003;
+import com.axibase.tsd.driver.jdbc.enums.SqlStatementType;
 import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.enums.timedatesyntax.*;
 import com.axibase.tsd.driver.jdbc.intf.ITimeDateConstant;
 import lombok.experimental.UtilityClass;
-import org.apache.calcite.avatica.Meta;
 import org.apache.commons.lang3.EnumUtils;
 
-import javax.annotation.Nullable;
 import java.util.*;
-
-import static org.apache.calcite.avatica.Meta.StatementType.*;
 
 @UtilityClass
 public class EnumUtil {
-
-	private static final Set<String> reservedWordsSql2003 = createSetFromEnum(ReservedWordsSQL2003.values());
 	private static final Map<String, AtsdType> atsdNameTypeMapping = createAtsdNameTypeMapping();
-	private static final Map<Integer, AtsdType> sqlAtsdTypesMaping = createSqlAtsdTypesMapping();
+	private static final Map<Integer, AtsdType> sqlAtsdTypesMapping = createSqlAtsdTypesMapping();
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
-
-	private static final Set<Meta.StatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SELECT, INSERT, UPDATE)));
+	private static final Set<SqlStatementType> SUPPORTED_STATEMENT_TYPES = Collections.unmodifiableSet(EnumSet.copyOf(Arrays.asList(SqlStatementType.values())));
 
 	private static Map<String, AtsdType> createAtsdNameTypeMapping() {
 		Map<String, AtsdType> mapping = new HashMap<>();
@@ -50,15 +43,7 @@ public class EnumUtil {
 		return Collections.unmodifiableSet(set);
 	}
 
-	private static boolean isTokenInSet(String token, Set<String> set) {
-		return set.contains(token.toUpperCase(Locale.US));
-	}
-
-	public static boolean isReservedSqlToken(String token) {
-		return isTokenInSet(token, reservedWordsSql2003);
-	}
-
-	public static AtsdType getAtsdTypeWithPropertyUrlHint(String serverTypeName, @Nullable String propertyUrl) {
+	public static AtsdType getAtsdTypeWithPropertyUrlHint(String serverTypeName, String propertyUrl) {
 		if ("atsd:datetime".equals(propertyUrl)) {
 			return AtsdType.TIMESTAMP_DATA_TYPE; // ATSD may return bigint for datetime column to eliminate parsing operation.
 		}
@@ -70,7 +55,7 @@ public class EnumUtil {
 	}
 
 	public static AtsdType getAtsdTypeBySqlType(int typeCode, AtsdType defaultType) {
-		AtsdType result = sqlAtsdTypesMaping.get(typeCode);
+		AtsdType result = sqlAtsdTypesMapping.get(typeCode);
 		if (result == null) {
 			result = defaultType;
 		}
@@ -123,13 +108,17 @@ public class EnumUtil {
 		return result;
 	}
 
-	public static Meta.StatementType getStatementTypeByQuery(final String query) {
+	public boolean isSupportedStatementType(SqlStatementType statementType) {
+		return SUPPORTED_STATEMENT_TYPES.contains(statementType);
+	}
+
+	public static SqlStatementType getStatementTypeByQuery(final String query) {
 		if (query == null) {
-			return SELECT;
+			return SqlStatementType.SELECT;
 		}
 		final String queryKind = new StringTokenizer(query).nextToken().toUpperCase(Locale.US);
 		try {
-			final Meta.StatementType statementType = Meta.StatementType.valueOf(queryKind);
+			final SqlStatementType statementType = SqlStatementType.valueOf(queryKind);
 			if (SUPPORTED_STATEMENT_TYPES.contains(statementType)) {
 				return statementType;
 			}

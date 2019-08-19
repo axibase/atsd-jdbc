@@ -16,6 +16,7 @@ package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.enums.AtsdType;
 import com.axibase.tsd.driver.jdbc.enums.JsonConvertedType;
+import com.axibase.tsd.driver.jdbc.enums.SqlStatementType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdColumnMetaData;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdJsonException;
@@ -23,15 +24,14 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.EnumUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.JsonTypeResolver;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import lombok.Getter;
 import org.apache.calcite.avatica.AvaticaParameter;
 import org.apache.calcite.avatica.ColumnMetaData;
-import org.apache.calcite.avatica.Meta.CursorFactory;
+import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.MetaResultSet;
 import org.apache.calcite.avatica.Meta.Signature;
-import org.apache.calcite.avatica.Meta.StatementType;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParser;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonToken;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -48,14 +48,19 @@ public class ContentMetadata {
 	private final List<MetaResultSet> list;
 	private final List<ColumnMetaData> metadataList;
 
-	public ContentMetadata(String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames, boolean odbcCompatible)
+	public ContentMetadata(long updateCount, String scheme, String sql, String catalog, String connectionId, int statementId, boolean assignColumnNames, boolean odbcCompatible, SqlStatementType statementType)
 			throws AtsdException, IOException {
 		this.metadataList = StringUtils.isNotEmpty(scheme) ? buildMetadataList(scheme, catalog, assignColumnNames, odbcCompatible)
 				: Collections.<ColumnMetaData>emptyList();
-		this.sign = new Signature(metadataList, sql, Collections.<AvaticaParameter>emptyList(), null, CursorFactory.LIST,
-				StatementType.SELECT);
-		this.list = Collections.unmodifiableList(
-				Collections.singletonList(MetaResultSet.create(connectionId, statementId, false, sign, null)));
+		this.sign = new Signature(metadataList, sql, Collections.<AvaticaParameter>emptyList(), null,
+				statementType.getCursorFactory(), statementType.getAvaticaStatementType());
+		this.list = Collections.unmodifiableList(Collections.singletonList(createMetaRs(connectionId, statementId, statementType, sign, updateCount)));
+	}
+
+	private static MetaResultSet createMetaRs(String connectionId, int statementId, SqlStatementType statementType, Meta.Signature sign, long updateCount) {
+		return statementType == SqlStatementType.SELECT ?
+				MetaResultSet.create(connectionId, statementId, false, sign, null) :
+				MetaResultSet.count(connectionId, statementId, updateCount);
 	}
 
 	public static List<ColumnMetaData> buildMetadataList(InputStream jsonInputStream, String catalog, boolean assignColumnNames, boolean odbcCompatible)

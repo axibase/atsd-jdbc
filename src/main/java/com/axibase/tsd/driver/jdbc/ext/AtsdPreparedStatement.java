@@ -23,29 +23,22 @@ import com.axibase.tsd.driver.jdbc.util.TimeDateExpression;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
-import org.apache.calcite.avatica.AvaticaConnection;
-import org.apache.calcite.avatica.AvaticaPreparedStatement;
-import org.apache.calcite.avatica.ColumnMetaData;
-import org.apache.calcite.avatica.Meta;
+import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.Meta.StatementHandle;
 import org.apache.calcite.avatica.remote.TypedValue;
 
 import java.io.InputStream;
 import java.io.Reader;
-import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Date;
-import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Calendar;
+import java.util.Map;
 
 import static org.apache.calcite.avatica.Meta.StatementType.SELECT;
 
 public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdPreparedStatement.class);
-
-	private final ConcurrentSkipListMap<Integer, TypedValue> parameters = new ConcurrentSkipListMap<>();
 
 	@Getter
 	@Setter
@@ -54,7 +47,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	protected AtsdPreparedStatement(AvaticaConnection connection, StatementHandle h, Signature signature,
 									int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
 		super(connection, h, signature, resultSetType, resultSetConcurrency, resultSetHoldability);
-		logger.trace("[new] {}", this.handle.id);
+		logger.trace("[new] handle id={}", this.handle.id);
 	}
 
 	@Override
@@ -66,102 +59,19 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 		}
 	}
 
-	@Override
-	public void clearParameters() throws SQLException {
-		super.clearParameters();
-		parameters.clear();
-	}
-
-	@Override
-	protected List<TypedValue> getParameterValues() {
-		if (parameters.isEmpty()) {
-			return Collections.emptyList();
-		}
-		if (parameters.lastKey() != parameters.size()) {
-			throw new IndexOutOfBoundsException(
-					String.format("Number of specified parameters [%d] is lower than the last key [%d]",
-							parameters.size(), parameters.lastKey()));
-		}
-		final List<TypedValue> list = new ArrayList<>(parameters.values());
-		if (logger.isDebugEnabled()) {
-			for (TypedValue tv : list) {
-				logger.debug("[TypedValue] type: {} value: {}", tv.type, tv.value);
-			}
-		}
-		return list;
-	}
-
 	/*
 		Method should close current result set and return true if another one can be fetched.
 		As we always use one result set, always return false;
 	 */
 	@Override
 	public boolean getMoreResults() throws SQLException {
-		if (openResultSet != null) {
-			openResultSet.close();
-		}
-		return false;
+		return super.getMoreResults();
 	}
 
 	@Override
 	public synchronized void close() throws SQLException {
 		super.close();
 		logger.trace("[close] {}", this.handle.id);
-	}
-
-	@Override
-	public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.OBJECT, null));
-	}
-
-	@Override
-	public void setBoolean(int parameterIndex, boolean value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.BOOLEAN, value));
-	}
-
-	@Override
-	public void setByte(int parameterIndex, byte value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.BYTE, value));
-	}
-
-	@Override
-	public void setShort(int parameterIndex, short value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.SHORT, value));
-	}
-
-	@Override
-	public void setInt(int parameterIndex, int value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.INTEGER, value));
-	}
-
-	@Override
-	public void setLong(int parameterIndex, long value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.LONG, value));
-	}
-
-	@Override
-	public void setFloat(int parameterIndex, float value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.FLOAT, value));
-	}
-
-	@Override
-	public void setDouble(int parameterIndex, double value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.DOUBLE, value));
-	}
-
-	@Override
-	public void setBigDecimal(int parameterIndex, BigDecimal value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.OBJECT, value));
-	}
-
-	@Override
-	public void setString(int parameterIndex, String value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.STRING, value));
-	}
-
-	@Override
-	public void setBytes(int parameterIndex, byte[] value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.STRING, value));
 	}
 
 	@Override
@@ -182,12 +92,12 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	@Override
 	public void setObject(int parameterIndex, Object value, int targetSqlType) throws SQLException {
 		final ColumnMetaData.Rep rep = EnumUtil.getAtsdTypeBySqlType(targetSqlType, AtsdType.JAVA_OBJECT_TYPE).rep;
-		parameters.put(parameterIndex, TypedValue.ofSerial(rep, value));
+		getParameterValues().set(parameterIndex - 1, TypedValue.ofSerial(rep, value));
 	}
 
 	@Override
 	public void setObject(int parameterIndex, Object value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.OBJECT, value));
+		getParameterValues().set(parameterIndex - 1, TypedValue.ofSerial(ColumnMetaData.Rep.OBJECT, value));
 	}
 
 	@Override
@@ -237,12 +147,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setTimestamp(int parameterIndex, Timestamp value, Calendar calendar) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofJdbc(ColumnMetaData.Rep.JAVA_SQL_TIMESTAMP, value, calendar));
-	}
-
-	@Override
-	public void setTimestamp(int parameterIndex, Timestamp value) throws SQLException {
-		setTimestamp(parameterIndex, value, getCalendar());
+		super.setTimestamp(parameterIndex, value, calendar);
 	}
 
 	@Override
@@ -262,12 +167,12 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
 	@Override
 	public void setRowId(int parameterIndex, RowId value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.OBJECT, value));
+		getSite(parameterIndex).setRowId(value);
 	}
 
 	@Override
 	public void setNString(int parameterIndex, String value) throws SQLException {
-		parameters.put(parameterIndex, TypedValue.ofSerial(ColumnMetaData.Rep.STRING, value));
+		getSite(parameterIndex).setNString(value);
 	}
 
 	@Override
@@ -360,7 +265,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	}
 
 	private AtsdConnection getAtsdConnection() {
-		return (AtsdConnection) super.getConnection();
+		return (AtsdConnection) connection;
 	}
 
 	public void setTags(int parameterIndex, Map<String, String> tags) throws SQLException {
@@ -372,7 +277,7 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 	public ResultSetMetaData getMetaData() {
 		logger.debug("[getMetaData]");
 		final ResultSetMetaData resultSetMetaData;
-		if (super.openResultSet == null) {
+		if (super.openResultSet == null) { // if result set is not created, metadata is accessed before query execution
 			if (getStatementType() == SELECT) {
 				getAtsdConnection().getMeta().updatePreparedStatementResultSetMetaData(this.getSignature(), this.handle);
 				resultSetMetaData = super.getMetaData();
@@ -387,18 +292,13 @@ public class AtsdPreparedStatement extends AvaticaPreparedStatement {
 
     @Override
     public void addBatch(String sql) throws SQLException {
-		throw new UnsupportedOperationException();
+		throw Helper.INSTANCE.unsupported();
     }
 
     @Override
 	public void addBatch() throws SQLException {
 		logger.debug("[addBatch]");
-		this.parameterValueBatch.add(this.copyParameterValues());
-	}
-
-	@Override
-	protected List<TypedValue> copyParameterValues() {
-		return getParameterValues();
+		super.addBatch();
 	}
 
 }

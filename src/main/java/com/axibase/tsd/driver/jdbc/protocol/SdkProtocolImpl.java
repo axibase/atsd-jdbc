@@ -27,11 +27,6 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.IOUtils;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import lombok.SneakyThrows;
-import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
-import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
-import org.apache.calcite.avatica.org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.calcite.avatica.org.apache.http.entity.ContentType;
-import org.apache.calcite.runtime.TrustAllSslSocketFactory;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,7 +48,6 @@ public class SdkProtocolImpl implements IContentProtocol {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(SdkProtocolImpl.class);
 	private static final String POST_METHOD = "POST";
 	private static final String GET_METHOD = "GET";
-	private static final String CONTEXT_INSTANCE_TYPE = "SSL";
 	private static final int CHUNK_LENGTH = 100;
 
 	private final ContentDescription contentDescription;
@@ -114,9 +108,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 				queryId = descriptionArray[0].getQueryId();
 			}
 		} catch (IOException e){
-			if (logger.isDebugEnabled()) {
-				logger.debug("Wrong query description format", e);
-			}
+			logger.debug("Wrong query description format", e);
 			queryId = contentDescription.getQueryId();
 		}
 	}
@@ -124,7 +116,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 	@Override
 	public long writeContent(int timeoutMillis) throws AtsdException, IOException {
 		contentDescription.addRequestHeader(HttpHeaders.ACCEPT, PLAIN_AND_JSON_MIME_TYPE);
-		contentDescription.addRequestHeader(HttpHeaders.CONTENT_TYPE, ContentType.TEXT_PLAIN.getMimeType());
+		contentDescription.addRequestHeader(HttpHeaders.CONTENT_TYPE, "text/plain");
 		long writeCount = 0;
 		try {
 			InputStream inputStream = executeRequest(POST_METHOD, timeoutMillis, contentDescription.getEndpoint());
@@ -136,9 +128,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			writeCount = sendCommandResult.getSuccess();
 			logger.debug("[response] success: {}", sendCommandResult.getSuccess());
 		} catch (IOException e) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Data writing error", e);
-			}
+			logger.debug("Data writing error", e);
 			if (queryId != null) {
 				throw new AtsdRuntimeException(prepareCancelMessage());
 			}
@@ -151,18 +141,14 @@ public class SdkProtocolImpl implements IContentProtocol {
 
 	@Override
 	public void close() {
-		if (logger.isTraceEnabled()) {
-			logger.trace("[SdkProtocolImpl#close]");
-		}
+		logger.trace("[SdkProtocolImpl#close]");
 		if (this.conn != null) {
 			this.conn.disconnect();
 		}
 	}
 
 	private InputStream executeRequest(String method, int queryTimeoutMillis, String url) throws AtsdException, IOException {
-		if (logger.isDebugEnabled()) {
-			logger.debug("[request] {} {}", method, url);
-		}
+		logger.debug("[request] {} {}", method, url);
 		this.conn = getHttpURLConnection(url);
 		if (contentDescription.getInfo().secure()) {
 			doTrustToCertificates((HttpsURLConnection) this.conn);
@@ -215,7 +201,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 		final String password = contentDescription.getInfo().password();
 		if (!StringUtils.isEmpty(login) && !StringUtils.isEmpty(password)) {
 			final String basicCreds = login + ':' + password;
-			final byte[] encoded = Base64.encodeBase64(basicCreds.getBytes());
+			final byte[] encoded = Base64.encode(basicCreds.getBytes());
 			conn.setRequestProperty(HttpHeaders.AUTHORIZATION, AUTHORIZATION_TYPE + new String(encoded));
 		}
 		conn.setAllowUserInteraction(false);
@@ -261,7 +247,7 @@ public class SdkProtocolImpl implements IContentProtocol {
 			sslConnection.setSSLSocketFactory(TrustAllSslSocketFactory.getDefaultSSLSocketFactory());
 			sslConnection.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
 		} else {
-			SSLContext sslContext = SSLContext.getInstance(CONTEXT_INSTANCE_TYPE);
+			SSLContext sslContext = SSLContext.getInstance("SSL");
 			try {
 				sslContext.init(null, null, new SecureRandom());
 				sslConnection.setSSLSocketFactory(sslContext.getSocketFactory());

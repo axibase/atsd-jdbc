@@ -63,19 +63,11 @@ public class AtsdStatement extends AvaticaStatement {
 	*/
 	@Override
 	public boolean getMoreResults() throws SQLException {
-		if (openResultSet != null) {
-			openResultSet.close();
-		}
-		return false;
+		return super.getMoreResults();
 	}
 
 	@Override
 	public synchronized void cancel() throws SQLException {
-		if (!this.cancelFlag.get()) {
-			final AtsdConnection atsdConnection = (AtsdConnection) this.connection;
-			atsdConnection.getMeta().cancelStatement(this.handle);
-		}
-
 		super.cancel();
 		logger.trace("[AtsdStatement#cancel]");
 	}

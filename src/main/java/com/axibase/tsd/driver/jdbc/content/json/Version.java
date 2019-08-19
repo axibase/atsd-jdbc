@@ -18,9 +18,9 @@ import com.axibase.tsd.driver.jdbc.ext.AtsdVersion;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonInclude;
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @Getter
 @Setter

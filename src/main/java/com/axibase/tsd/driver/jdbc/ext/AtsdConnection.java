@@ -14,23 +14,20 @@
 */
 package com.axibase.tsd.driver.jdbc.ext;
 
-import com.axibase.tsd.driver.jdbc.converter.AtsdSqlConverterFactory;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.ExceptionsUtil;
 import lombok.SneakyThrows;
 import org.apache.calcite.avatica.*;
 import org.apache.commons.lang3.StringUtils;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
-import static org.apache.calcite.avatica.Meta.StatementType.INSERT;
-import static org.apache.calcite.avatica.Meta.StatementType.UPDATE;
-
 public class AtsdConnection extends AvaticaConnection {
-
 	private static final LoggingFacade log = LoggingFacade.getLogger(AtsdMeta.class);
-	protected static final Trojan TROJAN = createTrojan();
 	
 	protected AtsdConnection(UnregisteredDriver driver, AvaticaFactory factory, String url, Properties info) {
 		super(driver, factory, url, info);
@@ -50,7 +47,7 @@ public class AtsdConnection extends AvaticaConnection {
 	}
 
 	AtsdMeta getMeta(){
-		return (AtsdMeta) TROJAN.getMeta(this);
+		return (AtsdMeta) meta;
 	}
 
 	@Override
@@ -96,23 +93,16 @@ public class AtsdConnection extends AvaticaConnection {
 		return factory;
 	}
 
+	protected void checkOpen() throws SQLException {
+		if (isClosed()) {
+			throw helper.closed();
+		}
+	}
+
     @Override
     public String nativeSQL(String sql) throws SQLException {
         log.debug("[nativeSQL]");
-        sql = StringUtils.stripStart(sql, null);
-        if (StringUtils.isEmpty(sql)) {
-            return sql;
-        }
-
-        final int idxOfSpace = sql.indexOf(' ');
-        if (idxOfSpace == -1 || idxOfSpace == 0 || idxOfSpace == sql.length() - 1) {
-            return sql;
-        }
-
-        Meta.StatementType statementType = Meta.StatementType.valueOf(sql.substring(0, idxOfSpace).toUpperCase());
-        if (INSERT == statementType || UPDATE == statementType) {
-            return AtsdSqlConverterFactory.getConverter(statementType, false).prepareSql(sql);
-        }
+        checkOpen();
         return sql;
     }
 

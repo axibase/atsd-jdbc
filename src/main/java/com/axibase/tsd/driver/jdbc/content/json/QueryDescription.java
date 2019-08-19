@@ -18,8 +18,8 @@ package com.axibase.tsd.driver.jdbc.content.json;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.calcite.avatica.com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.HashMap;
 import java.util.Map;

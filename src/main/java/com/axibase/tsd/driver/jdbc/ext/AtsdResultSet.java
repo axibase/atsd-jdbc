@@ -21,7 +21,6 @@ import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.TagsUtil;
 import org.apache.calcite.avatica.AvaticaResultSet;
 import org.apache.calcite.avatica.AvaticaStatement;
-import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.avatica.Meta.Frame;
 import org.apache.calcite.avatica.Meta.Signature;
 import org.apache.calcite.avatica.QueryState;
@@ -36,18 +35,13 @@ import java.util.TreeMap;
 
 public class AtsdResultSet extends AvaticaResultSet {
 	private static final LoggingFacade logger = LoggingFacade.getLogger(AtsdResultSet.class);
-	private final AtsdMeta meta;
-	private final Meta.StatementHandle handle;
 	private final StatementContext context;
 
 	public AtsdResultSet(AvaticaStatement statement, QueryState state, Signature signature,
-						 ResultSetMetaData resultSetMetaData, TimeZone timeZone, Frame firstFrame) {
+						 ResultSetMetaData resultSetMetaData, TimeZone timeZone, Frame firstFrame) throws SQLException {
 		super(statement, state, signature, resultSetMetaData, timeZone, firstFrame);
-		final AtsdConnection connection = (AtsdConnection) statement.connection;
-		this.meta = connection.getMeta();
-		this.handle = statement.handle;
-		this.context = meta.getContextFromMap(statement.handle);
-		logger.trace("[ctor] {}", this.handle.id);
+		this.context = getMeta().getContextFromMap(statement.handle);
+		logger.trace("[ctor] handle id={}", statement.handle.id);
 	}
 
 	@Override
@@ -574,7 +568,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 	public boolean next() throws SQLException {
 		final boolean next = super.next();
 		if (!next) {
-			meta.closeStatement(handle);
+			getMeta().closeStatement(statement.handle);
 			if (context != null && context.getException() != null) {
 				throw context.getException();
 			}
@@ -589,18 +583,19 @@ public class AtsdResultSet extends AvaticaResultSet {
 			context.setWarning(null);
 			context.setException(null);
 		}
-		if (logger.isTraceEnabled()) {
-			logger.trace("[AtsdResultSet#closed]");
-		}
-
+		logger.trace("[AtsdResultSet#closed]");
 	}
 
 	@Override
 	protected void cancel() {
+		logger.trace("[AtsdResultSet#cancel]");
+		getMeta().cancelStatement(statement.handle);
 		super.cancel();
-		if (logger.isTraceEnabled()) {
-			logger.trace("[AtsdResultSet#cancel]");
-		}
+	}
+
+	private AtsdMeta getMeta() {
+		final AtsdConnection atsdConnection = (AtsdConnection) statement.connection;
+		return atsdConnection.getMeta();
 	}
 
 }
