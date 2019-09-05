@@ -3,7 +3,6 @@ package com.axibase.tsd.driver.jdbc.protocol;
 import com.axibase.tsd.driver.jdbc.content.ContentDescription;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import lombok.experimental.UtilityClass;
-import org.apache.calcite.avatica.org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
@@ -35,12 +34,10 @@ class MetadataRetriever {
 				result.write(buffer, 0, length);
 			} else {
 				result.write(buffer, 0, index);
-				final byte[] decoded = Base64.decodeBase64(result.toByteArray());
+				final byte[] decoded = Base64.decode(result.toByteArray());
 				final String jsonScheme = new String(decoded, DEFAULT_CHARSET);
 				contentDescription.setJsonScheme(jsonScheme);
-				if (logger.isTraceEnabled()) {
-					logger.trace("JSON scheme: {}", jsonScheme);
-				}
+				logger.trace("JSON scheme: {}", jsonScheme);
 				result.reset();
 				final int newSize = length - index - 1;
 				return new ByteArrayInputStream(buffer, index + 1, newSize);
@@ -77,10 +74,8 @@ class MetadataRetriever {
 		String value = list != null && !list.isEmpty() ? list.get(0) : null;
 		if (value != null && value.startsWith(START_LINK) && value.endsWith(END_LINK)) {
 			final String encoded = value.substring(START_LINK.length(), value.length() - END_LINK.length());
-			String json = new String(Base64.decodeBase64(encoded), DEFAULT_CHARSET);
-			if (logger.isTraceEnabled()) {
-				logger.trace("JSON schema: {}", json);
-			}
+			final String json = new String(Base64.decodeFromChars(encoded.toCharArray()), DEFAULT_CHARSET);
+			logger.trace("JSON schema: {}", json);
 			contentDescription.setJsonScheme(json);
 		}
 	}

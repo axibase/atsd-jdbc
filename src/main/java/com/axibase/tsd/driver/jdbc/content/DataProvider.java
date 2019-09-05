@@ -15,6 +15,7 @@
 package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.enums.Location;
+import com.axibase.tsd.driver.jdbc.enums.SqlStatementType;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -25,8 +26,8 @@ import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
 import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
+import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import lombok.Getter;
-import org.apache.calcite.avatica.Meta;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,28 +40,19 @@ public class DataProvider implements IDataProvider {
 	private final ContentDescription contentDescription;
 	private final IContentProtocol contentProtocol;
 	private final StatementContext context;
+	private final SqlStatementType statementType;
 	@Getter
 	private IStoreStrategy strategy;
-	private AtomicBoolean isHoldingConnection = new AtomicBoolean();
+	private final AtomicBoolean isHoldingConnection = new AtomicBoolean();
 
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context,
-						Meta.StatementType statementType) {
+						SqlStatementType statementType) {
+		this.statementType = statementType;
 		final String endpoint;
-		switch (statementType) {
-			case SELECT: {
-				if (context.isEncodeTags()) {
-					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo) + "?encodeTags=true";
-				} else {
-					endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
-				}
-				break;
-			}
-			case INSERT:
-			case UPDATE: {
-                endpoint = Location.COMMAND_ENDPOINT.getUrl(connectionInfo);
-				break;
-			}
-			default: throw new IllegalArgumentException("Unsupported statement type: " + statementType);
+		if (context.isEncodeTags()) {
+			endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo) + "?encodeTags=true";
+		} else {
+			endpoint = Location.SQL_ENDPOINT.getUrl(connectionInfo);
 		}
 		this.contentDescription = new ContentDescription(endpoint, connectionInfo, query, context);
 		logger.trace("Endpoint: {}", contentDescription.getEndpoint());
@@ -69,18 +61,24 @@ public class DataProvider implements IDataProvider {
 	}
 
 	@Override
-	public void fetchData(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
+	public long executeQuery(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		contentDescription.setMaxRowsCount(maxLimit);
 		this.isHoldingConnection.set(true);
 		final InputStream is = contentProtocol.readContent(timeoutMillis);
 		this.isHoldingConnection.set(false);
-		this.strategy = defineStrategy();
-		if (this.strategy != null) {
-			this.strategy.store(is);
+		if (statementType == SqlStatementType.SELECT) {
+			this.strategy = defineStrategy();
+			if (this.strategy != null) {
+				this.strategy.store(is);
+			}
+			return -1L;
+		} else {
+			return JsonMappingUtil.mapToDataModificationResult(is).countUpdated();
 		}
 	}
 
 	@Override
+	@Deprecated
 	public long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException {
 		this.isHoldingConnection.set(false);
 		return contentProtocol.writeContent(timeoutMillis);

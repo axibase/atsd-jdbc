@@ -16,12 +16,12 @@ package com.axibase.tsd.driver.jdbc.util;
 
 import com.axibase.tsd.driver.jdbc.content.json.*;
 import lombok.experimental.UtilityClass;
-import org.apache.calcite.avatica.com.fasterxml.jackson.core.JsonParser;
-import org.apache.calcite.avatica.com.fasterxml.jackson.databind.DeserializationFeature;
-import org.apache.calcite.avatica.com.fasterxml.jackson.databind.MappingJsonFactory;
-import org.apache.calcite.avatica.com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.calcite.avatica.com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.calcite.avatica.com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MappingJsonFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.type.CollectionType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,6 +76,10 @@ public class JsonMappingUtil {
 
 	public static SendCommandResult mapToSendCommandResult(InputStream inputStream) throws IOException {
 		return READER.forType(SendCommandResult.class).readValue(inputStream);
+	}
+
+	public static DataModificationResult mapToDataModificationResult(InputStream inputStream) throws IOException {
+		return READER.forType(DataModificationResult.class).readValue(inputStream);
 	}
 
 	public static TreeMap<String, String> mapToTags(String jsonTags) throws IOException {

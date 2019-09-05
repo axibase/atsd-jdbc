@@ -1,7 +1,6 @@
 package com.axibase.tsd.driver.jdbc.converter;
 
 import com.axibase.tsd.driver.jdbc.util.CaseInsensitiveLinkedHashMap;
-import com.google.common.collect.Sets;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,8 +14,8 @@ class CommandBuilder {
     private static final String METRIC = "metric";
     private static final String SERIES = "series";
 
-    private static final Set<String> DATA_TYPES = Collections.unmodifiableSet(Sets.newHashSet("short", "integer", "long", "float", "double", "decimal"));
-    private static final Set<String> INVALID_ACTION_TYPES = Collections.unmodifiableSet(Sets.newHashSet( "none", "discard", "transform", "raise_error"));
+    private static final Set<String> DATA_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("short", "integer", "long", "float", "double", "decimal")));
+    private static final Set<String> INVALID_ACTION_TYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList( "none", "discard", "transform", "raise_error")));
 
     CommandBuilder() {
     }

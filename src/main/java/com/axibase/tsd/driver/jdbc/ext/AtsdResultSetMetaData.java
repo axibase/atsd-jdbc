@@ -1,8 +1,6 @@
 package com.axibase.tsd.driver.jdbc.ext;
 
-import org.apache.calcite.avatica.AvaticaStatement;
-import org.apache.calcite.avatica.ColumnMetaData;
-import org.apache.calcite.avatica.Meta;
+import org.apache.calcite.avatica.*;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -129,7 +127,7 @@ public class AtsdResultSetMetaData implements ResultSetMetaData {
 		if(iface.isInstance(this)) {
 			return iface.cast(this);
 		} else {
-			throw this.statement.connection.helper.createException("does not implement '" + iface + "'");
+			throw Helper.INSTANCE.createException("does not implement '" + iface + "'");
 		}
 	}
 

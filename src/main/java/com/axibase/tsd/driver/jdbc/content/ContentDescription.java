@@ -18,9 +18,9 @@ import com.axibase.tsd.driver.jdbc.enums.Location;
 import com.axibase.tsd.driver.jdbc.enums.MetadataFormat;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
+import com.axibase.tsd.driver.jdbc.protocol.HttpHeaders;
 import com.axibase.tsd.driver.jdbc.util.DbMetadataUtils;
 import lombok.Data;
-import org.apache.calcite.avatica.org.apache.http.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

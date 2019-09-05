@@ -26,7 +26,7 @@ public interface IDataProvider extends AutoCloseable {
 
 	IStoreStrategy getStrategy();
 
-	void fetchData(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
+	long executeQuery(long maxLimit, int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
 	long sendData(int timeoutMillis) throws AtsdException, GeneralSecurityException, IOException;
 
