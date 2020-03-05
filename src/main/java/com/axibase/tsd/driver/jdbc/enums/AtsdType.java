@@ -3,6 +3,7 @@ package com.axibase.tsd.driver.jdbc.enums;
 import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.IsoDateParseUtil;
+import com.axibase.tsd.driver.jdbc.util.TimestampParseUtil;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.ColumnMetaData.Rep;
 import org.apache.commons.lang3.StringUtils;
@@ -153,7 +154,7 @@ public enum AtsdType {
 			}
 			try {
 				if (cell.charAt(cell.length() - 1) != 'Z') { // datetime is not in ISO format, hence datetimeAsNumber option used
-					return new Timestamp(Long.parseLong(cell));
+					return TimestampParseUtil.parse(cell);
 				}
 				final long millis = IsoDateParseUtil.parseIso8601(cell);
 				return new Timestamp(millis);

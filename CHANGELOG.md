@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.8
+
+* Added support for microsecond-precision timestamp
+
 ## 1.4.7
 
 * Provide more details in case of authentication failure.
