@@ -19,18 +19,17 @@ import com.axibase.tsd.driver.jdbc.enums.JsonConvertedType;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.JsonMappingUtil;
 import com.axibase.tsd.driver.jdbc.util.TagsUtil;
-import org.apache.calcite.avatica.AvaticaResultSet;
-import org.apache.calcite.avatica.AvaticaStatement;
-import org.apache.calcite.avatica.Meta;
+import org.apache.calcite.avatica.*;
 import org.apache.calcite.avatica.Meta.Frame;
 import org.apache.calcite.avatica.Meta.Signature;
-import org.apache.calcite.avatica.QueryState;
+import org.apache.calcite.avatica.util.Cursor;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
@@ -524,13 +523,7 @@ public class AtsdResultSet extends AvaticaResultSet {
 
 	@Override
 	public String getString(String columnLabel) throws SQLException {
-		if (context != null && context.isEncodeTags()) {
-			final int column = findColumn(columnLabel);
-			if (column > 0 && getJsonType(column)== JsonConvertedType.TAGS) {
-				return decodeTags(super.getString(column));
-			}
-		}
-		return super.getString(columnLabel);
+		return getString(findColumn(columnLabel));
 	}
 
 	@Override
@@ -539,7 +532,72 @@ public class AtsdResultSet extends AvaticaResultSet {
 				&& getJsonType(columnIndex) == JsonConvertedType.TAGS) {
 			return decodeTags(super.getString(columnIndex));
 		}
-		return super.getString(columnIndex);
+		Cursor.Accessor accessor = getAccessor(columnIndex);
+		Object object = accessor.getObject();
+		return object instanceof Timestamp ? timestampToTimezone((Timestamp) object, localCalendar).toString() : accessor.getString();
+	}
+
+	private Cursor.Accessor getAccessor(int columnIndex) throws SQLException {
+		if (columnIndex <= 0 || columnIndex > accessorList.size()) {
+			throw new SQLException("invalid column ordinal: " + columnIndex);
+		}
+		return accessorList.get(columnIndex - 1);
+	}
+
+	private Timestamp timestampToTimezone(Timestamp timestamp, Calendar calendar) {
+		if (calendar != null) {
+			final long millis = timestamp.getTime();
+			final int offset = calendar.getTimeZone().getOffset(millis);
+			if (offset != 0) {
+				int nanos = timestamp.getNanos();
+				timestamp = new Timestamp(millis - offset);
+				timestamp.setNanos(nanos);
+			}
+		}
+		return timestamp;
+	}
+
+	@Override
+	public Timestamp getTimestamp(int columnIndex) throws SQLException {
+		return getTimestamp(columnIndex, localCalendar);
+	}
+
+	@Override
+	public Timestamp getTimestamp(String columnLabel) throws SQLException {
+		return getTimestamp(findColumn(columnLabel), localCalendar);
+	}
+
+	@Override
+	public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
+		return getTimestamp(findColumn(columnLabel), cal);
+	}
+
+	@Override
+	public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
+		Object object = getAccessor(columnIndex).getObject();
+		if (object instanceof Timestamp) {
+			return timestampToTimezone((Timestamp) object, cal);
+		}
+		return super.getTimestamp(columnIndex);
+	}
+
+	@Override
+	public Object getObject(int columnIndex) throws SQLException {
+		Cursor.Accessor accessor = getAccessor(columnIndex);
+		ColumnMetaData metaData = this.columnMetaDataList.get(columnIndex - 1);
+		int typeId = metaData.type.id;
+		if (typeId == Types.TIMESTAMP) {
+			Object object = accessor.getObject();
+			if (object instanceof Timestamp) {
+				return timestampToTimezone((Timestamp) object, this.localCalendar);
+			}
+		}
+		return AvaticaSite.get(accessor, typeId, this.localCalendar);
+	}
+
+	@Override
+	public Object getObject(String columnLabel) throws SQLException {
+		return getObject(findColumn(columnLabel));
 	}
 
 	public TreeMap<String, String> getTags(String columnLabel) throws SQLException {
