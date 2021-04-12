@@ -19,7 +19,7 @@ public class EnumUtil {
 
 	private static final Set<String> reservedWordsSql2003 = createSetFromEnum(ReservedWordsSQL2003.values());
 	private static final Map<String, AtsdType> atsdNameTypeMapping = createAtsdNameTypeMapping();
-	private static final Map<Integer, AtsdType> sqlAtsdTypesMaping = createSqlAtsdTypesMapping();
+	private static final Map<Integer, AtsdType> sqlAtsdTypesMapping = createSqlAtsdTypesMapping();
 	private static final Map<String, ITimeDateConstant> tokenToTimeDateEnumConstant = initializeTimeDateMap();
 	private static final Map<String, Strategy> strategyMap = EnumUtils.getEnumMap(Strategy.class);
 
@@ -31,6 +31,8 @@ public class EnumUtil {
 			mapping.put(type.originalType, type);
 			mapping.put(type.originalType.toUpperCase(Locale.US), type);
 		}
+		mapping.put("number", AtsdType.DECIMAL_TYPE);
+		mapping.put("NUMBER", AtsdType.DECIMAL_TYPE);
 		return Collections.unmodifiableMap(mapping);
 	}
 
@@ -70,7 +72,7 @@ public class EnumUtil {
 	}
 
 	public static AtsdType getAtsdTypeBySqlType(int typeCode, AtsdType defaultType) {
-		AtsdType result = sqlAtsdTypesMaping.get(typeCode);
+		AtsdType result = sqlAtsdTypesMapping.get(typeCode);
 		if (result == null) {
 			result = defaultType;
 		}
