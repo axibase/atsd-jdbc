@@ -2,9 +2,9 @@ package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.TestUtil;
 import com.axibase.tsd.driver.jdbc.enums.OnMissingMetricAction;
+import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
-import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
 import org.apache.calcite.avatica.Meta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +52,6 @@ public abstract class AbstractFetchTest {
 	protected static IStoreStrategy getStrategyObject() {
 		final Meta.StatementHandle statementHandle = new Meta.StatementHandle("12345678", 1, null);
 		final StatementContext context = new StatementContext(statementHandle, false);
-		return StrategyFactory.create(StrategyFactory.findClassByName(READ_STRATEGY), context, OnMissingMetricAction.ERROR);
+		return Strategy.byName(READ_STRATEGY).initialize(context, OnMissingMetricAction.ERROR);
 	}
 }

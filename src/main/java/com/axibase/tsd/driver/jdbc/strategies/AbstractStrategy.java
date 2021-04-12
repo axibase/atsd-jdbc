@@ -90,6 +90,9 @@ public abstract class AbstractStrategy implements IStoreStrategy {
 		} catch (InterruptedException e) {
 			logger.debug("[openToRead] {}", e.getMessage());
 			Thread.currentThread().interrupt();
+			if (inputStream == null) {
+				throw new IOException(e);
+			}
 		}
 		final String[] header = consumer.open(inputStream, metadataList);
 		consumer.fillComments();

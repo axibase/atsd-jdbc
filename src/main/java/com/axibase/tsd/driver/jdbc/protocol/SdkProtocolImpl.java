@@ -75,22 +75,19 @@ public class SdkProtocolImpl implements IContentProtocol {
 	public InputStream readContent(int timeoutMillis) throws AtsdException, IOException {
 		contentDescription.addRequestHeadersForDataFetching();
 		contentDescription.initDataFetchingContent();
-		InputStream inputStream = null;
 		try {
-			inputStream = executeRequest(POST_METHOD, timeoutMillis, contentDescription.getEndpoint());
+			InputStream inputStream = executeRequest(POST_METHOD, timeoutMillis, contentDescription.getEndpoint());
 			if (MetadataFormat.EMBED == contentDescription.getMetadataFormat()) {
 				inputStream = MetadataRetriever.retrieveJsonSchemeAndSubstituteStream(inputStream, contentDescription);
 			}
+			return inputStream;
 		} catch (IOException e) {
 			logger.warn("Metadata retrieving error", e);
 			if (queryId != null) { // queryId is set if cancel method is invoked from another thread
 				throw new AtsdRuntimeException(prepareCancelMessage());
 			}
-			if (e instanceof SocketException) {
-				throw e;
-			}
+			throw e;
 		}
-		return inputStream;
 	}
 
 	private String prepareCancelMessage() {
