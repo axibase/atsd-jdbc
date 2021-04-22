@@ -100,14 +100,14 @@ public class Consumer implements IConsumer {
 	private void addWarning(AtsdExceptionRepresentation section) {
 		SQLWarning sqlw = new SQLWarning(section.getMessage(), section.getState());
 		List<StackTraceElement> list = getStackTrace(section);
-		sqlw.setStackTrace(list.toArray(new StackTraceElement[list.size()]));
+		sqlw.setStackTrace(list.toArray(new StackTraceElement[0]));
 		context.addWarning(sqlw);
 	}
 
 	private SQLException addError(AtsdExceptionRepresentation section) {
 		SQLException sqlException = new SQLException(section.getMessage(), section.getState());
 		List<StackTraceElement> list = getStackTrace(section);
-		sqlException.setStackTrace(list.toArray(new StackTraceElement[list.size()]));
+		sqlException.setStackTrace(list.toArray(new StackTraceElement[0]));
 		context.addException(sqlException);
 		return sqlException;
 	}

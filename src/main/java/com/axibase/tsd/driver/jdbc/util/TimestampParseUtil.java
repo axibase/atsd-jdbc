@@ -14,10 +14,10 @@ public class TimestampParseUtil {
     public static Timestamp parse(String millisStr) {
         final int dotIndex = millisStr.lastIndexOf('.');
         if (dotIndex == -1) {
-            return new Timestamp(Long.parseLong(millisStr));
+            return new Timestamp(NumberParseUtil.parseLongFast(millisStr));
         }
-        final long millis = Long.parseLong(millisStr.substring(0, dotIndex));
-        final long microsPart = Long.parseLong(millisStr.substring(dotIndex + 1));
+        final long millis = NumberParseUtil.parseLongFast(millisStr, 0, dotIndex);
+        final long microsPart = NumberParseUtil.parseLongFast(millisStr, dotIndex + 1, millisStr.length());
         final Timestamp timestamp = new Timestamp(millis);
         final int nanos = (int) ((millis % MILLIS_IN_SECOND) * NANOS_IN_MILLIS + microsPart * NANOS_IN_MICROS);
         timestamp.setNanos(nanos);

@@ -3,6 +3,7 @@ package com.axibase.tsd.driver.jdbc.enums;
 import com.axibase.tsd.driver.jdbc.intf.ParserRowContext;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.util.IsoDateParseUtil;
+import com.axibase.tsd.driver.jdbc.util.NumberParseUtil;
 import com.axibase.tsd.driver.jdbc.util.TimestampParseUtil;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.ColumnMetaData.Rep;
@@ -17,7 +18,7 @@ public enum AtsdType {
 	BIGINT_DATA_TYPE("bigint", "bigint", Types.BIGINT, Rep.LONG, 19, 20, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
-			return Long.valueOf(cell);
+			return NumberParseUtil.parseLongFast(cell);
 		}
 
 		@Override
@@ -61,7 +62,8 @@ public enum AtsdType {
 	INTEGER_DATA_TYPE("integer", "integer", Types.INTEGER, Rep.INTEGER, 10, 11, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
-			return Integer.valueOf(cell);
+			final long num = NumberParseUtil.parseLongFast(cell);
+			return (int)Math.max(Math.min(num, Integer.MAX_VALUE), Integer.MIN_VALUE);
 		}
 
 		@Override
@@ -99,7 +101,8 @@ public enum AtsdType {
 	SMALLINT_DATA_TYPE("smallint", "smallint", Types.SMALLINT, Rep.SHORT, 5, 6, 0) {
 		@Override
 		protected Object readValueHelper(String cell) {
-			return Short.valueOf(cell);
+			final long num = NumberParseUtil.parseLongFast(cell);
+			return (int)Math.max(Math.min(num, Short.MAX_VALUE), Short.MIN_VALUE);
 		}
 
 		@Override
