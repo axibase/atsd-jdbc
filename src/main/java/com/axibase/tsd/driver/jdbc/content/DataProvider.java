@@ -15,6 +15,7 @@
 package com.axibase.tsd.driver.jdbc.content;
 
 import com.axibase.tsd.driver.jdbc.enums.Location;
+import com.axibase.tsd.driver.jdbc.enums.Strategy;
 import com.axibase.tsd.driver.jdbc.ext.AtsdConnectionInfo;
 import com.axibase.tsd.driver.jdbc.ext.AtsdException;
 import com.axibase.tsd.driver.jdbc.ext.AtsdRuntimeException;
@@ -24,7 +25,6 @@ import com.axibase.tsd.driver.jdbc.intf.IStoreStrategy;
 import com.axibase.tsd.driver.jdbc.logging.LoggingFacade;
 import com.axibase.tsd.driver.jdbc.protocol.ProtocolFactory;
 import com.axibase.tsd.driver.jdbc.protocol.SdkProtocolImpl;
-import com.axibase.tsd.driver.jdbc.strategies.StrategyFactory;
 import lombok.Getter;
 import org.apache.calcite.avatica.Meta;
 
@@ -41,7 +41,7 @@ public class DataProvider implements IDataProvider {
 	private final StatementContext context;
 	@Getter
 	private IStoreStrategy strategy;
-	private AtomicBoolean isHoldingConnection = new AtomicBoolean();
+	private final AtomicBoolean isHoldingConnection = new AtomicBoolean();
 
 	public DataProvider(AtsdConnectionInfo connectionInfo, String query, StatementContext context,
 						Meta.StatementType statementType) {
@@ -75,9 +75,7 @@ public class DataProvider implements IDataProvider {
 		final InputStream is = contentProtocol.readContent(timeoutMillis);
 		this.isHoldingConnection.set(false);
 		this.strategy = defineStrategy();
-		if (this.strategy != null) {
-			this.strategy.store(is);
-		}
+		this.strategy.store(is);
 	}
 
 	@Override
@@ -114,7 +112,7 @@ public class DataProvider implements IDataProvider {
 
 	private IStoreStrategy defineStrategy() {
 		final AtsdConnectionInfo info = this.contentDescription.getInfo();
-		return StrategyFactory.create(StrategyFactory.findClassByName(info.strategy()), this.context, info.missingMetric());
+		return Strategy.byName(info.strategy()).initialize(this.context, info.missingMetric());
 	}
 
 }
